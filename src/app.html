@@ -4031,7 +4031,7 @@ function parseOutline(src){
     else if(B==='two'){const k=rest.findIndex(x=>/^\s*[-－ー]{3,}\s*$/.test(x));const hf=Math.ceil(rest.length/2);
       t.body=(k<0?rest.slice(0,hf):rest.slice(0,k)).join('\n');t.body2=(k<0?rest.slice(hf):rest.slice(k+1)).join('\n')}
     else t.body=rest.join('\n');
-    return{key,t};
+    return{key,t,raw:ls.join('\n')};
   });
 }
 function serializeOutline(){
@@ -4048,7 +4048,12 @@ function serializeOutline(){
 function applyOutline(src){
   const d=S.doc,list=parseOutline(src);if(!list.length){toast('構成が空です');return false}
   const imgs=[];d.pages.forEach(p=>p.items.forEach(it=>{if(it.slot==='image'&&it.imageId)imgs.push(it.imageId)}));
-  d.pages=list.map(({key,t})=>{if(baseOf(key)==='image'&&imgs.length)t.image=imgs.shift();return makeSlide(key,t)});
+  /* 発表者ノートは同じ内容（なければ同じ見出し）のスライドに引き継ぐ */
+  const norm=x=>String(x||'').replace(/^[\[［][^\]］]+[\]］]\s*/,'').replace(/\s+/g,' ').trim();
+  const ob=serializeOutline().split('\n\n'),olds=d.pages.map((pg,i)=>({notes:pg.notes,b:norm(ob[i]),h:norm(slideTexts(pg).title)})).filter(o=>o.notes&&String(o.notes).trim());
+  const notes=list.map(()=>null);
+  for(const by of['b','h'])list.forEach(({t,raw},i)=>{if(notes[i]!=null)return;const v=by==='b'?norm(raw):norm(t.title);if(!v)return;const k=olds.findIndex(o=>o[by]===v);if(k>=0){notes[i]=olds[k].notes;olds.splice(k,1)}});
+  d.pages=list.map(({key,t},i)=>{if(baseOf(key)==='image'&&imgs.length)t.image=imgs.shift();const pg=makeSlide(key,t);if(notes[i]!=null)pg.notes=notes[i];return pg});
   S.sel=null;S.page=0;rebuild();commit();renderAll();return true;
 }
 let sampleCap=null;
