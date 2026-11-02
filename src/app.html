@@ -247,6 +247,14 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .rr{margin-bottom:8px}.rr .kc{flex-basis:26px;width:26px;height:26px}
 .kpv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .kpv canvas{width:100%;aspect-ratio:16/9;border:1px solid var(--line);display:block}
+#app.k-card .bk-only{display:none}
+.cpv{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.cpv button{padding:0;min-width:0;min-height:0;border:1px solid var(--line);background:none;display:block}
+.cpv button.on{border-color:var(--ink);outline:2px solid var(--ink);outline-offset:1px}
+.cpv canvas{width:100%;display:block}
+#c-ipv canvas{border:1px solid var(--line)}
+.cpv .cno{aspect-ratio:91/55;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sub)}
+.cim{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .th{display:flex;flex-direction:column;gap:4px;padding:5px;text-align:left;font-size:12px}
 .th.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent);outline:1px solid var(--accent)}
 .sw{display:block;position:relative;aspect-ratio:16/9;border:1px solid var(--line);overflow:hidden}
@@ -593,8 +601,8 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
   <header>
     <div class="hr hr1">
       <div class="mnu" id="mApp"><button class="mb logo" aria-haspopup="true" aria-expanded="false" aria-label="Thinbook"><span class="lt">Thinbook</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><svg class="ic hm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-        <div class="mp" role="menu" hidden><div class="mq"><button id="bNew2">新規冊子</button><button id="bNewS2">新規スライド</button><button id="bOpen2">開く</button><button id="bDbx2" hidden>Dropbox</button></div><button id="bNeta">ネタ帳</button><button id="bSales">頒布</button><button id="bXl">Excel</button><div class="mqd"></div></div></div>
-      <div class="grp gfile"><div class="mnu" id="mNew"><button class="mb" aria-haspopup="true" aria-expanded="false">新規<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="mp" role="menu" hidden><button id="bNew">冊子</button><button id="bNewS">スライド</button></div></div><button id="bOpen">開く</button><button id="bSave">保存</button><button id="bDbx" hidden>Dropbox</button></div>
+        <div class="mp" role="menu" hidden><div class="mq"><button id="bNew2">新規冊子</button><button id="bNewS2">新規スライド</button><button id="bNewC2">新規名刺</button><button id="bOpen2">開く</button><button id="bDbx2" hidden>Dropbox</button></div><button id="bNeta">ネタ帳</button><button id="bSales">頒布</button><button id="bXl">Excel</button><div class="mqd"></div></div></div>
+      <div class="grp gfile"><div class="mnu" id="mNew"><button class="mb" aria-haspopup="true" aria-expanded="false">新規<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="mp" role="menu" hidden><button id="bNew">冊子</button><button id="bNewS">スライド</button><button id="bNewC">名刺</button></div></div><button id="bOpen">開く</button><button id="bSave">保存</button><button id="bDbx" hidden>Dropbox</button></div>
       <span id="docInfo"></span>
       <div class="grp" id="gOut"><button id="bPptx" class="sl-only"><span class="lf">PPTX書き出し</span><span class="ls">書き出し</span></button><button id="bExport" class="primary">入稿データ書き出し</button></div>
     </div>
@@ -1001,7 +1009,7 @@ function drawItem(ctx,it,ch,preview){
     drawText(ctx,it,ch,preview);
   }
 }
-function nombreText(i){return String(S.doc.nombre.start+i)}
+function nombreText(i){if(S.doc.kind==='card')return i?'裏':'表';return String(S.doc.nombre.start+i)}
 function drawNombre(ctx,i,ch){
   const d=S.doc,nb=d.nombre;if(d.kind==='cover'||nb.mode==='none'||d.pages[i].noNombre)return;
   const W=pw(d),H=d.trimH,L=isLeft(i),t=nombreText(i);
@@ -1059,7 +1067,7 @@ function drawMarks(ctx,W,H,b,ext,ch){
 
 /* ---------- view ---------- */
 const spreadsEl=$('#spreads'),pagesEl=$('#pages'),stage=$('#stage');
-function spreadsOf(d){if(d.kind==='cover')return[[0]];if(d.kind==='slide')return d.pages.map((_,i)=>[i]);const n=d.pages.length,sp=[[0]];for(let i=1;i<n;i+=2)sp.push(i+1<n?[i,i+1]:[i]);return sp}
+function spreadsOf(d){if(d.kind==='cover')return[[0]];if(d.kind==='slide'||d.kind==='card')return d.pages.map((_,i)=>[i]);const n=d.pages.length,sp=[[0]];for(let i=1;i<n;i+=2)sp.push(i+1<n?[i,i+1]:[i]);return sp}
 const io=new IntersectionObserver(es=>{for(const e of es){const i=+e.target.dataset.i;if(e.isIntersecting){S.visible.add(i);S.dirty.add(i)}else S.visible.delete(i)}schedule()},{root:stage,rootMargin:'300px'});
 function rebuild(){
   stopInline();
@@ -1099,8 +1107,9 @@ function rebuild(){
   $('#zoomLbl').textContent=Math.round(S.zoom*100)+'%';$('#pLbl').textContent=S.mv?'マスター':d.kind==='slide'?'スライド':'ページ';
   updateInfo();schedule();
 }
-function updateInfo(){const d=S.doc;const sl=d.kind==='slide';$('#app').classList.toggle('k-slide',sl);if(S.tab==='notes'){if(sl)renderNotes();else{const sh=$('#app').classList.contains('sheet');showTab('props');if(!sh)setSheet(false)}}$('#bOutline').hidden=!sl;$('#bPptx').classList.toggle('primary',sl);$('#bExport').classList.toggle('primary',!sl);$('#bExport').innerHTML=sl?'PDF書き出し':'<span class="lf">入稿データ書き出し</span><span class="ls">書き出し</span>';(sl?$('#slotPdf'):$('#gOut')).append($('#bExport'));
+function updateInfo(){const d=S.doc;const sl=d.kind==='slide';$('#app').classList.toggle('k-slide',sl);$('#app').classList.toggle('k-card',d.kind==='card');if(S.tab==='notes'){if(sl)renderNotes();else{const sh=$('#app').classList.contains('sheet');showTab('props');if(!sh)setSheet(false)}}$('#bOutline').hidden=!sl;$('#bPptx').classList.toggle('primary',sl);$('#bExport').classList.toggle('primary',!sl);$('#bExport').innerHTML=sl?'PDF書き出し':'<span class="lf">入稿データ書き出し</span><span class="ls">書き出し</span>';(sl?$('#slotPdf'):$('#gOut')).append($('#bExport'));
   if(sl){$('#docInfo').textContent=[d.name,'スライド 16:9',d.key?'':(THEMES[d.theme]||{}).name,d.pages.length+'枚'].filter(Boolean).join(' ・ ');$('#docInfo').title=$('#docInfo').textContent;return}
+  if(d.kind==='card'){$('#docInfo').textContent=[d.name,'名刺 '+d.trimW+'×'+d.trimH+'mm',d.pages.length>1?'表・裏':'表のみ',d.color==='mono'?'モノクロ':'カラー'].join(' ・ ');$('#docInfo').title=$('#docInfo').textContent;return}
   const sz=Object.entries(SIZES).find(([k,v])=>v[0]===d.trimW&&v[1]===d.trimH);
   $('#docInfo').textContent=[d.name,(d.kind==='cover'?'表紙 ':'')+(sz?sz[0]+' ':'')+d.trimW+'×'+d.trimH+'mm'+(d.kind==='cover'?' 背幅'+d.spine+'mm':''),d.binding==='right'?'右綴じ':'左綴じ',d.color==='mono'?'モノクロ':'カラー',d.kind==='cover'?'':d.pages.length+'ページ'].filter(Boolean).join(' ・ ');$('#docInfo').title=$('#docInfo').textContent}
 let raf=0,tthumb=0;
@@ -1477,7 +1486,7 @@ const N=(k,v,step=0.1,extra='')=>`<input type="number" id="i-${k.replace(/\./g,'
 const SEL=(k,v,opts)=>`<select id="i-${k.replace(/\./g,'-')}" data-k="${k}">${opts.map(([a,b])=>`<option value="${esc(a)}"${String(a)===String(v)?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
 /* スライドの色を役割で選ぶ。役割を持つ色はテーマを変えると追従する */
 const ROLES=[['accent','キーカラー'],['keyDark','キーの濃色'],['keyLight','キーの淡色'],['keyPale','キーのごく淡い色'],['accent2','対比色'],['ink','文字'],['sub','補足'],['line','罫線'],['bg','地']];
-function roleRow(k,it){const d=S.doc;if(d.kind!=='slide'||d.pptx)return'';const T=theme(),cur=it[k+'Role'];
+function roleRow(k,it){const d=S.doc;if((d.kind!=='slide'&&d.kind!=='card')||d.pptx||!d.key&&d.kind==='card')return'';const T=theme(),cur=it[k+'Role'];
   return`<div class="kcs rr">${ROLES.filter(([r])=>T[r]).filter(([r],i,a)=>a.findIndex(([q])=>T[q].toLowerCase()===T[r].toLowerCase())===i).map(([r,n])=>`<button type="button" class="kc${cur===r?' on':''}" data-role="${r}" data-rk="${k}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div>`}
 $('#tab-props').addEventListener('click',e=>{const b=e.target.closest('[data-role]'),sel=selItem();if(!b||!sel)return;const k=b.dataset.rk,it=k==='color'&&sel.type==='text'?headOf(sel):sel,T=theme();
   it[k+'Role']=b.dataset.role;it[k]=hexC(T[b.dataset.role]);if(k==='color'&&sel.type==='text'&&(sel.next||headOf(sel)!==sel))dirtyAll();else dirty(S.sel.page);commit();renderProps()});
@@ -1487,6 +1496,7 @@ function renderProps(){
   if(S.tab!=='props')return;const el=$('#tab-props'),it=selItem(),d=S.doc;
   if(!it){
     if(d.kind==='slide'){if(S.mv)renderMasterProps(el);else renderSlideProps(el);return}
+    if(d.kind==='card'){cardPageProps(el);return}
     if(d.kind==='cover'){el.innerHTML=`<div class="sec"><h3>表紙</h3><div class="ok">${esc(document.getElementById('docInfo').textContent)}</div></div>`;return}
     const pg=d.pages[S.page];
     el.innerHTML=`<div class="sec"><h3>ページ ${esc(nombreText(S.page))}（${isLeft(S.page)?'左':'右'}ページ）</h3>
@@ -1572,6 +1582,7 @@ $('#tab-props').addEventListener('change',e=>{const t=e.target,n=t.dataset.null,
 function renderDoc(){
   if(S.tab!=='doc')return;const d=S.doc,m=d.margins,nb=d.nombre;
   if(d.kind==='slide'){renderSlideDoc();return}
+  if(d.kind==='card'){renderCardDoc();return}
   const pr=PR();
   let h=`<div class="sec"><h3>書類</h3>${F('名前',`<input type="text" id="d-name" data-dk="name" value="${esc(d.name)}">`)}
     ${F('印刷所',`<select id="d-pr" data-dk="printer">${Object.entries(PRINTERS).map(([k,v])=>`<option value="${k}"${k===(d.printer||'generic')?' selected':''}>${esc(v.name)}</option>`).join('')}</select>`)}
@@ -1612,7 +1623,7 @@ $('#tab-doc').addEventListener('input',e=>{const t=e.target,k=t.dataset.dk;if(!k
 
 /* ---------- pages ---------- */
 function addPages(at,n){for(let k=0;k<n;k++)S.doc.pages.splice(at,0,newPage());rebuild();commit();setPage(at);toast(n+'ページ追加しました')}
-$('#bAddP').onclick=()=>{if(S.doc.kind==='cover'||S.mv)return;if(S.doc.kind==='slide'){addSlide('content');return}addPages(S.page+1,1)};
+$('#bAddP').onclick=()=>{if(S.doc.kind==='cover'||S.mv)return;if(S.doc.kind==='card'){if(S.doc.pages.length>=2){toast('名刺は表と裏の2面です');return}cardAddBack();return}if(S.doc.kind==='slide'){addSlide('content');return}addPages(S.page+1,1)};
 $('#bDelP').onclick=()=>{const d=S.doc;if(d.kind==='cover'||d.pages.length<=1||S.mv)return;if(d.pptx){toast('PowerPointファイルではスライドを削除できません');return}d.pages.splice(S.page,1);S.sel=null;S.page=Math.min(S.page,d.pages.length-1);rebuild();commit();renderProps();toast('ページを削除しました（Ctrl+Zで元に戻せます）')};
 
 /* ---------- preflight ---------- */
@@ -1679,7 +1690,7 @@ document.addEventListener('pointerdown',e=>{$$('.mnu').forEach(m=>{if(!m.contain
 $('#mApp .mb').addEventListener('click',()=>{const q=$('#mApp .mqd');q.innerHTML='';if(!MQ.matches)return;const sl=$('#app').classList.contains('k-slide');
   for(const o of [...$$('#mDoc .mp button'),$('#bPres')]){if(o.hidden||(sl&&o.classList.contains('bk-only'))||(!sl&&o.classList.contains('sl-only')))continue;
     const p=document.createElement('button');p.textContent=o.textContent;p.className=o.classList.contains('on')?'on':'';p.onclick=()=>o.click();q.append(p)}},true);
-$('#bNew2').onclick=()=>$('#bNew').click();$('#bNewS2').onclick=()=>$('#bNewS').click();$('#bOpen2').onclick=()=>$('#bOpen').click();$('#bDbx2').onclick=()=>$('#bDbx').click();
+$('#bNew2').onclick=()=>$('#bNew').click();$('#bNewS2').onclick=()=>$('#bNewS').click();$('#bNewC2').onclick=()=>$('#bNewC').click();$('#bOpen2').onclick=()=>$('#bOpen').click();$('#bDbx2').onclick=()=>$('#bDbx').click();
 function runPreflight(){
   PF=preflight();const e=PF.filter(x=>x.lv==='err').length,w=PF.filter(x=>x.lv==='warn').length;
   const pr=$('#pfRow');pr.hidden=false;pr.classList.toggle('zero',!e&&!w);pr.setAttribute('aria-label',`プリフライト エラー${e} 警告${w}`);
@@ -1845,6 +1856,7 @@ function asciiBase(s,noDigits){let t=String(s||'').normalize('NFKC').replace(/[^
 function exportNames(opt){
   const d=S.doc,pr=PR(),cover=d.kind==='cover',r=opt.range,nums=r.map(i=>nombreText(i)),wd=Math.max(2,...nums.map(x=>x.length)),pad=x=>x.padStart(wd,'0');
   const base=opt.base;
+  if(d.kind==='card')return{one:base+'_meishi',page:k=>base+'_'+(r[k]?'ura':'omote')};
   const one={orange:cover?'hyousi01':'honbun',graphic:cover?base+'_H1-H4':`${base}_${pad(nums[0])}-${pad(nums[nums.length-1])}`,chokotto:cover?'hyoushi01':'honbun'}[pr.names]||(base+(cover?'_hyoshi':'_honbun'));
   const page=k=>cover?one:{orange:pad(nums[k]),graphic:`${base}_${pad(nums[k])}`,chokotto:'p'+nums[k].padStart(3,'0')}[pr.names]||`${base}_${nums[k].padStart(3,'0')}`;
   return{one,page};
@@ -1966,22 +1978,22 @@ async function exportJob(opt,progress){
   progress(total,total,'まとめています');
   if(fmt==='pdf')return{blob:pdfFrom(pdfPages,d.name),name:nm.one+'.pdf'};
   if(out)return out;
-  return{blob:zip.blob(),name:opt.base+(d.kind==='cover'?'_hyoshi':'_honbun')+'.zip'};
+  return{blob:zip.blob(),name:opt.base+(d.kind==='cover'?'_hyoshi':d.kind==='card'?'_meishi':'_honbun')+'.zip'};
 }
 async function exportPDF(opt,progress){const r=await exportJob(Object.assign({fmt:'pdf',bleed:true,base:'book'},opt),progress||(()=>{}));return r&&r.blob}
 $('#bExport').onclick=()=>{
   runPreflight();const d=S.doc,pr=PR(),cover=d.kind==='cover',e=PF.filter(x=>x.lv==='err').length,w=PF.filter(x=>x.lv==='warn').length,n=d.pages.length;
-  const fmt0=cover?pr.coverFmt:pr.fmt,marks0=cover?pr.marks:(pr.noMarksBody?false:pr.marks),bleed0=pr.trimOnly&&!cover?hasBleedItems():true;
+  const card=d.kind==='card',fmt0=card?'pdf':cover?pr.coverFmt:pr.fmt,marks0=card||(cover?pr.marks:(pr.noMarksBody?false:pr.marks)),bleed0=pr.trimOnly&&!cover?hasBleedItems():true;
   const fmts=Object.entries(FMTS).filter(([k])=>!pr.pdfOnly||k.startsWith('pdf'));
   const dlg=modal(`<h2>入稿データ書き出し</h2>
     ${d.printer&&d.printer!=='generic'?`<div class="ok">${esc(pr.name)}</div>`:''}
     <div class="row">${F('形式',`<select id="x-fmt">${fmts.map(([k,v])=>`<option value="${k}"${k===fmt0?' selected':''}>${v}</option>`).join('')}</select>`)}
-    ${F('ページ範囲',`<select id="x-range"><option value="all">すべて（${n}ページ）</option><option value="cur">現在のページ</option></select>`)}
+    ${F(card?'面':'ページ範囲',`<select id="x-range"><option value="all">${card?(n>1?'表・裏':'表'):`すべて（${n}ページ）`}</option>${card&&n<2?'':`<option value="cur">${card?'表示中の面':'現在のページ'}</option>`}</select>`)}
     ${F('トンボ',`<select id="x-marks"><option value="0">なし</option><option value="1"${marks0?' selected':''}>あり（日本式）</option></select>`)}
     ${F('塗り足し',`<select id="x-bleed"><option value="1">含める（${d.bleed}mm）</option><option value="0"${bleed0?'':' selected'}>含めない（仕上がりサイズ）</option></select>`)}
-    ${F('解像度',`<select id="x-dpi">${[1200,600,350].map(v=>`<option value="${v}"${v===(d.color==='mono'?600:350)?' selected':''}>${v}dpi</option>`).join('')}</select>`)}
+    ${F('解像度',`<select id="x-dpi">${[1200,600,350].map(v=>`<option value="${v}"${v===(d.color==='mono'||card?600:350)?' selected':''}>${v}dpi</option>`).join('')}</select>`)}
     ${F('カラー',`<input type="text" id="x-col" value="${d.color==='mono'?'グレースケール':'CMYK'}" readonly>`)}</div>
-    ${F('ファイル名の先頭',`<input type="text" id="x-base" value="${esc(asciiBase(d.name,pr.names==='graphic'||pr.names==='orange'))}">`)}
+    ${F('ファイル名の先頭',`<input type="text" id="x-base" value="${esc(card?asciiBase(d.name).replace(/^book$/,'card'):asciiBase(d.name,pr.names==='graphic'||pr.names==='orange'))}">`)}
     <div class="ok num" id="x-names"></div>
     <div id="x-warn" style="color:var(--warn)"></div>
     ${e||w?`<div style="color:${e?'var(--danger)':'var(--warn)'}">プリフライト：エラー ${e}件・警告 ${w}件</div>`:''}
@@ -4382,6 +4394,137 @@ function openOutline(){
   })();
 }
 $('#bOutline').onclick=openOutline;
+/* ---------- 名刺 ---------- */
+/* 表・裏の2面（pages[0]=表、pages[1]=裏）。色は作品のキーカラーから役割で決め、テーマを変えると追従する */
+const CARD_SIZES=[['jp','日本（91×55mm）',91,55],['us','欧米（89×51mm）',89,51],['cc','カード（85×55mm）',85,55]];
+const CARD_FRONT=[['side','作品を大きく'],['big','名前を大きく'],['full','作品を全面'],['ground','キーカラーの地'],['window','作品を小窓']];
+const CARD_BACK=[['info','連絡先'],['key','キーカラー'],['art','作品を全面'],['none','なし']];
+const CARD_PH={title:'肩書き',name:'名前',roman:'YOUR NAME',contact:'メール\nURL\nSNS'};
+function cardText(o){return Object.assign({id:uid(),type:'text',x:0,y:0,w:20,h:5,text:'',font:'Noto Sans JP',weight:400,size:7,leading:150,track:0,dir:'h',align:'start',colorRole:'ink'},o)}
+function cardRect(o){return Object.assign({id:uid(),type:'rect',x:0,y:0,w:10,h:1,fill:null,stroke:null,sw:0.3},o)}
+const cardV=(f,k)=>(f[k]||'').trim()||CARD_PH[k]||'';
+/* ローマ字の名前は1語1行の大文字。幅に収まる大きさ（pt）を求める */
+function cardRoman(f){return cardV(f,'roman').toUpperCase().split(/\s+/).filter(Boolean).join('\n')}
+/* 実際のフォントで1行ずつ幅を測り、語の途中で折り返さない大きさ（pt、0.5刻み）にする */
+let cardMc=null;
+function cardFitPt(t,wmm,max,track=0,weight=700){const c=cardMc||(cardMc=document.createElement('canvas').getContext('2d'));c.font=`${weight} 100px ${FF('Noto Sans JP')}`;
+  const u=Math.max(...t.split('\n').map(l=>(c.measureText(l).width+[...l].length*track/10)/100));return Math.max(5,Math.min(max,Math.floor(wmm*0.94/(u*PT)*2)/2))}
+/* 小さな文字のかたまり：名前・肩書き・（所属）・連絡先 */
+function cardInfo(x,y,w,h,f,o={}){const c=o.c||'ink',s=o.s||'sub',al=o.align||'start',org=(f.org||'').trim(),out=[];let yy=y;
+  if(o.roman){const t=cardRoman(f),sz=cardFitPt(t,w,o.roman,20),n=t.split('\n').length,hh=n*sz*PT*1.02+0.6;out.push(cardText({x,y:yy,w,h:hh,text:t,size:sz,weight:700,leading:100,track:20,align:al,colorRole:o.rc||'accent'}));yy+=hh+2.4}
+  out.push(cardText({x,y:yy,w,h:3.4,text:cardV(f,'name'),size:7,weight:700,track:40,align:al,colorRole:c}));yy+=3.8;
+  out.push(cardText({x,y:yy,w,h:3,text:cardV(f,'title')+(org?'　'+org:''),size:5.5,track:20,align:al,colorRole:s}));
+  out.push(cardText({x,y:y+h-11,w,h:11,text:cardV(f,'contact'),size:5.5,leading:165,anchor:'b',align:al,colorRole:c}));return out}
+function cardFront(lay,W,H,b,f){const M=5,P=H>W,pg={id:uid(),items:[],noNombre:true,bgRole:'bg'},I=o=>pg.items.push(imageItem(o)),A=a=>pg.items.push(...a);
+  if(lay==='big'||lay==='ground'){const g=lay==='ground';if(g)pg.bgRole='accent';const t=cardRoman(f),lw=4,w=W-2*M-lw-3,sz=cardFitPt(t,w,P?30:26,10),n=t.split('\n').length,hh=n*sz*PT*0.98+1;
+    pg.items.push(cardText({x:M,y:M,w,h:hh,text:t,size:sz,weight:700,leading:96,track:10,colorRole:g?'on':'accent'}));
+    pg.items.push(cardText({x:W-M-lw,y:M,w:lw,h:Math.min(40,H-2*M),text:cardV(f,'title'),size:5.5,track:120,dir:'v',colorRole:g?'on':'sub'}));
+    A(cardInfo(M,M+hh+3,w,H-2*M-hh-3,f,{c:g?'on':'ink',s:g?'on':'sub'}).slice(0,1));
+    A(cardInfo(M,M,w,H-2*M,f,{c:g?'on':'ink'}).slice(2))}
+  else if(lay==='full'){I({x:-b,y:-b,w:W+2*b,h:H+2*b});const lw=Math.min(W*0.5,40),w=lw-2*M+2;
+    let t=cardV(f,'roman').toUpperCase(),sz=cardFitPt(t,w,6.5,60);if(sz<5.5){t=cardRoman(f);sz=cardFitPt(t,w,6.5,60)}const nh=t.split('\n').length*sz*PT*1.2+0.4,top=H-nh-8.2;
+    pg.items.push(cardRect({x:0,y:top-2.6,w:lw,h:H-top+2.6+b,fillRole:'bg'}));
+    pg.items.push(cardText({x:M-1,y:top,w,h:nh,text:t,size:sz,weight:700,track:60,leading:120,colorRole:'accent'}));
+    pg.items.push(cardText({x:M-1,y:H-4.8,w,h:2.8,text:cardV(f,'title'),size:5,track:20,colorRole:'sub'}))}
+  else if(lay==='window'){const s=P?W-2*M:H-2*M;I(P?{x:M,y:M,w:s,h:s}:{x:W-M-s,y:M,w:s,h:s});A(P?cardInfo(M,M+s+4,W-2*M,H-s-2*M-4,f,{roman:11}):cardInfo(M,M,W-s-2*M-5,H-2*M,f,{roman:12}))}
+  else{const t=P?H*0.56:W*0.56;I(P?{x:-b,y:-b,w:W+2*b,h:t+b}:{x:-b,y:-b,w:t+b,h:H+2*b});A(P?cardInfo(M,t+M,W-2*M,H-t-2*M,f,{roman:12}):cardInfo(t+M,M,W-t-2*M,H-2*M,f,{roman:13}))}
+  return pg}
+function cardBack(lay,W,H,b,f){const M=5,pg={id:uid(),items:[],noNombre:true,bgRole:'bg'};
+  if(lay==='key'){pg.bgRole='accent';const t=cardRoman(f),sz=cardFitPt(t,W*0.62,24,10);pg.items.push(cardText({x:M,y:M,w:W-2*M,h:H-2*M,text:t,size:sz,weight:700,leading:96,track:10,align:'center',anchor:'ctr',colorRole:'on'}))}
+  else if(lay==='art')pg.items.push(imageItem({x:-b,y:-b,w:W+2*b,h:H+2*b}));
+  else if(lay==='info'){const lw=4;pg.items.push(cardRect({x:M,y:M,w:6,h:0.8,fillRole:'accent'}));pg.items.push(...cardInfo(M,M+4,W-2*M-lw-3,H-2*M-4,f,{roman:9}));
+    pg.items.push(cardText({x:W-M-lw,y:M,w:lw,h:Math.min(40,H-2*M),text:cardV(f,'title'),size:5.5,track:120,dir:'v',colorRole:'sub'}))}
+  return pg}
+function cardDims(size,ori){const z=CARD_SIZES.find(x=>x[0]===size)||CARD_SIZES[0];return ori==='p'?[z[3],z[2]]:[z[2],z[3]]}
+function cardDocBase(W,H,o){const d=newDoc({kind:'card',name:'名刺',printer:'generic',w:W,h:H,binding:'left',color:'cmyk',pages:1});
+  d.margins={top:4,bottom:4,inner:4,outer:4};d.nombre.mode='none';if(o&&o.key){d.key=o.key;d.ground=o.ground||'light'}return d}
+function cardPages(o){const [W,H]=cardDims(o.size,o.ori),b=3,T=mkTheme(o.key,o.ground),ps=[cardFront(o.front,W,H,b,o.f)];if(o.back!=='none')ps.push(cardBack(o.back,W,H,b,o.f));ps.forEach(p=>{themePage(p,T);if(o.art)for(const it of p.items)if(it.type==='image'&&!it.imageId)it.imageId=o.art});return{W,H,b,T,ps}}
+/* ダイアログの見本。塗り足しを含めず仕上がりで描く */
+function drawCardPv(c,pg,W,H){const dpr=window.devicePixelRatio||1;c.width=Math.round((c.clientWidth||104)*dpr);c.height=Math.round(c.width*H/W);
+  const ctx=c.getContext('2d'),s=c.width/W;ctx.setTransform(s,0,0,s,0,0);ctx.fillStyle=pg.bg?cmykCss(pg.bg):'#ffffff';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();for(const it of pg.items)drawItem(ctx,it,null,it.type==='image');ctx.restore()}
+function cardKeyPick(o){return keyPick(o).replace(/<div class="kpv">[\s\S]*?<\/div><\/div>$/,'</div>')}
+$('#bNewC').onclick=()=>newCardDlg();
+function newCardDlg(){
+  const o={mode:'design',size:'jp',ori:'l',front:'side',back:'info',art:null,key:KEYS[0][0],ground:'light',f:{org:'',title:'',name:'',roman:'',contact:''},imp:null};
+  const dlg=modal(`<h2>新規名刺</h2>
+    <div class="kinds" id="c-mode"><button data-m="design" class="on">デザイン</button><button data-m="import">データを読み込む</button></div>
+    <div id="c-design"><div class="row">${F('サイズ',`<select id="c-size">${CARD_SIZES.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>`)}${F('向き','<select id="c-ori"><option value="l">横</option><option value="p">縦</option></select>')}</div>
+    <div class="cim"><button id="c-art">作品画像を選ぶ</button><span class="ok" id="c-artn"></span></div>
+    <div class="sec"><h3>表</h3><div class="cpv" id="c-front">${CARD_FRONT.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===o.front?' class="on"':''}><canvas></canvas></button>`).join('')}</div></div>
+    <div class="sec"><h3>裏</h3><div class="cpv" id="c-back">${CARD_BACK.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===o.back?' class="on"':''}>${k==='none'?`<span class="cno">${n}</span>`:'<canvas></canvas>'}</button>`).join('')}</div></div>
+    <div class="sec" id="c-key">${cardKeyPick(o)}</div>
+    <div class="sec"><h3>記載内容</h3><div class="row">${F('名前','<input type="text" data-f="name">')}${F('ローマ字','<input type="text" data-f="roman">')}${F('所属・屋号','<input type="text" data-f="org">')}${F('肩書き','<input type="text" data-f="title">')}</div>${F('連絡先','<textarea data-f="contact" rows="3"></textarea>',1)}</div></div>
+    <div id="c-import" hidden><div class="cim"><button id="c-file">ファイルを選ぶ</button><span class="ok" id="c-st">PDF・AI（PDF互換）・PNG・JPEG・PSD</span></div>
+    <div class="cpv" id="c-ipv"></div></div>
+    <input type="file" id="c-artin" accept="image/png,image/jpeg,.psd" hidden><input type="file" id="c-in" accept=".pdf,.ai,.png,.jpg,.jpeg,.psd,image/png,image/jpeg,application/pdf" multiple hidden>
+    <div class="foot"><button id="c-cancel">キャンセル</button><button class="primary" id="c-ok">作成</button></div>`);
+  dlg.classList.add('owide');
+  const draw=()=>{const g={...o};
+    for(const b of $$('#c-front button')){const r=cardPages({...g,front:b.dataset.v,back:'none'});drawCardPv(b.querySelector('canvas'),r.ps[0],r.W,r.H)}
+    for(const b of $$('#c-back button')){const c=b.querySelector('canvas');if(!c)continue;const r=cardPages({...g,back:b.dataset.v});drawCardPv(c,r.ps[1],r.W,r.H)}};
+  const redraw=()=>{draw();Promise.all([document.fonts.load(`700 20px ${FF('Noto Sans JP')}`,'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),document.fonts.ready]).then(()=>setTimeout(draw,60),()=>{})};
+  const keyRe=()=>{$('#c-key').innerHTML=cardKeyPick(o);bindKeyPick($('#c-key'),o,keyRe);redraw()};bindKeyPick($('#c-key'),o,keyRe);
+  const pick=(sel,k)=>{$(sel).onclick=e=>{const b=e.target.closest('button');if(!b)return;o[k]=b.dataset.v;$$(sel+' button').forEach(x=>x.classList.toggle('on',x===b))}};pick('#c-front','front');pick('#c-back','back');
+  $('#c-size').onchange=()=>{o.size=$('#c-size').value;redraw()};$('#c-ori').onchange=()=>{o.ori=$('#c-ori').value;redraw()};
+  let ft=0;$('#c-design').addEventListener('input',e=>{const k=e.target.dataset.f;if(!k)return;o.f[k]=e.target.value;clearTimeout(ft);ft=setTimeout(redraw,200)});
+  $('#c-mode').onclick=e=>{const b=e.target.closest('button');if(!b)return;o.mode=b.dataset.m;$$('#c-mode button').forEach(x=>x.classList.toggle('on',x===b));$('#c-design').hidden=o.mode!=='design';$('#c-import').hidden=o.mode!=='import'};
+  $('#c-art').onclick=()=>$('#c-artin').click();
+  $('#c-artin').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const im=await readImage(f),id=uid();S.images[id]=im;o.art=id;$('#c-artn').textContent=f.name;redraw()}catch(err){toast(err.message)}};
+  $('#c-file').onclick=()=>$('#c-in').click();
+  $('#c-in').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;$('#c-st').textContent='読み込み中…';$('#c-file').disabled=true;
+    try{o.imp=await cardImport(fs);Object.assign(S.images,o.imp.images);$('#c-st').textContent=cardImpLabel(o.imp);$('#c-ipv').innerHTML=o.imp.faces.map((_,i)=>`<div><canvas></canvas></div>`).join('');
+      const d=cardImpDoc(o.imp),cs=$$('#c-ipv canvas');d.pages.forEach((p,i)=>drawCardPv(cs[i],p,d.trimW,d.trimH))}
+    catch(err){o.imp=null;$('#c-ipv').innerHTML='';$('#c-st').textContent=err.message||'読み込めませんでした'}$('#c-file').disabled=false};
+  $('#c-cancel').onclick=closeModal;
+  $('#c-ok').onclick=()=>{let d;
+    if(o.mode==='import'){if(!o.imp){toast('名刺のファイルを選んでください');return}d=cardImpDoc(o.imp);S.images=o.imp.images}
+    else{const r=cardPages(o);d=cardDocBase(r.W,r.H,o);d.pages=r.ps;S.images=o.art?{[o.art]:S.images[o.art]}:{}}
+    S.doc=d;S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;closeModal();fitZoom();rebuild();renderAll();resetHistory()};
+  redraw()}
+function cardPageProps(el){const d=S.doc,pg=d.pages[S.page],T=d.key?theme():null,two=d.pages.length>1;
+  const rs=T?ROLES.filter(([r])=>r!=='accent2'&&T[r]).filter(([r],i,a)=>a.findIndex(([q])=>T[q].toLowerCase()===T[r].toLowerCase())===i):[];
+  el.innerHTML=`<div class="sec"><h3>${S.page?'裏':'表'}</h3>${T?`<div class="kr"><span>地</span><div class="kcs">${rs.map(([r,n])=>`<button type="button" class="kc${(pg.bgRole||'')===r?' on':''}" data-bgr="${r}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div></div>`:''}
+    ${two?'<div class="btns"><button id="pSwap">表と裏を入れ替え</button></div>':''}</div>`;
+  el.onclick=e=>{const b=e.target.closest('[data-bgr]');if(!b||selItem())return;pg.bgRole=b.dataset.bgr;pg.bg=hexC(T[pg.bgRole]);dirty(S.page);commit();renderProps()};
+  if(two)$('#pSwap').onclick=()=>{d.pages.reverse();S.sel=null;rebuild();commit();renderProps();toast('表と裏を入れ替えました')}}
+function cardAddBack(){const d=S.doc,pg=cardBack(d.key?'key':'blank',d.trimW,d.trimH,d.bleed,{});if(d.key)themePage(pg);else{delete pg.bgRole;pg.items=[]}
+  d.pages.push(pg);rebuild();commit();setPage(1);renderDoc();toast('裏面を追加しました')}
+function renderCardDoc(){const d=S.doc,two=d.pages.length>1,sf=Math.min(d.margins.top,d.margins.bottom,d.margins.inner,d.margins.outer);
+  $('#tab-doc').innerHTML=`<div class="sec"><h3>書類</h3>${F('名前',`<input type="text" id="d-name" data-dk="name" value="${esc(d.name)}">`)}
+    <div class="row">${F('仕上がり幅（mm）',`<input type="number" data-dk="trimW" value="${d.trimW}" step="1">`)}${F('仕上がり高さ（mm）',`<input type="number" data-dk="trimH" value="${d.trimH}" step="1">`)}
+    ${F('塗り足し（mm）',`<input type="number" data-dk="bleed" value="${d.bleed}" step="0.5" min="0">`)}${F('安全域（mm）',`<input type="number" id="d-safe" value="${sf}" step="0.5" min="0">`)}
+    ${F('カラー',`<select data-dk="color"><option value="cmyk"${d.color==='cmyk'?' selected':''}>カラー（CMYK）</option><option value="mono"${d.color==='mono'?' selected':''}>モノクロ（グレースケール）</option></select>`,1)}</div></div>
+    <div class="sec"><h3>面</h3><div class="btns">${two?'<button id="d-cback">裏面を削除</button>':'<button id="d-cback">裏面を追加</button>'}</div></div>
+    <div class="sec" id="d-key"><h3>テーマ</h3>${cardKeyPick({key:d.key||KEYS[0][0],ground:d.ground||'light'})}</div>`;
+  $('#d-safe').oninput=e=>{const v=parseFloat(e.target.value);if(isNaN(v)||v<0)return;d.margins={top:v,bottom:v,inner:v,outer:v};dirtyAll();commit();runPreflight()};
+  $('#d-cback').onclick=()=>{if(two){d.pages.splice(1);S.sel=null;S.page=0;rebuild();commit();renderDoc();updateInfo();toast('裏面を削除しました（Ctrl+Zで元に戻せます）')}else{cardAddBack();updateInfo()}};
+  const o={key:d.key||KEYS[0][0],ground:d.ground||'light'};bindKeyPick($('#d-key'),o,()=>setTheme(o))}
+/* 既存の名刺データ。PDFは実寸から仕上がりサイズを推定（仕上がりを中央に置き、塗り足し・トンボの外側は切る）。画像は縦横比から推定 */
+let pdfjsP=null;
+function loadPdfjs(){const V='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';return pdfjsP||(pdfjsP=new Promise((res,rej)=>{if(window.pdfjsLib){res(window.pdfjsLib);return}const s=document.createElement('script');s.src=V+'pdf.min.js';
+  s.onload=()=>{const L=window.pdfjsLib;if(!L){rej(new Error('PDFを開く部品を読み込めませんでした'));return}L.GlobalWorkerOptions.workerSrc=V+'pdf.worker.min.js';res(L)};s.onerror=()=>{pdfjsP=null;rej(new Error('PDFを開く部品を読み込めませんでした（ネットワーク）'))};document.head.append(s)}))}
+function cardFitMm(w,h){let best=null;for(const z of CARD_SIZES)for(const [W,H] of [[z[2],z[3]],[z[3],z[2]]]){const ex=(w-W)/2,ey=(h-H)/2;if(ex<-0.6||ey<-0.6)continue;const sc=Math.abs(ex-ey)*4+Math.min(ex,ey)*0.1;if(Math.abs(ex-ey)<1.2&&(!best||sc<best.sc))best={W,H,ext:Math.max(0,Math.min(ex,ey)),sc}}return best}
+function cardFitPx(w,h){const r=w/h;let best=null;for(const z of CARD_SIZES)for(const [W,H] of [[z[2],z[3]],[z[3],z[2]]])for(const e of[0,3]){const df=Math.abs(Math.log(r/((W+2*e)/(H+2*e))));if(!best||df<best.df)best={W,H,ext:e,df}}return best}
+async function cardImport(files){const faces=[],images={};
+  for(const f of files){if(faces.length>=2)break;const head=new Uint8Array(await f.slice(0,5).arrayBuffer());
+    if(String.fromCharCode(...head)==='%PDF-'){const L=await loadPdfjs(),pdf=await L.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;
+      for(let n=1;n<=pdf.numPages&&faces.length<2;n++){const p=await pdf.getPage(n),vp1=p.getViewport({scale:1}),wmm=vp1.width*PT,hmm=vp1.height*PT,k=600/72,vp=p.getViewport({scale:k});
+        const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,c.width,c.height);
+        await p.render({canvasContext:x,viewport:vp}).promise;const src=c.toDataURL('image/png'),img=await loadImg(src),id=uid();images[id]={src,w:c.width,h:c.height,img,name:f.name+(pdf.numPages>1?' p'+n:'')};
+        faces.push({id,wmm,hmm,fit:cardFitMm(wmm,hmm),pdf:true})}}
+    else if(/^\x89PNG|^\xff\xd8|^8BPS/.test(String.fromCharCode(...head))||/^image\//.test(f.type)){const im=await readImage(f),id=uid();images[id]=im;faces.push({id,fit:cardFitPx(im.w,im.h)})}
+    else if(/^%!/.test(String.fromCharCode(...head)))throw new Error('このAIファイルは読み込めません。PDF互換ファイルを作成するをオンにして保存し直してください');
+    else throw new Error('読み込めない形式です：'+f.name)}
+  if(!faces.length)throw new Error('ページがありません');
+  const f0=faces[0].fit||cardFitPx(faces[0].wmm,faces[0].hmm);return{faces,images,W:f0.W,H:f0.H}}
+function cardImpLabel(m){const f=m.faces[0],e=f.fit?f.fit.ext:0,sz=[m.W+'×'+m.H+'mm',m.faces.length>1?'表・裏':'表のみ'];
+  if(f.pdf&&!f.fit)sz.push('名刺サイズではないため中央を合わせて配置');else if(e>3.5)sz.push('トンボを除いて配置');else if(e>=2.5)sz.push('塗り足しあり');else sz.push('塗り足しなし');return sz.join(' ・ ')}
+function cardImpDoc(m){const d=cardDocBase(m.W,m.H),b=d.bleed;d.name=(m.images[m.faces[0].id].name||'名刺').replace(/\.[^.]+$/,'').replace(/ p\d+$/,'');
+  d.pages=m.faces.map(f=>{const pg={id:uid(),items:[],noNombre:true};let it;
+    if(f.pdf)it=imageItem({x:(m.W-f.wmm)/2,y:(m.H-f.hmm)/2,w:f.wmm,h:f.hmm,imageId:f.id,fit:'stretch'});
+    else{const e=f.fit&&f.fit.W===m.W&&f.fit.H===m.H?f.fit.ext:Math.min(b,3);it=imageItem({x:-e,y:-e,w:m.W+2*e,h:m.H+2*e,imageId:f.id,fit:'cover'})}
+    pg.items.push(it);return pg});return d}
 function createSlideDoc(th,flow){
   const d=newDoc({kind:'slide',name:'無題',w:SW,h:SH,binding:'left',color:'cmyk',pages:1});
   d.bleed=0;d.margins={top:SM,bottom:SM,inner:SM,outer:SM};d.nombre.mode='none';Object.assign(d,typeof th==='string'?{theme:th}:{key:th.key,ground:th.ground||'light'});d.layVer=LAYVER;
