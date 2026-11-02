@@ -24,7 +24,7 @@ python3 tools/boards/flows.py /mnt/project-files/presentation-templates/tools
 
 出力の `/*FLOWS-DUR*/…/*FLOWS-DUR-END*/` と `/*FLOW_NOTES-DUR*/…/*FLOW_NOTES-DUR-END*/` を `src/app.html` の同じ印の範囲と置き換える。
 
-## 自分の企画書（作者のPowerPoint資料のデザイン）
+## 自分の企画書・面談資料・発表資料（作者のPowerPoint資料のデザイン）
 
 `tools/boards/own.py` に元資料の配置（mm）・文字サイズ・書体（游ゴシック）を写してある。中身は差し替え用の文字と空の画像枠だけで、元資料の文章や画像は入れない。
 
@@ -32,4 +32,4 @@ python3 tools/boards/flows.py /mnt/project-files/presentation-templates/tools
 python3 tools/boards/own.py src/boards.json
 ```
 
-`boards.json` の先頭に「自分の企画書」（id `own`）を入れ直す。ボードを作り直したときは convert.py のあとにもう一度実行する。
+`boards.json` の先頭に「自分の企画書」（id `own`）「自分の面談資料」（`own_meet`、地はキーカラーの淡色）「自分の発表資料」（`own_talk`）を入れ直す。各スライドの `r` は役割（cover/sec/text/list/table/img/imgs/person/profile/quote/video/end）。ボードを作り直したときは convert.py のあとにもう一度実行する。
