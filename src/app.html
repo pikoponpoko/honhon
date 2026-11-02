@@ -9,7 +9,7 @@
 :root{
   /* Same palette as Tehon / Soku Conte: green-gray paper, ink #1B2530, blue #3772FF, red #DF2935, yellow #FDCA40 */
   --bg:#E8EFEA; --panel:#E8EFEA; --stage:#DAE5DE; --btn:#FFFFFF; --ink:#1B2530; --sub:#526470; --line:#BCCCC3; --field:#84998E; --hover:#F6F9F7;
-  --accent:#3772FF; --accent-hover:#2F5FD9; --accent-active:#2A52B8; --accent-soft:#D2DED6; --accent-ink:#FFFFFF; --accent-text:#1B2530;
+  --accent:#2F5FD9; --accent-hover:#2A52B8; --accent-active:#23469E; --accent-soft:#D2DED6; --accent-ink:#FFFFFF; --accent-text:#1B2530;
   --danger:#C0392B; --warn:#DF2935; --guide:#A065E0; --paper:#FFFFFF; --focus:#1B2530; --scrim:rgba(16,24,23,0.5);
   --ui:"Noto Sans JP","BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --num:"Noto Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -1215,15 +1215,18 @@ function select(pi,id){const prev=S.sel;S.more=[];S.sel=id?{page:pi,id}:null;if(
 function setPage(i){if(S.page===i)return;const o=S.page;S.page=i;if(S.thumbEls[o])S.thumbEls[o].classList.remove('cur');if(S.thumbEls[i])S.thumbEls[i].classList.add('cur');if(S.tab==='props'&&!S.sel)renderProps();if(S.tab==='notes')renderNotes()}
 
 /* ---------- history & persistence ---------- */
-let saveT=0;
+let saveT=0,saveQueue=Promise.resolve(),saveRevision=0;
+function saveStatus(msg){let e=$('#saveStatus');if(!e){e=document.createElement('span');e.id='saveStatus';e.setAttribute('role','status');e.style.cssText='font-size:12px;color:var(--sub);flex:0 1 12em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';$('#bSave').after(e)}e.textContent=msg;e.title=msg}
+function scheduleSave(){saveRevision++;saveStatus('未保存の変更あり');clearTimeout(saveT);saveT=setTimeout(autosave,800)}
 function commit(){S.lmap=null;const j=JSON.stringify(S.doc);if(j===S.last)return;S.undo.push(S.last);if(S.undo.length>100)S.undo.shift();S.redo=[];S.last=j;afterChange()}
-function afterChange(){clearTimeout(saveT);saveT=setTimeout(autosave,800);clearTimeout(pfT);pfT=setTimeout(runPreflight,400);$('#bUndo').disabled=!S.undo.length;$('#bRedo').disabled=!S.redo.length}
+function afterChange(){scheduleSave();clearTimeout(pfT);pfT=setTimeout(runPreflight,400);$('#bUndo').disabled=!S.undo.length;$('#bRedo').disabled=!S.redo.length}
 function restore(j){S.last=j;S.doc=JSON.parse(j);if(S.mv){ensureMasters();swapIn()}S.lmap=null;if(S.sel&&!findItem(S.sel))S.sel=null;if(S.sel)S.more=(S.more||[]).filter(id=>findItem({page:S.sel.page,id}));else S.more=[];S.page=Math.min(S.page,S.doc.pages.length-1);rebuild();renderAll();afterChange()}
 function undo(){if(!S.undo.length)return;S.redo.push(S.last);restore(S.undo.pop())}
 function redo(){if(!S.redo.length)return;S.undo.push(S.last);restore(S.redo.pop())}
 function resetHistory(){S.undo=[];S.redo=[];S.last=JSON.stringify(S.doc);afterChange();fontNotice()}
 function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('thinbook',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-async function kvSet(k,v){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
+async function kvWrite(k,v){const db=await idb();try{await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=t.onabort=()=>rej(t.error||new Error('保存が中断されました'))})}finally{db.close()}}
+async function kvSet(k,v){try{await kvWrite(k,v);return true}catch(e){toast('この端末に保存できませんでした。編集用ファイルを保存してください');return false}}
 async function kvGet(k){try{const db=await idb();return await new Promise((res,rej)=>{const t=db.transaction('kv','readonly');const r=t.objectStore('kv').get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}catch(e){return null}}
 function projectData(file){const used=new Set(),mu=new Set();[...SL(),...MS()].forEach(p=>{p.items.forEach(it=>{if(it.imageId)used.add(it.imageId);if(it.posterId)used.add(it.posterId);if(it.mediaId)mu.add(it.mediaId)});if(p.bgImg&&p.bgImg.imageId)used.add(p.bgImg.imageId)});
   if(S.doc.pptx)SL().forEach(p=>(p.under||[]).forEach(it=>{if(it.imageId)used.add(it.imageId)}));
@@ -1233,18 +1236,35 @@ function projectData(file){const used=new Set(),mu=new Set();[...SL(),...MS()].f
     else images[id]=im.blob?{blob:im.blob,w:im.w,h:im.h,name:im.name||''}:{src:im.src,w:im.w,h:im.h,name:im.name||''}}
   const o={app:'honhon',version:1,doc:S.mv?{...S.doc,pages:S.mv.pages}:S.doc,images};if(S.doc.pptx&&S.pptxSrc instanceof Uint8Array&&file)o.pptxSrc=u8b64(S.pptxSrc);
   o.media={};for(const id of mu){const m=S.media[id];if(!m)continue;o.media[id]=fromPptx&&m.part?{part:m.part,name:m.name,type:m.type}:{blob:m.blob,name:m.name,type:m.type}}return o}
-function autosave(){kvSet('project',projectData())}
-async function loadProject(p){
+function autosave(){clearTimeout(saveT);if(!S.doc)return Promise.resolve(false);const rev=++saveRevision,data=structuredClone(projectData());saveStatus('保存中…');
+  const job=saveQueue.then(()=>kvWrite('project',data));saveQueue=job.catch(()=>{});
+  return job.then(()=>{if(rev===saveRevision)saveStatus('この端末に保存済み');return true},()=>{if(rev===saveRevision)saveStatus('保存失敗：ファイルを保存してください');toast('自動保存に失敗しました。「保存」から編集用ファイルを保存してください');return false})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S.doc)autosave()});
+function validateProject(p){
   if(!p||!['honhon','thinbook','kumi'].includes(p.app)||!p.doc)throw new Error('HonHonのプロジェクトファイルではありません');
-  S.media={};for(const [id,m] of Object.entries(p.media||{})){const blob=m.blob||(m.data?new Blob([b64u8(m.data)],{type:m.type}):null);if(blob)S.media[id]={blob,name:m.name,type:m.type}}
-  S.images={};S.pptxSrc=p.pptxSrc?(typeof p.pptxSrc==='string'?b64u8(p.pptxSrc):new Uint8Array(p.pptxSrc)):null;
-  if(!S.pptxSrc&&p.doc.pptx){const r=await kvGet('pptxsrc');if(r&&r.blob&&r.key===p.doc.pptx.key)S.pptxSrc=r.blob}
-  S.pptxZip=null;try{if(S.pptxSrc&&p.doc.pptx)S.pptxZip=new Map((await PZ.open(S.pptxSrc)).map(e=>[e.name,e]))}catch(e){}
-  for(const [id,m] of Object.entries(p.media||{}))if(m.part&&S.pptxZip&&S.pptxZip.get(m.part))S.media[id]={blob:null,size:S.pptxZip.get(m.part).usize,name:m.name,type:m.type,part:m.part};
-  await Promise.all(Object.entries(p.images||{}).map(async([id,m])=>{try{
-    if(m.part){if(S.pptxZip&&S.pptxZip.get(m.part))S.images[id]={part:m.part,name:m.name,w:m.w||1,h:m.h||1,pending:true};return}
-    const src=m.blob?URL.createObjectURL(m.blob):m.src;const img=await loadImg(src);S.images[id]={...m,src,img}}catch(e){}}));
-  S.doc=p.doc;S.lmap=null;migrateSlides();S.sel=null;S.page=0;fitZoom();rebuild();renderAll();resetHistory();
+  const d=p.doc,num=(v,min=0)=>typeof v==='number'&&Number.isFinite(v)&&v>=min;
+  if(!['body','cover','slide','card','dm'].includes(d.kind)||!num(d.trimW,20)||!num(d.trimH,20)||!num(d.bleed)||!d.margins||!d.nombre||!Array.isArray(d.pages)||!d.pages.length)throw new Error('書類のサイズまたはページ構成が不正です');
+  for(const k of ['top','bottom','inner','outer'])if(!num(d.margins[k]))throw new Error('マージンが不正です');
+  for(const k of ['start','size','offset'])if(!num(d.nombre[k]))throw new Error('ページ番号の設定が不正です');
+  if(d.spine!==undefined&&!num(d.spine))throw new Error('背幅が不正です');
+  const numeric=new Set(['x','y','w','h','size','weight','leading','track','rot','sw','zoom','ox','oy','c','m','k','gap','cols']);
+  if(d.masters!==undefined&&!Array.isArray(d.masters))throw new Error('マスターの構成が不正です');
+  if(d.spineCalc)for(const k of ['pages','paper','cover'])if(!num(d.spineCalc[k]))throw new Error('背幅計算の設定が不正です');
+  const check=(o,depth=0)=>{if(depth>40)throw new Error('書類の構造が複雑すぎます');if(!o||typeof o!=='object')return;for(const [k,v] of Object.entries(o)){if(['__proto__','constructor','prototype'].includes(k))throw new Error('書類に不正な項目があります');if(depth===0&&numeric.has(k)&&v!=null&&!num(v,-Infinity))throw new Error('書類の数値項目が不正です：'+k);if(v&&typeof v==='object')check(v,depth+1)}};
+  for(const pg of [...d.pages,...(d.masters||[])]){if(!pg||!Array.isArray(pg.items))throw new Error('ページの内容が不正です');for(const it of pg.items){if(!it||!['text','image','rect','video','table'].includes(it.type)||!num(it.x,-Infinity)||!num(it.y,-Infinity)||!num(it.w,0)||!num(it.h,0))throw new Error('要素の位置またはサイズが不正です');check(it)}}
+}
+async function loadProject(p){
+  validateProject(p);const next={doc:structuredClone(p.doc),images:Object.create(null),media:Object.create(null),pptxSrc:p.pptxSrc?(p.pptxSrc instanceof Blob?p.pptxSrc:typeof p.pptxSrc==='string'?b64u8(p.pptxSrc):new Uint8Array(p.pptxSrc)):null,pptxZip:null};
+  if(!next.pptxSrc&&p.doc.pptx){const r=await kvGet('pptxsrc');if(r&&r.blob&&r.key===p.doc.pptx.key)next.pptxSrc=r.blob}
+  if(next.pptxSrc&&p.doc.pptx)next.pptxZip=new Map((await PZ.open(next.pptxSrc)).map(e=>[e.name,e]));
+  for(const [id,m] of Object.entries(p.media||{})){const blob=m.blob||(m.data?new Blob([b64u8(m.data)],{type:m.type}):null);if(blob)next.media[id]={blob,name:m.name,type:m.type};else if(m.part&&next.pptxZip?.has(m.part))next.media[id]={blob:null,size:next.pptxZip.get(m.part).usize,name:m.name,type:m.type,part:m.part}}
+  const urls=[];try{await Promise.all(Object.entries(p.images||{}).map(async([id,m])=>{
+    if(m.part){if(!next.pptxZip?.has(m.part))throw new Error('画像が見つかりません：'+(m.name||id));next.images[id]={part:m.part,name:m.name,w:m.w||1,h:m.h||1,pending:true};return}
+    const src=m.blob?URL.createObjectURL(m.blob):m.src;if(m.blob)urls.push(src);const img=await loadImg(src);next.images[id]={...m,src,img}}));
+  }catch(e){urls.forEach(u=>URL.revokeObjectURL(u));throw e}
+  const previous={...S};clearTimeout(saveT);clearTimeout(commitT);clearTimeout(docT);
+  try{Object.assign(S,next,{mv:null,lmap:null,sel:null,more:[],page:0});migrateSlides();fitZoom();rebuild();renderAll();resetHistory()}
+  catch(e){Object.assign(S,previous);urls.forEach(u=>URL.revokeObjectURL(u));if(S.doc){rebuild();renderAll();scheduleSave()}throw e}
   if(S.pptxZip)setTimeout(loadPendingImages,0);
 }
 let dlCap=null;
@@ -1270,8 +1290,8 @@ function editText(pi,it){
   Object.assign(ta.style,{left:(it.x+b)*s+'px',top:(it.y+b)*s+'px',width:it.w*s+'px',height:it.h*s+'px',fontFamily:FF(st.font),fontWeight:st.weight,
     fontSize:st.size*PT*s+'px',lineHeight:st.leading/100,letterSpacing:st.track/1000+'em',writingMode:st.dir==='v'?'vertical-rl':'horizontal-tb',color:cmykCss(st.color)});
   pe.el.append(ta);S.editing=ta;ta.focus();
-  ta.addEventListener('input',()=>{h.text=ta.value;if(linked)dirtyAll();else dirty(pi)});
-  ta.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();ta.blur()}});
+  ta.addEventListener('input',()=>{h.text=ta.value;if(linked)dirtyAll();else dirty(pi);scheduleSave()});
+  ta.addEventListener('keydown',e=>{e.stopPropagation();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();commit();saveProject()}else if(e.key==='Escape'){e.preventDefault();ta.blur()}});
   ta.addEventListener('blur',()=>{ta.remove();S.editing=null;commit();renderProps();runPreflight()});
 }
 function decodeText(buf){try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){return new TextDecoder('shift_jis').decode(buf)}}
@@ -1584,7 +1604,7 @@ $('#bSide').onclick=()=>{const on=$('#app').classList.toggle('rp');$('#bSide').s
 $('#left').addEventListener('click',e=>{if(S.single&&e.target.closest('[data-tool],.thumb'))setTimeout(()=>msOpen(''),0)});
 $$('.tabs button').forEach(b=>b.onclick=()=>{if(S.single&&S.tab===b.dataset.tab&&$('#app').classList.contains('sheet'))setSheet(false);else showTab(b.dataset.tab)});
 const F=(label,inner,w)=>`<label class="f${w?' w':''}"><span>${label}</span>${inner}</label>`;
-const N=(k,v,step=0.1,extra='')=>`<input type="number" id="i-${k.replace(/\./g,'-')}" data-k="${k}" value="${v}" step="${step}" ${extra}>`;
+const N=(k,v,step=0.1,extra='')=>`<input type="number" id="i-${k.replace(/\./g,'-')}" data-k="${k}" value="${esc(v)}" step="${step}" ${extra}>`;
 const SEL=(k,v,opts)=>`<select id="i-${k.replace(/\./g,'-')}" data-k="${k}">${opts.map(([a,b])=>`<option value="${esc(a)}"${String(a)===String(v)?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
 /* スライドの色を役割で選ぶ。役割を持つ色はテーマを変えると追従する */
 const ROLES=[['accent','キーカラー'],['keyDark','キーの濃色'],['keyLight','キーの淡色'],['keyPale','キーのごく淡い色'],['accent2','対比色'],['ink','文字'],['sub','補足'],['line','罫線'],['bg','地']];
@@ -1688,24 +1708,24 @@ function renderDoc(){
   let h=`<div class="sec"><h3>書類</h3>${F('名前',`<input type="text" id="d-name" data-dk="name" value="${esc(d.name)}">`)}
     ${F('印刷所',`<select id="d-pr" data-dk="printer">${Object.entries(PRINTERS).map(([k,v])=>`<option value="${k}"${k===(d.printer||'generic')?' selected':''}>${esc(v.name)}</option>`).join('')}</select>`)}
     ${pr.url?`<a href="${pr.url}" target="_blank" rel="noopener">データ作成ガイド</a>`:''}
-    <div class="row">${F('仕上がり幅（mm）',`<input type="number" id="d-w" data-dk="trimW" value="${d.trimW}" step="1">`)}${F('仕上がり高さ（mm）',`<input type="number" id="d-h" data-dk="trimH" value="${d.trimH}" step="1">`)}
-    ${d.kind==='cover'?F('背幅（mm）',`<input type="number" id="d-sp" data-dk="spine" value="${d.spine}" step="0.1">`):''}
-    ${F('塗り足し（mm）',`<input type="number" id="d-b" data-dk="bleed" value="${d.bleed}" step="0.5" min="0">`)}
+    <div class="row">${F('仕上がり幅（mm）',`<input type="number" id="d-w" data-dk="trimW" value="${esc(d.trimW)}" step="1">`)}${F('仕上がり高さ（mm）',`<input type="number" id="d-h" data-dk="trimH" value="${esc(d.trimH)}" step="1">`)}
+    ${d.kind==='cover'?F('背幅（mm）',`<input type="number" id="d-sp" data-dk="spine" value="${esc(d.spine)}" step="0.1">`):''}
+    ${F('塗り足し（mm）',`<input type="number" id="d-b" data-dk="bleed" value="${esc(d.bleed)}" step="0.5" min="0">`)}
     ${F('綴じ',`<select id="d-bind" data-dk="binding"><option value="right"${d.binding==='right'?' selected':''}>右綴じ</option><option value="left"${d.binding==='left'?' selected':''}>左綴じ</option></select>`)}
     ${F('カラー',`<select id="d-col" data-dk="color"><option value="mono"${d.color==='mono'?' selected':''}>モノクロ（グレースケール）</option><option value="cmyk"${d.color==='cmyk'?' selected':''}>カラー（CMYK）</option></select>`,1)}</div></div>
-    ${d.kind==='cover'?coverDocSec():''}<div class="sec"><h3>マージン（mm）</h3><div class="row">${F('天',`<input type="number" id="d-mt" data-dk="margins.top" value="${m.top}" step="0.5">`)}${F('地',`<input type="number" id="d-mb" data-dk="margins.bottom" value="${m.bottom}" step="0.5">`)}
-    ${F('ノド',`<input type="number" id="d-mi" data-dk="margins.inner" value="${m.inner}" step="0.5">`)}${F('小口',`<input type="number" id="d-mo" data-dk="margins.outer" value="${m.outer}" step="0.5">`)}</div></div>`;
+    ${d.kind==='cover'?coverDocSec():''}<div class="sec"><h3>マージン（mm）</h3><div class="row">${F('天',`<input type="number" id="d-mt" data-dk="margins.top" value="${esc(m.top)}" step="0.5">`)}${F('地',`<input type="number" id="d-mb" data-dk="margins.bottom" value="${esc(m.bottom)}" step="0.5">`)}
+    ${F('ノド',`<input type="number" id="d-mi" data-dk="margins.inner" value="${esc(m.inner)}" step="0.5">`)}${F('小口',`<input type="number" id="d-mo" data-dk="margins.outer" value="${esc(m.outer)}" step="0.5">`)}</div></div>`;
   if(d.kind==='cover'){const sc=d.spineCalc||{pages:32,paper:0,cover:1},sp=pr.spine||'chokotto',papers=sp==='orange'?PAPERS_OR:PAPERS_CH;
-    h+=`<div class="sec"><h3>背幅計算</h3><div class="row">${F('本文ページ数',`<input type="number" id="sc-p" value="${sc.pages}" step="4" min="4">`)}
+    h+=`<div class="sec"><h3>背幅計算</h3><div class="row">${F('本文ページ数',`<input type="number" id="sc-p" value="${esc(sc.pages)}" step="4" min="4">`)}
       ${F('本文用紙',`<select id="sc-pa">${papers.map(([n],k)=>`<option value="${k}"${k==sc.paper?' selected':''}>${esc(n)}</option>`).join('')}</select>`,1)}
       ${sp==='chokotto'?F('表紙用紙',`<select id="sc-co">${COVERS_CH.map(([n],k)=>`<option value="${k}"${k==sc.cover?' selected':''}>${esc(n)}</option>`).join('')}</select>`,1):''}
       <label class="f"><span>背幅</span><output id="sc-out" class="num"></output></label></div>
       <div class="btns"><button id="sc-apply">背幅に反映</button></div></div>`}
   if(d.kind!=='cover')h+=`<div class="sec"><h3>ノンブル</h3><div class="row">
     ${F('位置',`<select id="d-nbm" data-dk="nombre.mode"><option value="outer"${nb.mode==='outer'?' selected':''}>小口側・下</option><option value="center"${nb.mode==='center'?' selected':''}>中央・下</option><option value="hidden"${nb.mode==='hidden'?' selected':''}>隠しノンブル（ノド側）</option><option value="none"${nb.mode==='none'?' selected':''}>なし</option></select>`,1)}
-    ${F('開始番号',`<input type="number" id="d-nbs" data-dk="nombre.start" value="${nb.start}" step="1" min="1">`)}
-    ${F('サイズ（pt）',`<input type="number" id="d-nbz" data-dk="nombre.size" value="${nb.size}" step="0.5" min="4">`)}
-    ${F('下端からの距離（mm）',`<input type="number" id="d-nbo" data-dk="nombre.offset" value="${nb.offset}" step="0.5">`)}</div>
+    ${F('開始番号',`<input type="number" id="d-nbs" data-dk="nombre.start" value="${esc(nb.start)}" step="1" min="1">`)}
+    ${F('サイズ（pt）',`<input type="number" id="d-nbz" data-dk="nombre.size" value="${esc(nb.size)}" step="0.5" min="4">`)}
+    ${F('下端からの距離（mm）',`<input type="number" id="d-nbo" data-dk="nombre.offset" value="${esc(nb.offset)}" step="0.5">`)}</div>
     ${F('フォント',FSEL('id="d-nbf" data-dk="nombre.font"',nb.font))}</div>`;
   $('#tab-doc').innerHTML=h;
   if(d.kind==='cover'){const calc=()=>{const v=spineOf(+$('#sc-p').value,+$('#sc-pa').value,$('#sc-co')?+$('#sc-co').value:0);$('#sc-out').textContent=v+' mm';return v};calc();
@@ -1904,6 +1924,18 @@ async function saveProject(){if(S.doc.pptx&&S.pptxSrc){try{toast('保存中…')
   const pd=projectData(true);for(const m of Object.values(pd.media)){m.data=u8b64(new Uint8Array(await m.blob.arrayBuffer()));delete m.blob}
   for(const m of Object.values(pd.images))if(m.blob){m.src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(m.blob)});delete m.blob}const j=JSON.stringify(pd);saveFile((S.doc.name||'無題')+'.honhon.json',new Blob([j],{type:'application/json'}))}
 $('#bSave').onclick=saveProject;
+/* 書類を切り替える前の復元用コピー。元のPPTXも一緒に保持する。 */
+async function backupBeforeSwitch(){if(!S.doc)return;const pages=SL();if(S.doc.name==='無題'&&!pages.some(p=>p.items.length||p.notes||p.plan?.title))return;
+  const p=structuredClone(projectData());if(S.pptxSrc)p.pptxSrc=S.pptxSrc;await kvWrite('previousProject',p)}
+const switchBypass=new WeakSet();let switchBusy=false;
+async function protectSwitch(e,el){if(switchBypass.has(el)){switchBypass.delete(el);return}e.preventDefault();e.stopImmediatePropagation();if(switchBusy)return;switchBusy=true;
+  try{await backupBeforeSwitch();switchBypass.add(el);if(e.type==='click')el.click();else el.dispatchEvent(new Event('change',{bubbles:true}))}
+  catch(err){if(confirm('復元用コピーを保存できませんでした。編集用ファイルを保存していない変更は失われます。書類を切り替えますか？')){switchBypass.add(el);if(e.type==='click')el.click();else el.dispatchEvent(new Event('change',{bubbles:true}))}}
+  finally{switchBusy=false}}
+document.addEventListener('click',e=>{const el=e.target.closest('#bNew,#bNewS,#bNewC,#bNewD');if(el)protectSwitch(e,el)},true);
+$('#fOpen').addEventListener('change',e=>{if(e.target.files[0]&&!/\.xlsx$/i.test(e.target.files[0].name))protectSwitch(e,e.target)},true);
+const recoveryButton=document.createElement('button');recoveryButton.textContent='前の作品を復元';$('#mApp .mp').append(recoveryButton);
+recoveryButton.onclick=async()=>{try{const p=await kvGet('previousProject');if(!p){toast('復元できる前の作品はありません');return}await backupBeforeSwitch();await loadProject(p);toast('前の作品を復元しました')}catch(err){toast('復元できませんでした：'+err.message)}};
 
 /* ---------- Dropbox backup ---------- */
 const DBX='Dropbox',DROOT='/HonHon',DOLD='/Thinbook',CH=600000;
@@ -2047,11 +2079,14 @@ function tifEnc(r){
 }
 function pdfStr(s){let h='FEFF';for(const c of s){const cp=c.codePointAt(0);if(cp>0xffff){const v=cp-0x10000;h+=((0xd800+(v>>10)).toString(16)+(0xdc00+(v&0x3ff)).toString(16)).toUpperCase()}else h+=cp.toString(16).padStart(4,'0').toUpperCase()}return '<'+h+'>'}
 async function ensureFonts(){
+  await ensureImages();
   const ps=[];const d=S.doc;
   for(const pg of d.pages)for(const it of pg.items)if(it.type==='text')ps.push(document.fonts.load(`${it.weight} 20px ${FF(it.font)}`,storyText(it)||'あ'));
   ps.push(document.fonts.load(`400 20px ${FF(d.nombre.font)}`,'0123456789'));
   await Promise.all(ps.map(p=>p.catch(()=>{})));await document.fonts.ready;wcache.clear();lcache.clear();
 }
+async function ensureImages(){const d=S.doc;await loadPendingImages();if(S.doc!==d)throw new Error('書類が変更されました。もう一度書き出してください');
+  for(const pg of [...SL(),...MS()]){const B=mBg(pg);for(const it of [...(B.img?[B.img]:[]),...mUnder(pg),...pg.items])for(const id of [it.imageId,it.posterId])if(id){const im=S.images[id];if(!im||im.pending||im.failed||!im.img)throw new Error('画像を読み込めません：'+(im?.name||id))}}}
 /* mode: gray(1ch, 255=白) / cmyk(4ch, インキ量) / rgb(3ch) */
 async function rasterPage(i,opt,mode,tick){
   const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH,ext=opt.marks?b+12:opt.bleed?b:0,mw=W+2*ext,mh=H+2*ext,s=opt.dpi/25.4;
@@ -3113,7 +3148,8 @@ function netaRenderEdit(){
 async function netaAddImages(files){const n=netaCur();if(!n)return;
   for(const f of files){if(!f.type.startsWith('image/'))continue;try{const im=await readImage(f);n.images.push({id:uid(),src:im.src,w:im.w,h:im.h,name:im.name||''})}catch(e){toast(e.message)}}
   netaTouch(n);netaRenderEdit();netaRenderList()}
-function netaToBook(n){
+async function netaToBook(n){
+  try{await backupBeforeSwitch()}catch(e){if(!confirm('復元用コピーを保存できませんでした。保存していない変更は失われます。新しい書類を作成しますか？'))return}
   $('#bNew').onclick();const ok=$('#n-ok'),orig=ok.onclick;
   ok.onclick=async()=>{orig();if(!$('#modal').hidden)return;
     const d=S.doc;d.name=n.title||'無題';
@@ -5297,8 +5333,10 @@ const PZ=(()=>{
 })();
 /* 画像・動画をあとから読み込む（開く時間を短くするため） */
 async function mediaBlob(m){if(!m.blob&&m.part&&S.pptxZip){const e=S.pptxZip.get(m.part);if(e)m.blob=await PZ.blob(e,m.type)}return m.blob}
-let lazyRun=0;
-async function loadPendingImages(){
+let lazyRun=0,lazyJob=null;
+function loadPendingImages(){const d=S.doc;if(lazyJob&&lazyJob.doc===d)return lazyJob.promise;
+  const job={doc:d};lazyJob=job;job.promise=loadPendingImagesJob().finally(()=>{if(lazyJob===job)lazyJob=null});return job.promise}
+async function loadPendingImagesJob(){
   const run=++lazyRun,d=S.doc,zip=S.pptxZip;if(!zip)return;
   const uses=new Map(),order=[];
   const idx=[...new Set([...[...S.visible].sort((a,b)=>a-b),...d.pages.keys()])];
