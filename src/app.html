@@ -221,8 +221,8 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 }
 .themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .kp{display:flex;flex-direction:column;gap:10px}
-.kr{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.kr>span{width:72px;font-size:13px;color:var(--sub)}
+.kr{display:flex;flex-direction:column;gap:6px}
+.kr>span{font-size:13px;color:var(--sub)}
 .kcs{display:flex;gap:6px;flex-wrap:wrap}
 .kc{flex:0 0 32px;width:32px;height:32px;min-width:0;min-height:0;padding:0;border:1px solid var(--line);position:relative;overflow:hidden}
 .kc.on{border-color:var(--ink);outline:2px solid var(--ink);outline-offset:1px}
@@ -1462,9 +1462,9 @@ const F=(label,inner,w)=>`<label class="f${w?' w':''}"><span>${label}</span>${in
 const N=(k,v,step=0.1,extra='')=>`<input type="number" id="i-${k.replace(/\./g,'-')}" data-k="${k}" value="${v}" step="${step}" ${extra}>`;
 const SEL=(k,v,opts)=>`<select id="i-${k.replace(/\./g,'-')}" data-k="${k}">${opts.map(([a,b])=>`<option value="${esc(a)}"${String(a)===String(v)?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
 /* スライドの色を役割で選ぶ。役割を持つ色はテーマを変えると追従する */
-const ROLES=[['accent','キーカラー'],['accent2','対比色'],['ink','文字'],['sub','補足'],['line','罫線'],['bg','地']];
+const ROLES=[['accent','キーカラー'],['keyDark','キーの濃色'],['keyLight','キーの淡色'],['keyPale','キーのごく淡い色'],['accent2','対比色'],['ink','文字'],['sub','補足'],['line','罫線'],['bg','地']];
 function roleRow(k,it){const d=S.doc;if(d.kind!=='slide'||d.pptx)return'';const T=theme(),cur=it[k+'Role'];
-  return`<div class="kcs rr">${ROLES.filter(([r])=>r!=='accent2'||d.key2).map(([r,n])=>`<button type="button" class="kc${cur===r?' on':''}" data-role="${r}" data-rk="${k}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div>`}
+  return`<div class="kcs rr">${ROLES.filter(([r])=>(r!=='accent2'||d.key2)&&T[r]).filter(([r],i,a)=>a.findIndex(([q])=>T[q].toLowerCase()===T[r].toLowerCase())===i).map(([r,n])=>`<button type="button" class="kc${cur===r?' on':''}" data-role="${r}" data-rk="${k}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div>`}
 $('#tab-props').addEventListener('click',e=>{const b=e.target.closest('[data-role]'),sel=selItem();if(!b||!sel)return;const k=b.dataset.rk,it=k==='color'&&sel.type==='text'?headOf(sel):sel,T=theme();
   it[k+'Role']=b.dataset.role;it[k]=hexC(T[b.dataset.role]);if(k==='color'&&sel.type==='text'&&(sel.next||headOf(sel)!==sel))dirtyAll();else dirty(S.sel.page);commit();renderProps()});
 function colorFields(k,c){if(S.doc.color==='mono')return `<div class="row">${F('K（%）',N(k+'.k',c.k,1,'min="0" max="100"'))}</div>`;
@@ -3506,12 +3506,19 @@ const THEMES={
   mincho:{name:'明朝',bg:'#ffffff',ink:'#1a1a1a',sub:'#666666',accent:'#ce0000',on:'#ffffff',head:'Shippori Mincho',body:'BIZ UDPMincho'},
 };
 /* 作品ごとのキーカラー1色と、意味の決まった固定色から役割を組む。キー＝作品の核、対比＝外からの評価など2色目、ink＝語り・事実、sub＝補足、line＝罫線・枠、div＝区切りの面 */
-const KEYS=[['#1d8b56','緑'],['#ec0000','赤'],['#0017c1','青'],['#1a1a1a','黒']];
+const KEYS=[['#1d8b56','グリーン'],['#00626b','ティール'],['#2fb58c','ミント'],['#3aa6dd','スカイ'],['#0017c1','ブルー'],['#14213d','ネイビー'],['#6b4fbb','バイオレット'],['#e4007f','マゼンタ'],['#7a1f3d','ボルドー'],['#ec0000','レッド'],['#ff5a1f','オレンジ'],['#d4a017','マスタード'],['#1a1a1a','ブラック']];
 function lumH(h){const n=parseInt(String(h).replace('#',''),16),f=v=>{v/=255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4};return 0.2126*f(n>>16&255)+0.7152*f(n>>8&255)+0.0722*f(n&255)}
 const conH=(a,b)=>{const x=lumH(a),y=lumH(b);return(Math.max(x,y)+0.05)/(Math.min(x,y)+0.05)};
-function mkTheme(key,ground,key2){const dk=ground==='dark',bg=dk?'#1a1a1a':'#ffffff',ink=dk?'#ffffff':'#1a1a1a',div=dk?'#ffffff':'#1a1a1a',onDiv=bg;
-  const k=conH(key,bg)<1.5?ink:key,k2=key2?(conH(key2,bg)<1.5?ink:key2):k;
-  return{bg,ink,sub:dk?'#cccccc':'#666666',line:dk?'#666666':'#cccccc',accent:k,accent2:k2,on:conH('#ffffff',k)>=conH('#1a1a1a',k)?'#ffffff':'#1a1a1a',div,onDiv,keyDiv:conH(k,div)>=3?k:onDiv,head:'Noto Sans JP',body:'Noto Sans JP'}}
+/* キーカラーを白・黒と混ぜて関連色を作る。淡色＝面・枠、濃色＝文字・面。地は白／淡／濃／黒から選ぶ */
+function mixH(a,b,t){const p=x=>parseInt(String(x).replace('#',''),16),A=p(a),B=p(b),c=s=>Math.round((A>>s&255)*(1-t)+(B>>s&255)*t);return'#'+[16,8,0].map(s=>c(s).toString(16).padStart(2,'0')).join('')}
+const GROUNDS=[['light','白'],['tint','キーの淡色'],['shade','キーの濃色'],['dark','黒']];
+function keyTones(key){return{keyLight:mixH(key,'#ffffff',0.8),keyPale:mixH(key,'#ffffff',0.92),keyDark:mixH(key,'#000000',0.55)}}
+function groundHex(key,g){const t=keyTones(key);return g==='tint'?t.keyPale:g==='shade'?t.keyDark:g==='dark'?'#1a1a1a':'#ffffff'}
+function mkTheme(key,ground,key2){const g=GROUNDS.some(([v])=>v===ground)?ground:'light',dk=g==='dark'||g==='shade',t=keyTones(key),bg=groundHex(key,g),ink=dk?'#ffffff':'#1a1a1a';
+  const sub=g==='shade'?t.keyLight:dk?'#cccccc':g==='tint'?mixH(key,'#1a1a1a',0.6):'#666666',line=g==='shade'?mixH(key,'#000000',0.3):dk?'#666666':g==='tint'?t.keyLight:'#cccccc';
+  const div=g==='tint'?t.keyDark:g==='shade'?t.keyPale:dk?'#ffffff':'#1a1a1a',onDiv=dk?bg:'#ffffff';
+  const fit=c=>[0,0.2,0.4,0.6].map(x=>mixH(c,dk?'#ffffff':'#000000',x)).find(x=>conH(x,bg)>=3)||ink,k=fit(key),k2=key2?fit(key2):k;
+  return{bg,ink,sub,line,accent:k,accent2:k2,...t,on:conH('#ffffff',k)>=conH('#1a1a1a',k)?'#ffffff':'#1a1a1a',div,onDiv,keyDiv:[key,t.keyDark,t.keyLight].find(c=>conH(c,div)>=3)||onDiv,head:'Noto Sans JP',body:'Noto Sans JP'}}
 function hexC(h){const n=parseInt(String(h).replace('#',''),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,k=1-Math.max(r,g,b);
   if(k>=0.9999)return{c:0,m:0,y:0,k:100};const f=v=>Math.round((1-v-k)/(1-k)*1000)/10;return{c:f(r),m:f(g),y:f(b),k:Math.round(k*1000)/10}}
 function cHex(c){return cmykCss(c).match(/\d+/g).map(v=>(+v).toString(16).padStart(2,'0')).join('').toUpperCase()}
@@ -3683,7 +3690,7 @@ function keyPick(o,two){const sw=(v,n,cur,nm)=>`<button type="button" class="kc$
   cust=(cur,nm)=>{const c=cur&&!KEYS.some(([v])=>v===cur);return`<label class="kc kx${c?' on':''}" title="ほかの色"${c?` style="background:${cur}"`:''}><input type="color" data-${nm}="" value="${c?cur:'#1d8b56'}" aria-label="ほかの色"></label>`};
   return`<div class="kp"><div class="kr"><span>キーカラー</span><div class="kcs">${KEYS.map(([v,n])=>sw(v,n,o.key,'key')).join('')}${cust(o.key,'key')}</div></div>`+
   (two?`<div class="kr"><span>対比色</span><div class="kcs">${sw('','なし',o.key2||'','key2')}${KEYS.filter(([v])=>v!==o.key).map(([v,n])=>sw(v,n,o.key2,'key2')).join('')}${cust(o.key2,'key2')}</div></div>`:'')+
-  `<div class="kr"><span>地</span><div class="seg">${[['light','白'],['dark','黒']].map(([v,n])=>`<button type="button" data-ground="${v}" class="${(o.ground||'light')===v?'on':''}">${n}</button>`).join('')}</div></div>`+
+  `<div class="kr"><span>地</span><div class="kcs">${GROUNDS.map(([v,n])=>`<button type="button" class="kc${(o.ground||'light')===v?' on':''}" data-ground="${v}" title="${n}" aria-label="${n}" style="background:${groundHex(o.key,v)}"></button>`).join('')}</div></div>`+
   `<div class="kpv">${KPV.map(k=>`<canvas data-pv="${k}"></canvas>`).join('')}</div></div>`}
 function drawKeyPv(root,o){const T=mkTheme(o.key,o.ground,o.key2),dpr=window.devicePixelRatio||1;
   for(const c of root.querySelectorAll('.kpv canvas')){const pg=makeSlide(c.dataset.pv,KPT,T);c.width=Math.round(c.clientWidth*dpr)||160;c.height=Math.round(c.width*SH/SW);
@@ -3934,7 +3941,7 @@ function renderNotes(){
 function renderSlideDoc(){
   const d=S.doc;
   $('#tab-doc').innerHTML=`<div class="sec"><h3>書類</h3>${F('名前',`<input type="text" id="d-name" data-dk="name" value="${esc(d.name)}">`)}</div>`+
-    (d.pptx?'':`<div class="sec" id="d-key"><h3>テーマ</h3>${keyPick({key:d.key||theme().accent,ground:d.key?d.ground:(theme().bg.toLowerCase()==='#ffffff'?'light':'dark'),key2:d.key2||''},1)}</div>`);
+    (d.pptx?'':`<div class="sec" id="d-key"><h3>テーマ</h3>${keyPick({key:d.key||theme().accent,ground:d.key?d.ground||'light':(theme().bg.toLowerCase()==='#ffffff'?'light':'dark'),key2:d.key2||''},1)}</div>`);
   if(!d.pptx){const o={key:d.key||theme().accent.toLowerCase(),ground:d.ground||(theme().bg.toLowerCase()==='#ffffff'?'light':'dark'),key2:d.key2||''};bindKeyPick($('#d-key'),o,()=>setTheme(o))}
 }
 
