@@ -227,9 +227,12 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .kc{flex:0 0 32px;width:32px;height:32px;min-width:0;min-height:0;padding:0;border:1px solid var(--line);position:relative;overflow:hidden}
 .kc.on{border-color:var(--ink);outline:2px solid var(--ink);outline-offset:1px}
 .kc s{position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--sub);transform:rotate(45deg)}
-.kx{cursor:pointer;display:flex;align-items:center;justify-content:center}
-.kx:not([style])::before{content:'';width:14px;height:14px;background:linear-gradient(var(--ink),var(--ink)) center/100% 1.5px no-repeat,linear-gradient(var(--ink),var(--ink)) center/1.5px 100% no-repeat}
-.kx input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
+.kin{display:flex;gap:8px;align-items:center}
+.kbig{flex:0 0 44px;width:44px;height:44px;cursor:pointer}
+.kbig input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
+.khex{width:120px;height:44px;min-height:44px;padding-top:0;padding-bottom:0;box-sizing:border-box;font-variant-numeric:tabular-nums;text-transform:uppercase}
+.khex.bad{border-color:var(--danger)}
+.kpre .kc{flex-basis:24px;width:24px;height:24px}
 .seg{display:flex}.seg button{min-width:48px}.seg button+button{margin-left:-1px}
 .rr{margin-bottom:8px}.rr .kc{flex-basis:26px;width:26px;height:26px}
 .kpv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -3686,19 +3689,27 @@ function addSlide(key){const d=S.doc;if(d.pptx){toast('PowerPointファイルで
 const thKey=()=>{const d=S.doc;return d?(d.key?d.key+(d.ground||'')+(d.key2||''):d.theme||''):''};
 function setTheme(o){const d=S.doc;Object.assign(d,o);if(!d.key2)delete d.key2;[...SL(),...MS()].forEach(p=>themePage(p));layThumbCache.clear();dirtyAll();updateInfo();commit();renderDoc();renderProps()}
 const KPV=['title','section_big','number'],KPT={title:'タイトル',sub:'サブタイトル',num:'01',body:'本文'};
+/* 色はピッカーとカラーコードで決めるのが基本。使った色は端末に残し、プリセットの前に並べる */
+const recentKeys=()=>{try{return JSON.parse(localStorage.getItem('tb-keys')||'[]').filter(v=>/^#[0-9a-f]{6}$/.test(v))}catch(e){return[]}};
+function rememberKey(v){if(!v||KEYS.some(([k])=>k===v))return;try{localStorage.setItem('tb-keys',JSON.stringify([v,...recentKeys().filter(x=>x!==v)].slice(0,8)))}catch(e){}}
 function keyPick(o,two){const sw=(v,n,cur,nm)=>`<button type="button" class="kc${cur===v?' on':''}" data-${nm}="${v}" aria-label="${n}" title="${n}" style="background:${v||'transparent'}">${v?'':'<s></s>'}</button>`,
-  cust=(cur,nm)=>{const c=cur&&!KEYS.some(([v])=>v===cur);return`<label class="kc kx${c?' on':''}" title="ほかの色"${c?` style="background:${cur}"`:''}><input type="color" data-${nm}="" value="${c?cur:'#1d8b56'}" aria-label="ほかの色"></label>`};
-  return`<div class="kp"><div class="kr"><span>キーカラー</span><div class="kcs">${KEYS.map(([v,n])=>sw(v,n,o.key,'key')).join('')}${cust(o.key,'key')}</div></div>`+
-  (two?`<div class="kr"><span>対比色</span><div class="kcs">${sw('','なし',o.key2||'','key2')}${KEYS.filter(([v])=>v!==o.key).map(([v,n])=>sw(v,n,o.key2,'key2')).join('')}${cust(o.key2,'key2')}</div></div>`:'')+
+  pal=(cur,nm,skip)=>[...recentKeys().map(v=>[v,v.toUpperCase()]),...KEYS].filter(([v])=>v!==skip).map(([v,n])=>sw(v,n,cur,nm)).join(''),
+  inp=(cur,nm,ph)=>`<div class="kin"><label class="kc kbig"${cur?` style="background:${cur}"`:''}><input type="color" data-${nm}="" value="${cur||'#1d8b56'}" aria-label="色を選ぶ"></label><input type="text" class="khex" data-hex="${nm}" value="${cur?cur.toUpperCase():''}" placeholder="${ph}" maxlength="7" spellcheck="false" autocomplete="off" aria-label="カラーコード"></div>`;
+  return`<div class="kp"><div class="kr"><span>キーカラー</span>${inp(o.key,'key','#000000')}<div class="kcs kpre">${pal(o.key,'key')}</div></div>`+
+  (two?`<div class="kr"><span>対比色</span>${inp(o.key2,'key2','なし')}<div class="kcs kpre">${sw('','なし',o.key2||'','key2')}${pal(o.key2,'key2',o.key)}</div></div>`:'')+
   `<div class="kr"><span>地</span><div class="kcs">${GROUNDS.map(([v,n])=>`<button type="button" class="kc${(o.ground||'light')===v?' on':''}" data-ground="${v}" title="${n}" aria-label="${n}" style="background:${groundHex(o.key,v)}"></button>`).join('')}</div></div>`+
   `<div class="kpv">${KPV.map(k=>`<canvas data-pv="${k}"></canvas>`).join('')}</div></div>`}
 function drawKeyPv(root,o){const T=mkTheme(o.key,o.ground,o.key2),dpr=window.devicePixelRatio||1;
   for(const c of root.querySelectorAll('.kpv canvas')){const pg=makeSlide(c.dataset.pv,KPT,T);c.width=Math.round(c.clientWidth*dpr)||160;c.height=Math.round(c.width*SH/SW);
     const ctx=c.getContext('2d'),s=c.width/SW;ctx.setTransform(s,0,0,s,0,0);ctx.fillStyle=cmykCss(pg.bg);ctx.fillRect(0,0,SW,SH);for(const it of pg.items)drawItem(ctx,it,null,false)}}
 /* キーカラー選択の操作。o を書き換えて cb を呼ぶ */
-function bindKeyPick(root,o,cb){const kp=root.querySelector('.kp');
+function bindKeyPick(root,o,cb){const kp=root.querySelector('.kp'),done=nm=>{rememberKey(o[nm]);cb()};
   kp.onclick=e=>{const b=e.target.closest('button');if(!b)return;if('key' in b.dataset)o.key=b.dataset.key;else if('key2' in b.dataset)o.key2=b.dataset.key2;else if(b.dataset.ground)o.ground=b.dataset.ground;else return;cb()};
-  for(const i of kp.querySelectorAll('input[type=color]'))i.oninput=i.onchange=e=>{const nm='key' in i.dataset?'key':'key2';o[nm]=i.value.toLowerCase();if(e.type==='change')cb();else{i.parentNode.style.background=i.value;drawKeyPv(root,o)}};
+  for(const i of kp.querySelectorAll('input[type=color]'))i.oninput=i.onchange=e=>{const nm='key' in i.dataset?'key':'key2';o[nm]=i.value.toLowerCase();if(e.type==='change')done(nm);else{i.parentNode.style.background=i.value;const h=kp.querySelector(`[data-hex="${nm}"]`);if(h)h.value=i.value.toUpperCase();drawKeyPv(root,o)}};
+  for(const h of kp.querySelectorAll('.khex')){const nm=h.dataset.hex,ok=()=>{const m=h.value.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);if(!m)return null;const x=m[1].length===3?[...m[1]].map(c=>c+c).join(''):m[1];return'#'+x.toLowerCase()};
+    h.oninput=()=>{delete h.dataset.done;const v=ok();h.classList.toggle('bad',!!h.value.trim()&&!v);if(v){o[nm]=v;h.previousElementSibling.style.background=v;drawKeyPv(root,o)}};
+    h.onchange=()=>{if(!h.isConnected||h.dataset.done)return;h.dataset.done=1;const v=ok();if(v){o[nm]=v;done(nm)}else if(nm==='key2'&&!h.value.trim()){o.key2='';cb()}};
+    h.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();h.onchange()}};h.onfocus=()=>{delete h.dataset.done}}
   drawKeyPv(root,o)}
 const layThumbCache=new Map();
 /* ---------- スライドマスター ---------- */
