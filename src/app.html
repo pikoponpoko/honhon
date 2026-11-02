@@ -242,6 +242,9 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 #c-ipv canvas{border:1px solid var(--line)}
 .cpv .cno{aspect-ratio:91/55;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sub)}
 .cim{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cpv.cvl{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:12px}
+#d-cover .cpv.cvl{grid-template-columns:repeat(2,minmax(0,1fr))}
+#d-cover .cim{margin:4px 0 12px}
 .th{display:flex;flex-direction:column;gap:4px;padding:5px;text-align:left;font-size:12px}
 .th.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent);outline:1px solid var(--accent)}
 .sw{display:block;position:relative;aspect-ratio:16/9;border:1px solid var(--line);overflow:hidden}
@@ -1472,7 +1475,7 @@ const N=(k,v,step=0.1,extra='')=>`<input type="number" id="i-${k.replace(/\./g,'
 const SEL=(k,v,opts)=>`<select id="i-${k.replace(/\./g,'-')}" data-k="${k}">${opts.map(([a,b])=>`<option value="${esc(a)}"${String(a)===String(v)?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
 /* スライドの色を役割で選ぶ。役割を持つ色はテーマを変えると追従する */
 const ROLES=[['accent','キーカラー'],['keyDark','キーの濃色'],['keyLight','キーの淡色'],['keyPale','キーのごく淡い色'],['accent2','対比色'],['ink','文字'],['sub','補足'],['line','罫線'],['bg','地']];
-function roleRow(k,it){const d=S.doc;if((d.kind!=='slide'&&d.kind!=='card')||d.pptx||!d.key&&d.kind==='card')return'';const T=theme(),cur=it[k+'Role'];
+function roleRow(k,it){const d=S.doc;if((d.kind!=='slide'&&d.kind!=='card'&&d.kind!=='cover')||d.pptx||!d.key&&d.kind!=='slide')return'';const T=theme(),cur=it[k+'Role'];
   return`<div class="kcs rr">${ROLES.filter(([r])=>(r!=='accent2'||d.key2)&&T[r]).filter(([r],i,a)=>a.findIndex(([q])=>T[q].toLowerCase()===T[r].toLowerCase())===i).map(([r,n])=>`<button type="button" class="kc${cur===r?' on':''}" data-role="${r}" data-rk="${k}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div>`}
 $('#tab-props').addEventListener('click',e=>{const b=e.target.closest('[data-role]'),sel=selItem();if(!b||!sel)return;const k=b.dataset.rk,it=k==='color'&&sel.type==='text'?headOf(sel):sel,T=theme();
   it[k+'Role']=b.dataset.role;it[k]=hexC(T[b.dataset.role]);if(k==='color'&&sel.type==='text'&&(sel.next||headOf(sel)!==sel))dirtyAll();else dirty(S.sel.page);commit();renderProps()});
@@ -1578,7 +1581,7 @@ function renderDoc(){
     ${F('塗り足し（mm）',`<input type="number" id="d-b" data-dk="bleed" value="${d.bleed}" step="0.5" min="0">`)}
     ${F('綴じ',`<select id="d-bind" data-dk="binding"><option value="right"${d.binding==='right'?' selected':''}>右綴じ</option><option value="left"${d.binding==='left'?' selected':''}>左綴じ</option></select>`)}
     ${F('カラー',`<select id="d-col" data-dk="color"><option value="mono"${d.color==='mono'?' selected':''}>モノクロ（グレースケール）</option><option value="cmyk"${d.color==='cmyk'?' selected':''}>カラー（CMYK）</option></select>`,1)}</div></div>
-    <div class="sec"><h3>マージン（mm）</h3><div class="row">${F('天',`<input type="number" id="d-mt" data-dk="margins.top" value="${m.top}" step="0.5">`)}${F('地',`<input type="number" id="d-mb" data-dk="margins.bottom" value="${m.bottom}" step="0.5">`)}
+    ${d.kind==='cover'?coverDocSec():''}<div class="sec"><h3>マージン（mm）</h3><div class="row">${F('天',`<input type="number" id="d-mt" data-dk="margins.top" value="${m.top}" step="0.5">`)}${F('地',`<input type="number" id="d-mb" data-dk="margins.bottom" value="${m.bottom}" step="0.5">`)}
     ${F('ノド',`<input type="number" id="d-mi" data-dk="margins.inner" value="${m.inner}" step="0.5">`)}${F('小口',`<input type="number" id="d-mo" data-dk="margins.outer" value="${m.outer}" step="0.5">`)}</div></div>`;
   if(d.kind==='cover'){const sc=d.spineCalc||{pages:32,paper:0,cover:1},sp=pr.spine||'chokotto',papers=sp==='orange'?PAPERS_OR:PAPERS_CH;
     h+=`<div class="sec"><h3>背幅計算</h3><div class="row">${F('本文ページ数',`<input type="number" id="sc-p" value="${sc.pages}" step="4" min="4">`)}
@@ -1594,10 +1597,10 @@ function renderDoc(){
     ${F('フォント',FSEL('id="d-nbf" data-dk="nombre.font"',nb.font))}</div>`;
   $('#tab-doc').innerHTML=h;
   if(d.kind==='cover'){const calc=()=>{const v=spineOf(+$('#sc-p').value,+$('#sc-pa').value,$('#sc-co')?+$('#sc-co').value:0);$('#sc-out').textContent=v+' mm';return v};calc();
-    for(const x of['#sc-p','#sc-pa','#sc-co'])if($(x))$(x).addEventListener('input',calc);
-    $('#sc-apply').onclick=()=>{const v=calc();d.spineCalc={pages:+$('#sc-p').value,paper:+$('#sc-pa').value,cover:$('#sc-co')?+$('#sc-co').value:0};d.spine=v;rebuild();commit();renderDoc();toast('背幅を'+v+'mmにしました')}}
+    for(const x of['#sc-p','#sc-pa','#sc-co'])if($(x))$(x).addEventListener('input',calc);bindCoverDoc();
+    $('#sc-apply').onclick=()=>{const v=calc();d.spineCalc={pages:+$('#sc-p').value,paper:+$('#sc-pa').value,cover:$('#sc-co')?+$('#sc-co').value:0};d.spine=v;coverSync();rebuild();commit();renderDoc();toast('背幅を'+v+'mmにしました')}}
 }
-function spineOf(pages,paper,cover){const sp=PR().spine||'chokotto';pages=Math.max(0,pages|0);
+function spineOf(pages,paper,cover,prk){const sp=(prk?PRINTERS[prk]||PRINTERS.generic:PR()).spine||'chokotto';pages=Math.max(0,pages|0);
   if(sp==='orange'){const t=(PAPERS_OR[paper]||PAPERS_OR[0])[1];return Math.ceil(pages/2*t)}
   const c=(PAPERS_CH[paper]||PAPERS_CH[0])[1],cv=(COVERS_CH[cover]||COVERS_CH[1])[1];return Math.round((pages*c+cv*2)*10)/10}
 let docT=0;
@@ -1605,7 +1608,7 @@ $('#tab-doc').addEventListener('input',e=>{const t=e.target,k=t.dataset.dk;if(!k
   if((k==='trimW'||k==='trimH')&&v<20)return;setPath(S.doc,k,v);clearTimeout(docT);
   if(k==='printer'){S.doc.bleed=PR().bleed;rebuild();commit();renderDoc();runPreflight();return}
   const structural=['trimW','trimH','spine','bleed','binding','nombre.start'].includes(k);
-  docT=setTimeout(()=>{if(structural)rebuild();else{dirtyAll();updateInfo()}commit();if(k==='color')renderProps()},t.tagName==='SELECT'?0:350)});
+  docT=setTimeout(()=>{if(structural){if(k!=='nombre.start')coverSync();rebuild()}else{dirtyAll();updateInfo()}commit();if(k==='color')renderProps()},t.tagName==='SELECT'?0:350)});
 
 /* ---------- pages ---------- */
 function addPages(at,n){for(let k=0;k<n;k++)S.doc.pages.splice(at,0,newPage());rebuild();commit();setPage(at);toast(n+'ページ追加しました')}
@@ -1714,7 +1717,7 @@ $('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal'&&!export
 $('#bNewS').onclick=()=>newDocDlg(true);
 $('#bNew').onclick=()=>newDocDlg(false);
 function newDocDlg(slide){
-  const NK={key:KEYS[0][0],ground:'light'};
+  const NK={key:KEYS[0][0],ground:'light'},CO={lay:'full',f:{},font:'Noto Sans JP',key:KEYS[0][0],ground:'light',img:null};
   const dlg=modal(`<h2>${slide?'新規スライド':'新規冊子'}</h2>
     <div class="kinds" id="n-kinds"${slide?' hidden':''}><button data-k="body" class="on">本文</button><button data-k="cover">表紙</button><button data-k="web">Web記事から</button></div>
     <span class="n-book">${F('印刷所',`<select id="n-pr">${Object.entries(PRINTERS).map(([k,v])=>`<option value="${k}"${k===(S.doc&&S.doc.printer)?' selected':''}>${esc(v.name)}</option>`).join('')}</select>`)}</span>
@@ -1728,9 +1731,23 @@ function newDocDlg(slide){
     <span id="n-pw">${F('ページ数','<input type="number" id="n-pages" value="24" step="4" min="1">')}</span>
     <span id="n-sw" hidden>${F('背幅（mm）','<input type="number" id="n-spine" value="3" step="0.1" min="0">')}</span></div>
     <div id="n-slide" class="sec" hidden>${keyPick(NK)}<div class="row">${F('構成のひな形',`<select id="n-flow">${Object.keys(FLOWS).map(k=>`<option>${k}</option>`).join('')}<option value="">白紙</option></select>`)}</div></div>
+    <div id="n-cover" class="sec" hidden><div class="row">${F('本文ページ数','<input type="number" id="n-cvp" value="32" step="4" min="4">')}${F('本文用紙','<select id="n-cvpa"></select>',1)}</div>
+      ${coverLayPick(CO.lay)}${coverFields(CO.f,CO.font)}<div class="cim"><button id="n-cvart">絵を選ぶ</button><span class="ok" id="n-cvart-n"></span></div><div id="n-cvkey">${cardKeyPick(CO)}</div></div>
     <div class="foot"><button id="n-cancel">キャンセル</button><button class="primary" id="n-ok">作成</button></div>`);
-  const sync=()=>{const k=$('#n-size').value;if(k!=='custom'){let [w,h]=SIZES[k];if($('#n-ori').value==='l')[w,h]=[h,w];$('#n-w').value=w;$('#n-h').value=h}const kv=$('#n-kind').value,cv=kv==='cover',sl=kv==='slide';$('#n-pw').hidden=cv||sl;$('#n-sw').hidden=!cv;$$('.n-book').forEach(x=>x.hidden=sl);$('#n-w').closest('.row').hidden=sl;$('#n-slide').hidden=!sl;dlg.classList.toggle('owide',sl)};
-  $('#n-size').onchange=sync;$('#n-kind').onchange=()=>{$$('#n-kinds button').forEach(x=>x.classList.toggle('on',x.dataset.k===$('#n-kind').value));sync()};
+  const sync=()=>{const k=$('#n-size').value;if(k!=='custom'){let [w,h]=SIZES[k];if($('#n-ori').value==='l')[w,h]=[h,w];$('#n-w').value=w;$('#n-h').value=h}const kv=$('#n-kind').value,cv=kv==='cover',sl=kv==='slide';$('#n-pw').hidden=cv||sl;$('#n-sw').hidden=!cv;$$('.n-book').forEach(x=>x.hidden=sl);$('#n-w').closest('.row').hidden=sl;$('#n-slide').hidden=!sl;$('#n-cover').hidden=!cv;dlg.classList.toggle('owide',sl||cv);if(cv)cvPv()};
+  /* 表紙：本文ページ数と用紙から背幅を出し、配置の見本を描く */
+  const cvG=()=>cvGeo(Math.max(20,+$('#n-w').value||148),Math.max(0,+$('#n-spine').value||0),Math.max(20,+$('#n-h').value||210),(PRINTERS[$('#n-pr').value]||PRINTERS.generic).bleed,$('#n-bind').value==='right');
+  const cvPv=()=>{if($('#n-cover').hidden)return;coverPvs($('#n-cover'),CO,cvG())};
+  const cvPapers=()=>{const sp=(PRINTERS[$('#n-pr').value]||PRINTERS.generic).spine||'chokotto';$('#n-cvpa').innerHTML=(sp==='orange'?PAPERS_OR:PAPERS_CH).map(([n],k)=>`<option value="${k}">${esc(n)}</option>`).join('')};
+  const cvSpine=()=>{$('#n-spine').value=spineOf(+$('#n-cvp').value,+$('#n-cvpa').value,1,$('#n-pr').value);cvPv()};
+  cvPapers();$('#n-pr').addEventListener('change',()=>{cvPapers();if(!$('#n-cover').hidden)cvSpine()});
+  for(const x of['#n-cvp','#n-cvpa'])$(x).addEventListener('input',cvSpine);
+  for(const x of['#n-w','#n-h','#n-spine','#n-bind','#n-ori','#n-size'])$(x).addEventListener('input',()=>setTimeout(cvPv));
+  $('#n-cover .cvl').onclick=e=>{const b=e.target.closest('button[data-v]');if(!b)return;CO.lay=b.dataset.v;$$('#n-cover .cvl button').forEach(x=>x.classList.toggle('on',x===b))};
+  let cvT=0;$('#n-cover').addEventListener('input',e=>{const k=e.target.dataset.cf;if(!k)return;if(k==='font')CO.font=e.target.value;else CO.f[k]=e.target.value;clearTimeout(cvT);cvT=setTimeout(()=>{cvPv();document.fonts.ready.then(()=>setTimeout(cvPv,60))},200)});
+  $('#n-cvart').onclick=async()=>{try{const a=await coverPickArt();if(!a)return;CO.img={imageId:a.id,fit:'cover'};$('#n-cvart').textContent='絵を差し替え';$('#n-cvart-n').textContent=a.name;cvPv()}catch(err){toast(err.message||'読み込めませんでした')}};
+  const cvKey=()=>{$('#n-cvkey').innerHTML=cardKeyPick(CO);bindKeyPick($('#n-cvkey'),CO,cvKey);cvPv()};bindKeyPick($('#n-cvkey'),CO,cvKey);
+  $('#n-size').onchange=sync;$('#n-kind').onchange=()=>{$$('#n-kinds button').forEach(x=>x.classList.toggle('on',x.dataset.k===$('#n-kind').value));if($('#n-kind').value==='cover'){$('#n-col').value='cmyk';$('#n-cover').hidden=false;cvSpine();document.fonts.ready.then(()=>setTimeout(cvPv,60))}sync()};
   $('#n-kinds').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='web'){wbStep1();return}$('#n-kind').value=b.dataset.k;$('#n-kind').onchange()};$('#n-ori').onchange=sync;
   for(const x of['#n-w','#n-h'])$(x).addEventListener('input',()=>{$('#n-size').value='custom'});
   const nkRe=()=>{$('#n-slide .kp').outerHTML=keyPick(NK);bindKeyPick($('#n-slide'),NK,nkRe)};bindKeyPick($('#n-slide'),NK,nkRe);
@@ -1738,7 +1755,10 @@ function newDocDlg(slide){
   $('#n-ok').onclick=()=>{if($('#n-kind').value==='slide'){createSlideDoc({...NK},$('#n-flow').value);closeModal();openOutline();return}
     const w=+$('#n-w').value,h=+$('#n-h').value;if(!(w>=20&&h>=20)){toast('サイズを20mm以上で入力してください');return}
     const kind=$('#n-kind').value;S.doc=newDoc({kind,name:'無題',printer:$('#n-pr').value,w,h,binding:$('#n-bind').value,color:$('#n-col').value,pages:+$('#n-pages').value,spine:+$('#n-spine').value});
-    S.images={};S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;closeModal();fitZoom();rebuild();renderAll();resetHistory()};
+    const im=kind==='cover'&&CO.img&&S.images[CO.img.imageId];
+    if(kind==='cover'){const d=S.doc;d.name=(CO.f.title||'').trim()||'無題';d.spineCalc={pages:+$('#n-cvp').value,paper:+$('#n-cvpa').value,cover:1};
+      if(CO.lay!=='none'){d.key=CO.key;d.ground=CO.ground;d.cover={lay:CO.lay,f:{...CO.f},font:CO.font,img:CO.img};coverBuild(d,mkTheme(d.key,d.ground))}}
+    S.images=im?{[CO.img.imageId]:im}:{};S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;closeModal();fitZoom();rebuild();renderAll();resetHistory()};
   if(slide){$('#n-kind').value='slide';sync()}
 }
 $('#bOpen').onclick=()=>$('#fOpen').click();
@@ -4473,6 +4493,89 @@ function createSlideDoc(th,flow){
   fitZoom();rebuild();renderAll();resetHistory();
 }
 
+/* ---------- 表紙デザイン ---------- */
+/* 表1・背・表4を1枚に並べた表紙書類（kind:'cover'）に、絵・タイトル・作者名・サークル名から配置を組む。
+   d.cover={lay,f:{title,author,circle},font}。背幅・判型・綴じを変えると組み直す（cv付きの部品だけ作り直し、手で足した部品は残す） */
+const COVER_LAYS=[['full','全面の絵'],['band','キーカラーの帯'],['frame','余白'],['side','縦書き'],['type','キーカラーの地'],['wrap','表1〜表4通しの絵'],['none','白紙']];
+const COVER_PH={title:'タイトル',author:'作者名',circle:'サークル名'};
+const COVER_FONTS=[['Noto Sans JP','ゴシック'],['Shippori Mincho','明朝']];
+function cvGeo(W,S,H,b,R){return{W,S,H,b,R,F:R?0:W+S,B:R?W+S:0,X:W,T:2*W+S,M:Math.max(8,Math.round(W*0.07))}}
+/* 実際の組版で文字の占める高さ（縦書きは幅）を測る。枠 mh に収まるまで文字を小さくする（下限は元の55%） */
+let cvMid=0;
+function cvMeasure(o){const V=o.dir==='v',t={...o,id:'_cvm'+(cvMid++%4),[V?'w':'h']:9999},L=layoutText(t,t.text,true),b=L.bbox;return b?(V?t.w-b.x0:b.y1):0}
+function cvFit(o,mh){let z=o.size,m=cvMeasure(o);while(m>mh&&z>o.size*0.55){z-=1;m=cvMeasure({...o,size:z})}return{size:z,h:m}}
+function cvText(o){return Object.assign({id:uid(),type:'text',x:0,y:0,w:20,h:10,text:'',font:'Noto Sans JP',weight:700,size:12,leading:130,track:0,dir:'h',align:'start',colorRole:'ink',lay:1},o)}
+function cvRect(o){return Object.assign({id:uid(),type:'rect',x:0,y:0,w:10,h:1,fill:null,stroke:null,sw:0.3,fillRole:'accent',lay:1},o)}
+function cvImg(o,src){return Object.assign(imageItem({fit:'cover',lay:1,cv:'image'}),src||{},o)}
+function coverItems(spec,G,img){
+  const {W,S,H,b,R,F,B,X,T,M}=G,f=spec.f||{},v=k=>(f[k]||'').trim()||COVER_PH[k],font=spec.font||'Noto Sans JP';
+  const tS=Math.round(Math.min(W,H*0.75)*0.26),aS=Math.max(9,Math.round(tS*0.36)),tM=tS*PT,aM=aS*PT;
+  const out={bgRole:'bg',items:[]},P=out.items,tx=o=>cvText({font,...o}),fb={x:R?-b:F,y:-b,w:W+b,h:H+2*b};
+  const tBase=(w,c,o)=>tx({cv:'title',x:0,y:0,w,h:10,text:v('title'),size:tS,leading:125,track:20,colorRole:c,...o});
+  const title=(x,y,w,c,o={},mh=H*0.4)=>{const it=tBase(w,c,o),r=cvFit(it,mh);Object.assign(it,{x,y,size:r.size,h:r.h+0.5});P.push(it);return r.h};
+  const tH=(w,mh=H*0.4)=>cvFit(tBase(w,'ink',{}),mh).h;
+  const author=(x,y,w,c,o={})=>P.push(tx({cv:'author',x,y,w,h:aM*1.5,text:v('author'),size:aS,weight:400,track:60,colorRole:c,...o}));
+  const spine=(fill,c)=>{if(fill)P.push(cvRect({cv:'spine',x:X,y:-b,w:S,h:H+2*b,fillRole:fill}));if(S<3)return;
+    const z=Math.min(14,Math.round(S*0.58*MMPT*2)/2),cw=z*PT*1.1,x=X+(S-cw)/2,top=Math.max(10,M),cut=H*0.64;
+    const st=tx({cv:'stitle',x,y:top,w:cw,h:cut-top,text:v('title'),size:z,leading:100,track:60,dir:'v',colorRole:c});st.size=cvFit(st,cw+0.01).size;P.push(st);
+    P.push(tx({cv:'sauthor',x,y:cut+6,w:cw,h:H-top-cut-6,text:v('author'),size:Math.max(6,Math.round(z*0.75*2)/2),weight:400,leading:100,track:60,dir:'v',align:'end',colorRole:c}))};
+  const circle=(c,o={})=>P.push(tx({cv:'circle',x:B+M,y:H-M-aM*1.5,w:W-2*M,h:aM*1.5,text:v('circle'),size:Math.max(8,aS-1),weight:400,track:60,colorRole:c,...o}));
+  const lay=spec.lay;
+  if(lay==='full'){P.push(cvImg(fb,img));const hb=tH(W-2*M-14)+aM*1.5+21,y=H-M-hb;
+    P.push(cvRect({x:F+M,y,w:W-2*M,h:hb,fillRole:'bg'}));const th=title(F+M+7,y+7,W-2*M-14,'ink');author(F+M+7,y+7+th+3.5,W-2*M-14,'sub');
+    P.push(cvRect({cv:'spine',x:R?X:-b,y:-b,w:W+S+b,h:H+2*b}));spine(null,'on');circle('on')}
+  else if(lay==='band'){const bh=H*0.36,by=H-bh;P.push(cvImg({...fb,h:by+b},img));P.push(cvRect({x:-b,y:by,w:T+2*b,h:bh+b,fillRole:'accent'}));
+    title(F+M,by+M*0.9,W-2*M,'on',{},bh-M*1.9-aM*2.5);author(F+M,H-M-aM*1.5,W-2*M,'on');spine('accent','on');circle('on')}
+  else if(lay==='frame'){const ih=H*0.58;P.push(cvImg({x:F+M,y:M,w:W-2*M,h:ih},img));const by=M+ih+9;P.push(cvRect({x:F+M,y:by,w:12,h:1.2}));
+    title(F+M,by+6,W-2*M,'ink',{},H-M-aM*2.5-by-6);author(F+M,H-M-aM*1.5,W-2*M,'sub');spine('accent','on');P.push(cvRect({x:B+M,y:H-M-aM*1.5-7,w:4,h:4}));circle('sub')}
+  else if(lay==='side'){const sw=Math.max(tS*PT*2.6+aM,W*0.3),sx=R?F:F+W-sw,ix=R?F+sw:F;P.push(cvImg({x:ix,y:-b,w:W-sw,h:H+2*b},img));
+    const ins=Math.max(5,(sw-tM*1.25-aM*1.6)/2),cx=sx+ins,cw=sw-2*ins,cut=H*0.7;
+    const it=tx({cv:'title',x:cx,y:M,w:cw,h:cut-M,text:v('title'),size:tS,leading:125,track:60,dir:'v',colorRole:'ink'});it.size=cvFit(it,cw).size;P.push(it);
+    P.push(tx({cv:'author',x:cx,y:cut+6,w:cw,h:H-M-cut-6,text:v('author'),size:aS,weight:400,leading:100,track:60,dir:'v',align:'end',colorRole:'sub'}));
+    spine('accent','on');circle('sub')}
+  else if(lay==='type'){out.bgRole='accent';const aw=W-2*M*1.5,ah=Math.min(aw*0.8,H*0.5);P.push(cvImg({x:F+(W-aw)/2,y:M*1.5,w:aw,h:ah},img));
+    title(F+M*1.5,M*1.5+ah+10,W-3*M,'on',{align:'center'},H-M*1.5-ah-10-M-aM*2.5);author(F+M,H-M-aM*1.5,W-2*M,'on',{align:'center'});spine(null,'on');circle('on',{align:'center'})}
+  else if(lay==='wrap'){P.push(cvImg({x:-b,y:-b,w:T+2*b,h:H+2*b},img));const hb=tH(W-2*M-14)+aM*1.5+21;
+    P.push(cvRect({x:F+M,y:M,w:W-2*M,h:hb,fillRole:'bg'}));const th=title(F+M+7,M+7,W-2*M-14,'ink');author(F+M+7,M+7+th+3.5,W-2*M-14,'sub');
+    if(S>=3)P.push(cvRect({cv:'spine',x:X,y:Math.max(10,M)-4,w:S,h:H-2*Math.max(10,M)+8,fillRole:'bg'}));spine(null,'ink');
+    P.push(cvRect({x:B+M,y:H-M-aM*1.5-5,w:W*0.5,h:aM*1.5+10,fillRole:'bg'}));circle('ink',{x:B+M+5,w:W*0.5-10})}
+  for(const it of P)if(!it.cv)it.cv='deco';
+  return out}
+/* 書類から絵と文字を拾い直して d.cover.f と画像の設定を更新する */
+function coverRead(d){const pg=d.pages[0],c=d.cover,f=c.f||(c.f={});let img=null;
+  for(const it of pg.items){if(it.cv==='image'&&!img){img={};for(const k in it)if(!['id','x','y','w','h','lay','cv'].includes(k))img[k]=it[k]}
+    for(const k of['title','author','circle'])if(it.cv===k&&it.text!==COVER_PH[k])f[k]=it.text}
+  if(img)c.img=img;return c}
+function coverBuild(d,T){const c=d.cover;if(!c)return;const pg=d.pages[0],keep=pg.items.filter(it=>!it.cv),G=cvGeo(d.trimW,d.spine,d.trimH,d.bleed,d.binding==='right');
+  const r=c.lay==='none'?{bgRole:'bg',items:[]}:coverItems(c,G,c.img);pg.items=[...r.items,...keep];pg.bgRole=r.bgRole;themePage(pg,T||theme())}
+function coverSync(){const d=S.doc;if(d.kind!=='cover'||!d.cover)return;coverRead(d);coverBuild(d)}
+function drawCoverPv(c,pg,G,T){const dpr=window.devicePixelRatio||1;c.width=Math.round((c.clientWidth||180)*dpr);c.height=Math.round(c.width*G.H/G.T);
+  const ctx=c.getContext('2d'),s=c.width/G.T;ctx.setTransform(s,0,0,s,0,0);ctx.fillStyle=pg.bg?cmykCss(pg.bg):'#ffffff';ctx.fillRect(0,0,G.T,G.H);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,G.T,G.H);ctx.clip();
+  for(const it of pg.items){if(it.type==='image'&&!(it.imageId&&S.images[it.imageId]&&S.images[it.imageId].img)){ctx.fillStyle=T.keyLight;ctx.fillRect(it.x,it.y,it.w,it.h)}else drawItem(ctx,it,null,false)}
+  ctx.restore()}
+/* 配置の見本（表紙設定 o={lay,f,font,key,ground,img}） */
+function coverPvs(root,o,G){const T=mkTheme(o.key,o.ground);
+  for(const bt of root.querySelectorAll('button[data-v]')){const cv=bt.querySelector('canvas');if(!cv)continue;const r=bt.dataset.v==='none'?{bgRole:'bg',items:[]}:coverItems({...o,lay:bt.dataset.v},G,o.img);
+    const pg={items:r.items,bg:hexC(T[r.bgRole])};themePage(pg,T);drawCoverPv(cv,pg,G,T)}}
+const coverLayPick=cur=>`<div class="cpv cvl">${COVER_LAYS.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===cur?' class="on"':''}><canvas></canvas></button>`).join('')}</div>`;
+const coverFields=(f,font)=>`<div class="row">${F('タイトル',`<input type="text" data-cf="title" value="${esc(f.title||'')}">`)}${F('作者名',`<input type="text" data-cf="author" value="${esc(f.author||'')}">`)}${F('サークル名',`<input type="text" data-cf="circle" value="${esc(f.circle||'')}">`)}
+  ${F('書体',`<select data-cf="font">${COVER_FONTS.map(([v,n])=>`<option value="${v}"${v===(font||'Noto Sans JP')?' selected':''}>${n}</option>`).join('')}</select>`)}</div>`;
+async function coverPickArt(){const f=await new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept='.png,.jpg,.jpeg,.psd,.webp,image/*';i.onchange=()=>res(i.files[0]||null);i.click()});
+  if(!f)return null;const im=await readImage(f),id=uid();S.images[id]=im;return{id,name:im.name||''}}
+/* 右パネル「書類」タブの表紙デザイン欄 */
+function coverDocSec(){const d=S.doc,c=d.cover||{lay:'none',f:{},font:'Noto Sans JP'},im=c.img&&S.images[c.img.imageId];
+  return`<div class="sec" id="d-cover"><h3>表紙デザイン</h3>${coverLayPick(c.lay)}${coverFields(c.f||{},c.font)}
+    <div class="cim"><button id="d-cvart">${im?'絵を差し替え':'絵を選ぶ'}</button>${im?`<span class="ok">${esc(im.name||'')}</span>`:''}</div>${cardKeyPick({key:d.key||KEYS[0][0],ground:d.ground||'light'})}</div>`}
+function bindCoverDoc(){const d=S.doc,root=$('#d-cover');if(!root)return;const G=()=>cvGeo(d.trimW,d.spine,d.trimH,d.bleed,d.binding==='right');
+  const ensure=()=>{if(!d.cover){d.cover={lay:'none',f:{},font:'Noto Sans JP'};if(!d.key){d.key=KEYS[0][0];d.ground='light'}}coverRead(d);return d.cover};
+  const pv=()=>{const c=d.cover||{lay:'none',f:{}};coverPvs(root,{...c,key:d.key||KEYS[0][0],ground:d.ground||'light'},G())};
+  const apply=()=>{coverBuild(d);S.sel=null;dirtyAll();commit();pv()};
+  root.querySelector('.cvl').onclick=e=>{const b=e.target.closest('button[data-v]');if(!b)return;const c=ensure();c.lay=b.dataset.v;$$('#d-cover .cvl button').forEach(x=>x.classList.toggle('on',x===b));apply()};
+  let t=0;root.addEventListener('input',e=>{const k=e.target.dataset.cf;if(!k)return;e.stopPropagation();const c=ensure();if(k==='font')c.font=e.target.value;else c.f[k]=e.target.value;clearTimeout(t);t=setTimeout(apply,e.target.tagName==='SELECT'?0:300)});
+  $('#d-cvart').onclick=async()=>{try{const a=await coverPickArt();if(!a)return;const c=ensure();c.img=Object.assign(c.img||{fit:'cover'},{imageId:a.id,ox:0,oy:0});if(c.lay==='none')c.lay='full';apply();renderDoc()}catch(err){toast(err.message||'読み込めませんでした')}};
+  const o={key:d.key||KEYS[0][0],ground:d.ground||'light'};bindKeyPick(root,o,()=>{setTheme(o)});
+  pv();document.fonts.ready.then(()=>setTimeout(pv,60))}
 /* ---------- zip ---------- */
 const PZ=(()=>{
   const T=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;T[n]=c>>>0}
