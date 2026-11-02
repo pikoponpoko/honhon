@@ -766,20 +766,7 @@ function cropOf(el){const sr=el&&el.getElementsByTagNameNS('http://schemas.openx
   const f=n=>Math.max(0,Math.min(0.99,(+sr.getAttribute(n)||0)/100000)),c={l:f('l'),t:f('t'),r:f('r'),b:f('b')};return c.l||c.t||c.r||c.b?{crop:c}:{}}
 function imageItem(o){return Object.assign({id:uid(),type:'image',x:0,y:0,w:40,h:40,imageId:null,fit:'cover'},o)}
 
-function sampleDoc(){
-  const d=newDoc({kind:'body',name:'サンプル',w:148,h:210,binding:'right',color:'mono',pages:8});
-  S.doc=d;
-  const t='縦書き本文の組版確認用テキストです。句読点「、」「。」の位置、二重かぎ括弧『』、長音ー、三点リーダ……、ダッシュ――の向きを確認できます。\n数字は2桁まで縦中横になります（例：12月31日）。英単語 HonHon は90度回転して組まれます。\n行頭に句読点が来る場合はぶら下げ、閉じ括弧は追い出しで処理します。';
-  const m0=margBox(0);
-  d.pages[0].items.push(textItem({x:m0.x+m0.w-30,y:m0.y+20,w:24,h:120,text:'サンプル本',font:'Shippori Mincho',weight:700,size:28,leading:120,track:100}));
-  const m1=margBox(1);
-  d.pages[1].items.push(textItem({x:m1.x,y:m1.y,w:m1.w,h:m1.h,text:(t+'\n').repeat(4).trim(),size:9,leading:175}));
-  const m2=margBox(2);
-  d.pages[2].items.push(rectItem({x:-3,y:-3,w:154,h:70,fill:{c:0,m:0,y:0,k:15}}));
-  d.pages[2].items.push(imageItem({x:m2.x,y:80,w:m2.w,h:80}));
-  d.pages[2].items.push(textItem({x:m2.x,y:170,w:m2.w,h:20,text:'横組みの例：見出し Heading 2026',font:'Noto Sans JP',weight:700,size:12,leading:150,dir:'h'}));
-  return d;
-}
+function blankDoc(){return newDoc({kind:'body',name:'無題',w:148,h:210,binding:'right',color:'mono',pages:8})}
 
 /* ---------- color ---------- */
 function cmykCss(c){const k=1-c.k/100;return `rgb(${Math.round(255*(1-c.c/100)*k)},${Math.round(255*(1-c.m/100)*k)},${Math.round(255*(1-c.y/100)*k)})`}
@@ -5689,7 +5676,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>
 (async()=>{
   const saved=await kvGet('project');const hs=await kvGet('handles');if(hs)Object.assign(handles,hs);
   try{if(saved&&saved.doc){await loadProject(saved);return}}catch(e){}
-  S.doc=sampleDoc();fitZoom();rebuild();renderAll();resetHistory();
+  S.doc=blankDoc();fitZoom();rebuild();renderAll();resetHistory();
 })();
 window.__thinbook={S,exportPPTX,importPPTX,parseOutline,applyOutline,createSlideDoc,setTheme,setLayout,exportPDF,exportJob,preflight,layout,autoFlow,autoDaiwari,select,parsePSD,spineOf,newDoc,rebuild,commit,headOf,chainOf,linkTo,editText,alignSel};
 </script>
