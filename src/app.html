@@ -4533,14 +4533,20 @@ const DM_BACK=[['none','なし'],['address','宛名面'],['info','案内'],['key
 const DM_PH={title:'展示名',name:'作家名',date:'会期',place:'会場',detail:'住所\n開館時間・休館日\nURL',from:'差出人の住所\n名前'};
 /* 文字の高さ（mm）を行数から見積もる。全角1・半角0.55 */
 function dmLines(t,size,track,w){let n=0;for(const ln of String(t).split('\n')){let u=0;for(const ch of ln)u+=ch.charCodeAt(0)<0x2000?0.55:1;n+=Math.max(1,Math.ceil(u*size*PT*(1+(track||0)/1000)/Math.max(1,w)-0.02))}return n}
+/* 文字幅を実測し、各行が折り返さない大きさに縮める（min より小さくはしない） */
+let dmMc=null;
+function dmFit(t,wmm,max,min,weight,track){dmMc=dmMc||document.createElement('canvas').getContext('2d');dmMc.font=`${weight||400} 100px "Noto Sans JP"`;
+  let u=0;for(const ln of String(t).split('\n')){const n=[...ln].length;u=Math.max(u,dmMc.measureText(ln).width/100+n*(track||0)/1000)}
+  if(!u)return max;return Math.max(min,Math.min(max,Math.floor(wmm*0.97/(u*PT)*2)/2))}
 function dmText(t,b,y,size,o={}){const lead=o.leading||150,n=dmLines(t,size,o.track,b.w),h=(size*PT)*(1+(n-1)*lead/100)+size*PT*0.3;
   return cardText({x:b.x,y,w:b.w,h,text:t,size,leading:lead,weight:o.weight||400,track:o.track||0,align:o.align||'start',colorRole:o.c||'ink'})}
 /* 上から順に積む。keys の各要素：title・name・bar・date・place・detail・from */
 function dmStack(b,f,o,s){const v=k=>(f[k]||'').trim()||DM_PH[k],al=o.align||'start',c=o.c||'ink',ac=o.ac||'accent',sc=o.sc||'sub',out=[];let y=b.y;
   const S={title:[(o.ts||24)*s,{weight:700,leading:125,track:20,c}],name:[10*s,{c:sc,track:40}],date:[(o.ds||12)*s,{weight:700,c:ac,track:20}],place:[10*s,{weight:700,c}],detail:[8*s,{leading:160,c}],from:[8*s,{leading:160,c}]};
+  const MINPT={title:12,name:8,date:9,place:8,detail:8,from:8};
   const gap={title:2.2,name:3.2,bar:3.2,date:1.4,place:1.8,detail:2,from:0};
   for(const k of o.keys){if(k==='bar'){out.push(cardRect({x:al==='center'?b.x+b.w/2-5*s:b.x,y,w:10*s,h:0.7*s,fillRole:o.bar||ac}));y+=0.7*s+gap.bar*s;continue}
-    const [z,op]=S[k],t=dmText(v(k),b,y,z,{...op,align:al});out.push(t);y+=t.h+gap[k]*s}
+    const [z0,op]=S[k],fit=MINPT[k],z=fit?dmFit(v(k),b.w,z0,Math.min(z0,fit*s),op.weight,op.track):z0,t=dmText(v(k),b,y,z,{...op,align:al});out.push(t);y+=t.h+gap[k]*s}
   if(o.bottom){const off=b.y+b.h-y+(gap[o.keys[o.keys.length-1]]||0)*s;if(off>0)for(const it of out)it.y+=off}
   return out}
 function dmScale(W,H){return Math.min(W,H)/100}
