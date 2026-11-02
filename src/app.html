@@ -4535,6 +4535,10 @@ function wbArticle(doc,url){
 /* 一覧ページから記事へのリンクを拾う：同じ構造で並んだリンクの一番大きな集まり */
 function wbLinks(doc,url){
   const here=new URL(url),groups=new Map();
+  /* 記事の見出しについたリンク（1件だけのカテゴリーでも拾う） */
+  const hl=[];for(const a of doc.querySelectorAll('article :is(h1,h2,h3) a[href],:is(.entry-title,.post-title) a[href]')){if(a.closest('nav,header:not(article header),footer,aside'))continue;
+    const h=wbAbs(a.getAttribute('href'),url);if(!h)continue;const u=new URL(h);u.hash='';if(u.origin===here.origin&&u.pathname!==here.pathname&&!hl.includes(u.href))hl.push(u.href)}
+  if(hl.length)return hl;
   for(const a of doc.querySelectorAll('a[href]')){
     if(a.closest('nav,header,footer,aside'))continue;const h=wbAbs(a.getAttribute('href'),url);if(!h)continue;const u=new URL(h);u.hash='';
     if(u.origin!==here.origin||u.pathname===here.pathname||u.pathname==='/'||!wbClean(a.textContent))continue;
