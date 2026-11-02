@@ -247,6 +247,48 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .ilord .drag{opacity:.5}
 .dlg.owide{width:min(640px,100%)}
 textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;font-family:var(--ui)}
+.dlg.obdlg{width:min(1120px,100%);height:min(88vh,900px);max-height:none}
+.dlg.obdlg>.dlgb{gap:12px}
+.ohead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.ohead .oseg{width:min(240px,100%)}
+.ohead .f{width:min(200px,100%)}
+.obdlg textarea.outline{flex:1 1 auto;min-height:200px;resize:none}
+.obrd{flex:1 1 auto;min-height:240px;overflow:auto;display:flex;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.obrd[hidden]{display:none}
+.ocols{display:flex;align-items:flex-start;gap:12px;padding:12px;flex:none}
+.ocol{width:208px;flex:none;display:flex;flex-direction:column;gap:8px}
+.ocol.ohold{position:sticky;left:0;z-index:1;align-self:stretch;padding:12px;background:var(--panel);border-right:1px solid var(--line)}
+.olbl{font-size:12px;font-weight:700;color:var(--sub);line-height:20px}
+.ocards{display:flex;flex-direction:column;gap:8px;min-height:44px}
+.ohold .ocards{min-height:88px}
+.ocard{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:8px 28px 10px 10px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:14px;line-height:1.5}
+.ohold .ocard{border-style:dashed;border-color:var(--field)}
+.ocard:hover{border-color:var(--field)}
+.ocard:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.ocard.edit{cursor:auto;user-select:text;-webkit-user-select:text;touch-action:auto;border-color:var(--accent);outline:1px solid var(--accent);padding:6px;display:flex;flex-direction:column;gap:6px}
+.ocard.ohd{border:0;border-bottom:2px solid var(--accent);border-radius:0;background:transparent;padding:4px 28px 6px 2px}
+.ocard.ohd.edit{border:1px solid var(--accent);border-radius:var(--r);background:var(--bg);padding:6px}
+.omt{display:flex;gap:6px;font-size:12px;line-height:18px;color:var(--sub)}
+.onum{font-family:var(--num);min-width:1.5em}.onum:empty{display:none}
+.ottl{font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
+.ottl:empty::before{content:"—";color:var(--sub);font-weight:400}
+.ohd .ottl{font-size:15px}
+.ohd .ottl[data-sec]::before{content:attr(data-sec);font-family:var(--num);color:var(--accent);margin-right:6px}
+.obdy{margin-top:2px;color:var(--sub);font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.ox{position:absolute;top:4px;right:4px;width:24px;height:24px;min-height:0;padding:0;border:0;background:transparent;color:var(--sub);font-size:16px;line-height:24px;visibility:hidden}
+.ox:hover{background:var(--hover);color:var(--ink)}
+.ocard:hover>.ox,.ocard:focus>.ox{visibility:visible}
+@media (hover:none){.ox{visibility:visible}}
+.oed{width:100%;min-height:52px;resize:none;overflow:hidden;line-height:1.5;font-family:var(--ui);font-size:14px}
+.olay{width:100%}
+.oadd{min-height:32px;padding:0;border:1px dashed var(--field);background:transparent;color:var(--sub)}
+.oadd:hover{background:var(--hover);color:var(--ink)}
+.oaddg{flex:none;width:120px;min-height:36px;border:1px dashed var(--field);background:transparent;color:var(--sub)}
+.oaddg:hover{background:var(--hover);color:var(--ink)}
+.odrag{opacity:.35}
+.oghost{position:fixed;left:0;top:0;z-index:30;pointer-events:none;margin:0;border-color:var(--accent);outline:1px solid var(--accent);background:var(--bg);overflow:hidden;cursor:grabbing}
+.ocol.oghost{padding:0}
+@media (max-width:600px){.ocol{width:176px}.ocol.ohold{position:static}.ohead .f{width:100%}}
 .hint{font-size:12px;color:var(--sub)}
 #pNotes{width:100%;min-height:90px;resize:vertical;line-height:1.6}
 .aiask{display:flex;gap:8px}
@@ -4021,34 +4063,154 @@ const OUTLINE_RULES=`# 書式（厳守）
 - 行頭に [2段] を付けた見出し：本文を「---」だけの行で左右に分ける
 - 行頭に [カード] を付けた見出し：2〜4個の箇条書きを横に並べる
 - 本文は1枚5行以内、1行30字以内`;
+/* 構成テキスト ⇄ カード（区切りごとの列）。区切りより前のスライドは先頭の列、保留の列はスライドにしない */
+function outlineGroups(src){
+  const blocks=String(src).replace(/\r/g,'').split(/\n[ \t　]*\n/).map(b=>b.split('\n').map(x=>x.replace(/\s+$/,'')).filter(x=>x.trim())).filter(b=>b.length);
+  const gs=[{head:null,cards:[]}];
+  blocks.forEach((ls,i)=>{let h=ls[0].trim(),key=null;const m=h.match(/^[\[［]([^\]］]+)[\]］]\s*/);
+    if(m&&TAGS[m[1].trim()]){key=TAGS[m[1].trim()];h=h.slice(m[0].length)}
+    if(!key)key=i===0?'title':ls.length>1?'content':'section';
+    const c={k:key,text:[h,...ls.slice(1)].join('\n')};
+    if(baseOf(key)==='section')gs.push({head:c,cards:[]});else gs[gs.length-1].cards.push(c)});
+  return gs;
+}
+function outlineFromGroups(gs){
+  const out=[],lines=c=>String(c.text||'').split('\n').map(x=>x.replace(/\s+$/,'')).filter(x=>x.trim());
+  for(const g of gs){
+    if(g.head){const L=lines(g.head);if(L.length){const i=out.length,tag=g.head.k!=='section'?`[${LAYOUTS[g.head.k].name}] `:(i===0||L.length>1?'[区切り] ':'');out.push([tag+L[0].trim(),...L.slice(1)].join('\n'))}}
+    for(const c of g.cards){const L=lines(c);if(!L.length)continue;const i=out.length,k=LAYOUTS[c.k]?c.k:'content';
+      const need=k==='title'?i!==0:k==='content'?(i===0||L.length<2):true;
+      out.push([(need?`[${LAYOUTS[k].name}] `:'')+L[0].trim(),...L.slice(1)].join('\n'))}
+  }
+  return out.join('\n\n');
+}
+const OVIEW='thinbook-outline-view';
 function openOutline(){
   const d=S.doc;if(d.kind!=='slide'||d.pptx)return;
+  const base=serializeOutline(),dr=d.outlineDraft;
+  let hold=Array.isArray(d.outlineHold)?d.outlineHold.map(c=>({k:c.k,text:c.text})):[];
+  let view='card';try{if(localStorage.getItem(OVIEW)==='text')view='text'}catch(e){}
   const dlg=modal(`<h2>構成</h2>
-    <div class="row">${F('ひな形',`<select id="o-flow"><option value="">—</option>${Object.keys(FLOWS).map(k=>`<option>${k}</option>`).join('')}</select>`)}</div>
-    <textarea id="o-text" class="outline" spellcheck="false">${esc(serializeOutline())}</textarea>
-    <div class="hint">空行でスライドを区切る ・ 1行だけのブロックは区切り ・ 行頭の [数字] [画像] [2段] [カード] などでレイアウト指定</div>
+    <div class="ohead"><div class="tcseg oseg" role="tablist"><button data-v="card" role="tab">カード</button><button data-v="text" role="tab">テキスト</button></div>${F('ひな形',`<select id="o-flow"><option value="">—</option>${Object.keys(FLOWS).map(k=>`<option>${k}</option>`).join('')}</select>`)}</div>
+    <div class="obrd" id="o-brd"></div>
+    <textarea id="o-text" class="outline" spellcheck="false"></textarea>
+    <div class="hint" id="o-hint">空行でスライドを区切る ・ 1行だけのブロックは区切り ・ 行頭の [数字] [画像] [2段] [カード] などでレイアウト指定</div>
     <div class="sec" id="o-ai" hidden><h3>Claudeに相談</h3><div class="aiask"><input type="text" id="o-q" aria-label="依頼"><button id="o-ask">送信</button><button id="o-undo" hidden>元に戻す</button></div><div class="ok" id="o-st"></div></div>
     <div class="foot"><button id="o-cancel">閉じる</button><button class="primary" id="o-ok">スライドに反映</button></div>`);
-  dlg.classList.add('owide');
-  const ta=$('#o-text');
-  $('#o-flow').onchange=e=>{const v=FLOWS[e.target.value];if(v!=null)ta.value=v};
-  $('#o-cancel').onclick=closeModal;
-  $('#o-ok').onclick=()=>{const fl=$('#o-flow').value;if(applyOutline(ta.value)){if(fl&&ta.value===FLOWS[fl]){flowNotes(S.doc.pages,fl);commit()}closeModal()}};
+  dlg.classList.add('owide','obdlg');
+  const ta=$('#o-text'),brd=$('#o-brd');
+  const cardKeys=Object.keys(LAYOUTS).filter(k=>baseOf(k)!=='section'),secKeys=Object.keys(LAYOUTS).filter(k=>baseOf(k)==='section');
+  const split=t=>{const L=String(t||'').split('\n');return[L[0]||'',L.slice(1).filter(x=>x.trim()).join('\n')]};
+  function paint(el){const c=el._c,[h,b]=split(c.text),hd=el.classList.contains('ohd');
+    el.innerHTML=`<div class="omt"><span class="onum"></span><span>${esc(LAYOUTS[c.k]?LAYOUTS[c.k].name:'')}</span></div><div class="ottl">${esc(h)}</div>${!hd&&b?`<div class="obdy">${esc(b)}</div>`:''}<button class="ox" tabindex="-1" aria-label="${hd?'区切りを外す':'削除'}">×</button>`}
+  function cardEl(c,hd){const el=document.createElement('div');el.className='ocard'+(hd?' ohd':'');el.tabIndex=0;el._c=c;paint(el);return el}
+  function colEl(g,kind){const col=document.createElement('section');col.className='ocol'+(kind?' '+kind:'');
+    if(kind==='ohold')col.innerHTML='<div class="olbl">保留</div>';else if(g.head)col.append(cardEl(g.head,true));
+    const list=document.createElement('div');list.className='ocards';(g.cards||[]).forEach(c=>list.append(cardEl(c)));
+    const add=document.createElement('button');add.className='oadd';add.setAttribute('aria-label','カードを追加');add.textContent='＋';col.append(list,add);return col}
+  let cols,holdCol,addG;
+  function render(gs){brd.innerHTML='';cols=document.createElement('div');cols.className='ocols';
+    holdCol=colEl({cards:hold},'ohold');
+    gs.forEach((g,i)=>cols.append(colEl(g,i?'ogrp':'ofirst')));
+    addG=document.createElement('button');addG.className='oaddg';addG.textContent='＋ 区切り';cols.append(addG);
+    brd.append(holdCol,cols);renum()}
+  function groups(){return[...cols.querySelectorAll('.ocol')].map(col=>{const h=col.querySelector(':scope>.ohd');return{head:h?h._c:null,cards:[...col.querySelector('.ocards').children].map(e=>e._c)}})}
+  function readHold(){hold=[...holdCol.querySelector('.ocards').children].map(e=>e._c).filter(c=>String(c.text).trim())}
+  function renum(){let n=0,s=0;for(const el of cols.querySelectorAll('.ocard')){const on=String(el._c.text).trim()!=='';if(on)n++;
+      const sp=el.querySelector('.onum');if(sp)sp.textContent=on?String(n):'';
+      if(el.classList.contains('ohd')&&on){s++;const t=el.querySelector('.ottl');if(t)t.dataset.sec=String(s).padStart(2,'0')}}
+    for(const sp of holdCol.querySelectorAll('.onum'))sp.textContent=''}
+  const getText=()=>view==='card'?outlineFromGroups(groups()):ta.value;
+  function setText(v){if(view==='card')render(outlineGroups(v));else ta.value=v;changed()}
+  let dT=null;
+  function keep(){if(S.doc!==d)return;if(view==='card')readHold();const t=getText();
+    d.outlineDraft=t===base?null:{base,text:t};d.outlineHold=hold.map(c=>({k:c.k,text:c.text}));if(!d.outlineDraft)delete d.outlineDraft;if(!hold.length)delete d.outlineHold;
+    S.last=JSON.stringify(S.doc);afterChange()}
+  function changed(){if(view==='card')renum();clearTimeout(dT);dT=setTimeout(keep,400)}
+  function show(v){if(v!==view){const t=getText();if(view==='card')readHold();view=v;try{localStorage.setItem(OVIEW,v)}catch(e){}if(v==='card')render(outlineGroups(t));else ta.value=t}
+    for(const b of dlg.querySelectorAll('.oseg button'))b.setAttribute('aria-selected',b.classList.toggle('on',b.dataset.v===view));
+    brd.hidden=view!=='card';ta.hidden=$('#o-hint').hidden=view!=='text'}
+  /* 編集 */
+  function edit(el){if(el.classList.contains('edit'))return;const c=el._c,hd=el.classList.contains('ohd'),ks=hd?secKeys:cardKeys;
+    el.classList.add('edit');el.innerHTML=`<select class="olay" aria-label="レイアウト">${ks.map(k=>`<option value="${k}"${k===c.k?' selected':''}>${LAYOUTS[k].name}</option>`).join('')}</select><textarea class="oed" rows="2" spellcheck="false" aria-label="${hd?'区切り':'見出しと本文'}"></textarea>`;
+    const t=el.querySelector('.oed'),grow=()=>{t.style.height='auto';t.style.height=t.scrollHeight+'px'};t.value=c.text;
+    t.oninput=()=>{c.text=t.value;grow();changed()};el.querySelector('.olay').onchange=e=>{c.k=e.target.value;changed()};
+    el.addEventListener('focusout',function fo(e){if(el.contains(e.relatedTarget))return;el.removeEventListener('focusout',fo);done(el)});
+    t.focus();t.setSelectionRange(t.value.length,t.value.length);requestAnimationFrame(grow)}
+  function done(el){el.classList.remove('edit');if(!el.isConnected)return;if(!String(el._c.text).trim()){drop(el);return}paint(el);renum()}
+  function drop(el){if(el.classList.contains('ohd')){const col=el.closest('.ocol'),prev=col.previousElementSibling;
+      if(prev)prev.querySelector('.ocards').append(...col.querySelector('.ocards').children);col.remove()}else el.remove();changed()}
+  function addCard(col){const c={k:col.classList.contains('ofirst')&&!cols.querySelector('.ocard')?'title':'content',text:''},el=cardEl(c);col.querySelector('.ocards').append(el);edit(el)}
+  brd.addEventListener('click',e=>{const x=e.target.closest('.ox');if(x){const el=x.closest('.ocard');drop(el);return}
+    const a=e.target.closest('.oadd');if(a){addCard(a.closest('.ocol'));return}
+    if(e.target.closest('.oaddg')){const col=colEl({head:{k:'section',text:''},cards:[]},'ogrp');cols.insertBefore(col,addG);edit(col.querySelector('.ohd'));col.scrollIntoView({inline:'nearest',block:'nearest'})}});
+  brd.addEventListener('keydown',e=>{e.stopPropagation();const el=e.target.closest('.ocard');if(!el)return;
+    if(el.classList.contains('edit')){if(e.key==='Escape'){e.preventDefault();el.focus()}return}
+    if(e.target!==el)return;
+    if(e.key==='Enter'){e.preventDefault();edit(el);return}
+    if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();const nx=el.nextElementSibling||el.previousElementSibling;drop(el);if(nx&&nx.classList&&nx.classList.contains('ocard'))nx.focus();return}
+    if(!e.altKey||!/^Arrow/.test(e.key))return;e.preventDefault();
+    const all=[holdCol,...cols.querySelectorAll('.ocol')];
+    if(el.classList.contains('ohd')){const col=el.closest('.ocol');
+      if(e.key==='ArrowLeft'){const p=col.previousElementSibling;if(p&&p.classList.contains('ogrp'))cols.insertBefore(col,p)}
+      else if(e.key==='ArrowRight'){const n=col.nextElementSibling;if(n&&n.classList.contains('ogrp'))cols.insertBefore(n,col)}}
+    else{const list=el.parentNode;
+      if(e.key==='ArrowUp'){if(el.previousElementSibling)list.insertBefore(el,el.previousElementSibling)}
+      else if(e.key==='ArrowDown'){if(el.nextElementSibling)list.insertBefore(el.nextElementSibling,el)}
+      else{const i=all.indexOf(el.closest('.ocol')),j=i+(e.key==='ArrowLeft'?-1:1);if(all[j])all[j].querySelector('.ocards').append(el)}}
+    el.focus();el.scrollIntoView({block:'nearest',inline:'nearest'});changed()});
+  /* ドラッグで並べ替え（カード：列の間も移動／区切り：列ごと移動） */
+  let dg=null;
+  brd.addEventListener('pointerdown',e=>{if(e.button!==0)return;const el=e.target.closest('.ocard');if(!el||el.classList.contains('edit')||e.target.closest('button'))return;
+    const hd=el.classList.contains('ohd');dg={el:hd?el.closest('.ocol'):el,card:el,col:hd,x0:e.clientX,y0:e.clientY,id:e.pointerId,on:false}});
+  brd.addEventListener('pointermove',e=>{if(!dg||e.pointerId!==dg.id)return;
+    if(!dg.on){if(Math.hypot(e.clientX-dg.x0,e.clientY-dg.y0)<5)return;dg.on=true;brd.setPointerCapture(e.pointerId);
+      const r=dg.el.getBoundingClientRect();dg.dx=dg.x0-r.left;dg.dy=dg.y0-r.top;
+      const g=dg.el.cloneNode(true);g.classList.add('oghost');g.style.width=r.width+'px';if(dg.col)g.style.height=Math.min(r.height,brd.clientHeight)+'px';dlg.append(g);dg.g=g;dg.el.classList.add('odrag')}
+    dg.g.style.transform=`translate(${e.clientX-dg.dx}px,${e.clientY-dg.dy}px)`;
+    const br=brd.getBoundingClientRect(),ed=40;dg.sx=e.clientX<br.left+ed?-1:e.clientX>br.right-ed?1:0;dg.sy=e.clientY<br.top+ed?-1:e.clientY>br.bottom-ed?1:0;dg.ex=e.clientX;dg.ey=e.clientY;
+    if((dg.sx||dg.sy)&&!dg.raf){const step=()=>{if(!dg||!(dg.sx||dg.sy)){if(dg)dg.raf=0;return}brd.scrollLeft+=dg.sx*12;brd.scrollTop+=dg.sy*12;place();dg.raf=requestAnimationFrame(step)};dg.raf=requestAnimationFrame(step)}
+    place()});
+  function place(){const x=dg.ex,y=dg.ey;
+    if(dg.col){const gs=[...cols.querySelectorAll('.ocol.ogrp')].filter(c=>c!==dg.el),ref=gs.find(c=>{const r=c.getBoundingClientRect();return x<r.left+r.width/2})||addG;
+      if(dg.el.nextElementSibling!==ref)cols.insertBefore(dg.el,ref);return}
+    const all=[holdCol,...cols.querySelectorAll('.ocol')];let col=null,best=1/0;
+    for(const c of all){const r=c.getBoundingClientRect();const dd=x<r.left?r.left-x:x>r.right?x-r.right:0;if(dd<best){best=dd;col=c}}
+    if(!col)return;const list=col.querySelector('.ocards'),cs=[...list.children].filter(c=>c!==dg.el),ref=cs.find(c=>{const r=c.getBoundingClientRect();return y<r.top+r.height/2})||null;
+    if(dg.el.parentNode!==list||dg.el.nextElementSibling!==ref)list.insertBefore(dg.el,ref)}
+  const end=e=>{if(!dg||e.pointerId!==dg.id)return;const g=dg;dg=null;if(g.raf)cancelAnimationFrame(g.raf);
+    if(g.on){g.g.remove();g.el.classList.remove('odrag');changed()}else if(e.type==='pointerup')edit(g.card)};
+  brd.addEventListener('pointerup',end);brd.addEventListener('pointercancel',end);
+  /* 起動 */
+  const start=dr&&dr.base===base?dr.text:base;
+  if(view==='card')render(outlineGroups(start));else ta.value=start;
+  show(view);
+  dlg.querySelector('.oseg').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.v)};
+  ta.oninput=changed;
+  $('#o-flow').onchange=e=>{const v=FLOWS[e.target.value];if(v!=null)setText(v)};
+  $('#o-cancel').onclick=()=>{clearTimeout(dT);keep();closeModal()};
+  $('#o-ok').onclick=()=>{clearTimeout(dT);if(view==='card')readHold();const t=getText();
+    if(!parseOutline(t).length){toast('構成が空です');return}
+    delete d.outlineDraft;if(hold.length)d.outlineHold=hold.map(c=>({k:c.k,text:c.text}));else delete d.outlineHold;
+    const fl=$('#o-flow').value,norm=x=>outlineFromGroups(outlineGroups(x));
+    if(applyOutline(t)){if(fl&&FLOWS[fl]&&norm(t)===norm(FLOWS[fl])){flowNotes(S.doc.pages,fl);commit()}closeModal()}};
   let prev=null,busy=null;
   (async()=>{const sm=sampleCap&&await sampleCap;if(!sm||!$('#o-ai'))return;$('#o-ai').hidden=false;
     const st=$('#o-st'),btn=$('#o-ask');
-    $('#o-undo').onclick=()=>{if(prev!=null){ta.value=prev;prev=null;$('#o-undo').hidden=true;st.textContent=''}};
+    $('#o-undo').onclick=()=>{if(prev!=null){setText(prev);prev=null;$('#o-undo').hidden=true;st.textContent=''}};
     const ask=async()=>{
       if(busy){busy.abort();return}
-      const q=$('#o-q').value.trim(),cur=ta.value.trim();
-      const prompt=`プレゼン資料の構成と内容を一緒に考えてください。話の流れが自然につながるように組み立ててください。\n\n${OUTLINE_RULES}\n\n# 現在の構成\n${cur||'（まだありません）'}\n\n# 依頼\n${q||'内容を具体的にし、話の流れがよくなるよう改善してください'}\n\n構成テキストだけを出力してください。前置き、説明、コードブロックは不要です。`;
-      prev=ta.value;busy=new AbortController();btn.textContent='停止';st.textContent='考えています…';$('#o-undo').hidden=true;
-      const clean=s=>s.replace(/^```[^\n]*\n?/,'').replace(/\n?```\s*$/,'');
-      try{const r=await sm(prompt,{signal:busy.signal,onText:({text})=>{ta.value=clean(text);st.textContent='書いています…'}});ta.value=clean(r.text).trim();st.textContent=r.truncated?'途中で終わりました':'';$('#o-undo').hidden=false}
+      if(view==='card')readHold();
+      const q=$('#o-q').value.trim(),cur=getText().trim(),hl=hold.map(c=>String(c.text).trim()).filter(Boolean);
+      const prompt=`プレゼン資料の構成と内容を一緒に考えてください。話の流れが自然につながるように組み立ててください。\n\n${OUTLINE_RULES}\n\n# 現在の構成\n${cur||'（まだありません）'}\n\n${hl.length?`# 保留中のアイデア（使えるものは構成に組み込む）\n${hl.join('\n\n')}\n\n`:''}# 依頼\n${q||'内容を具体的にし、話の流れがよくなるよう改善してください'}\n\n構成テキストだけを出力してください。前置き、説明、コードブロックは不要です。`;
+      prev=getText();busy=new AbortController();btn.textContent='停止';st.textContent='考えています…';$('#o-undo').hidden=true;
+      const clean=s=>s.replace(/^```[^\n]*\n?/,'').replace(/\n?```\s*$/,'');let lt=0;
+      let lastS=null;const live=s=>{lastS=s;if(view==='text'){ta.value=s;return}const n=Date.now();if(n-lt>400){lt=n;render(outlineGroups(s))}};
+      try{const r=await sm(prompt,{signal:busy.signal,onText:({text})=>{live(clean(text));st.textContent='書いています…'}});setText(clean(r.text).trim());st.textContent=r.truncated?'途中で終わりました':'';$('#o-undo').hidden=false}
       catch(err){const c=err&&err.code;
-        if(c==='not_granted'){$('#o-ai').hidden=true;ta.value=prev}
-        else if(c==='aborted'||(err&&err.name==='AbortError')){st.textContent='停止しました';$('#o-undo').hidden=false}
-        else{st.textContent=c==='rate_limited'?'混み合っています。少し待ってから送信してください':'うまくいきませんでした（'+(c||err.message||err)+'）';if(err&&err.text)ta.value=clean(err.text);else ta.value=prev;$('#o-undo').hidden=false}}
+        if(c==='not_granted'){$('#o-ai').hidden=true;setText(prev)}
+        else if(c==='aborted'||(err&&err.name==='AbortError')){st.textContent='停止しました';if(lastS!=null)setText(lastS);$('#o-undo').hidden=false}
+        else{st.textContent=c==='rate_limited'?'混み合っています。少し待ってから送信してください':'うまくいきませんでした（'+(c||err.message||err)+'）';setText(err&&err.text?clean(err.text):prev);$('#o-undo').hidden=false}}
       busy=null;btn.textContent='送信';
     };
     btn.onclick=ask;$('#o-q').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();ask()}};
