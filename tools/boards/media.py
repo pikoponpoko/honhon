@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""画像・映像／タイトル／連絡先のスライドを src/boards.json に入れる。
+"""画像・映像／タイトル／連絡先のスライドを src/boards.json に入れる（自分の資料のピンの後ろ）。
 
 python3 tools/boards/media.py src/boards.json
 
@@ -373,12 +373,22 @@ add('右に絵：左に名前と一覧', [
     box(16, 76, 40, 3, f='k')] + rows(16, 90, W - 152, LIST))
 
 
+def roles():
+    """構成のサジェスト用の役割 r と話題 tp（app.html の boardRole / TOPICS）"""
+    for p in PINS:
+        for sl in p['slides']:
+            if p['id'] == 'titles': sl['r'] = 'sec' if sl['n'].startswith('章扉') else 'cover'
+            elif p['id'] == 'contact': sl['r'], sl['tp'] = 'end', '連絡先'
+            elif any(o['t'] == 'v' for o in sl['it']): sl['r'], sl['tp'] = 'video', '映像'
+            else: sl['r'] = 'img' if sum(o['t'] == 'i' for o in sl['it']) == 1 else 'imgs'
+
 def main():
+    roles()
     out = sys.argv[1]
     d = json.load(open(out))
     ids = {p['id'] for p in PINS}
     rest = [p for p in d['pins'] if p['id'] not in ids]
-    k = next((i + 1 for i, p in enumerate(rest) if p['id'] == 'own'), 0)
+    k = max([i + 1 for i, p in enumerate(rest) if p['id'].startswith('own')] or [0])
     d['pins'] = rest[:k] + PINS + rest[k:]
     open(out, 'w').write(json.dumps(d, ensure_ascii=False, separators=(',', ':')))
     for p in PINS: print(p['id'], p['name'], len(p['slides']))

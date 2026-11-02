@@ -24,7 +24,7 @@ python3 tools/boards/flows.py /mnt/project-files/presentation-templates/tools
 
 出力の `/*FLOWS-DUR*/…/*FLOWS-DUR-END*/` と `/*FLOW_NOTES-DUR*/…/*FLOW_NOTES-DUR-END*/` を `src/app.html` の同じ印の範囲と置き換える。
 
-## 自分の企画書（作者のPowerPoint資料のデザイン）
+## 自分の企画書・面談資料・発表資料（作者のPowerPoint資料のデザイン）
 
 `tools/boards/own.py` に元資料の配置（mm）・文字サイズ・書体（游ゴシック）を写してある。中身は差し替え用の文字と空の画像枠だけで、元資料の文章や画像は入れない。
 
@@ -32,7 +32,7 @@ python3 tools/boards/flows.py /mnt/project-files/presentation-templates/tools
 python3 tools/boards/own.py src/boards.json
 ```
 
-`boards.json` の先頭に「自分の企画書」（id `own`）を入れ直す。ボードを作り直したときは convert.py のあとにもう一度実行する。
+`boards.json` の先頭に「自分の企画書」（id `own`）「自分の面談資料」（`own_meet`、地はキーカラーの淡色）「自分の発表資料」（`own_talk`）を入れ直す。各スライドの `r` は役割（cover/sec/text/list/table/img/imgs/person/profile/quote/video/end）。ボードを作り直したときは convert.py のあとにもう一度実行する。
 
 ## 画像・映像／タイトル／連絡先
 
@@ -42,4 +42,4 @@ python3 tools/boards/own.py src/boards.json
 python3 tools/boards/media.py src/boards.json
 ```
 
-「自分の企画書」の後ろに、id `media`（画像・映像）・`titles`（タイトル）・`contact`（連絡先）を入れ直す。ボードを作り直したときは own.py のあとに実行する。スライド名は「短い名前：説明」の形にし、短い名前（6文字以内）が「後ろに追加」のボタン名になる。
+自分の資料（`own`〜）の後ろに、id `media`（画像・映像）・`titles`（タイトル）・`contact`（連絡先）を入れ直す。ボードを作り直したときは own.py のあとに実行する。各スライドに役割 `r`（titles＝cover・章扉はsec、contact＝end、動画＝video、画像1枚＝img、複数＝imgs）を付ける。スライド名は「短い名前：説明」の形にし、短い名前（6文字以内）が「後ろに追加」のボタン名になる。
