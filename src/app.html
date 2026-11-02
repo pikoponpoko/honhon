@@ -111,7 +111,7 @@ aside{background:var(--panel);overflow:auto;min-height:0}
 .page canvas{display:block;width:100%;height:100%}
 .ov{position:absolute;inset:0}
 .pno{font-family:var(--num);font-size:12px;color:var(--sub)}
-.dwr{display:grid;grid-template-columns:84px minmax(0,1fr) 64px 28px;gap:4px;margin-bottom:4px}
+.dwr{display:grid;grid-template-columns:84px minmax(0,1fr) 64px 32px;gap:4px;margin-bottom:4px}
 .dwh{color:var(--sub);font-size:12px;margin:0}
 .tno{max-width:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ined{position:absolute;z-index:2;background:var(--paper);border:1px solid var(--accent);padding:0;margin:0;resize:none;outline:none;overflow:auto;border-radius:0}
@@ -200,7 +200,8 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .nimgs{display:flex;flex-wrap:wrap;gap:8px}
 .nimg{position:relative;width:96px;height:96px;border:1px solid var(--line);background:var(--paper)}
 .nimg img{width:100%;height:100%;object-fit:contain;display:block}
-.nimg button{position:absolute;top:2px;right:2px;padding:0 6px;line-height:18px}
+.nimg button{position:absolute;top:4px;right:4px}
+#nImgAdd{display:flex;align-items:center;justify-content:center;padding:0}
 .nimgs.drop{outline:2px dashed var(--accent);outline-offset:2px}
 .nact{display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between}
 .nempty{color:var(--sub);padding:12px}
@@ -224,16 +225,17 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .lay{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;font-size:12px}
 .lay canvas{width:100%;aspect-ratio:16/9;border:1px solid var(--line);display:block}
 .lays.sugs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.tcdlg{width:min(760px,100%)}
-.tcseg{display:flex}
-.tcseg button{border-radius:0;flex:1}
-.tcseg button:first-child{border-radius:var(--r) 0 0 var(--r)}
-.tcseg button:last-child{border-radius:0 var(--r) var(--r) 0;border-left:0}
-.tcseg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
-.tcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.tcdlg{width:min(800px,100%)}
+.tcseg{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.tcseg button{border:0;border-radius:0;background:transparent;min-height:36px;border-bottom:2px solid transparent}
+.tcseg button:hover{background:var(--hover)}.tcseg button:focus-visible{outline-offset:-2px}
+.tcseg button.on{color:var(--accent);background:transparent;border-bottom-color:var(--accent);outline:0;font-weight:700}
+.tcseg button.on:focus-visible{outline:2px solid var(--focus)}
+.tcg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:820px){.tcg{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tcg .lay canvas{aspect-ratio:auto}
-.tcr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,9em) 64px 28px;gap:4px;margin-bottom:4px}
-.tcr.col{grid-template-columns:7em minmax(0,1fr) 28px}
+.tcr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,9em) 64px 32px;gap:4px;margin-bottom:4px}
+.tcr.col{grid-template-columns:7em minmax(0,1fr) 32px}
 .tcr.tch{color:var(--sub);font-size:12px;margin-bottom:2px}
 .lay.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent);outline:1px solid var(--accent)}
 .ilpat{margin-top:6px}
@@ -251,9 +253,13 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 .aiask input{flex:1}
 #modal{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:20;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 #modal[hidden]{display:none!important}
-.dlg{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-dlg);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto}
-.dlg h2{margin:0;font-size:18px;line-height:1.5}
-.dlg .foot{display:flex;justify-content:flex-end;gap:8px}
+.dlg{background:var(--bg);border:1px solid var(--field);border-radius:var(--r-dlg);padding:24px;width:min(560px,100%);display:flex;flex-direction:column;gap:16px;max-height:calc(100dvh - 32px);overflow:auto}
+.dlg h2{margin:0;font-size:18px;line-height:27px;font-weight:700}
+.dlg.d3{overflow:hidden;gap:0}
+.dlg.d3>h2{flex:none;margin-bottom:16px}
+.dlg.d3>.dlgb{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:16px;margin:0 -24px;padding:2px 24px}
+.dlg.d3>.foot{flex:none;padding-top:16px}
+.dlg .foot{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px}
 .prog{height:6px;background:var(--hover);border-radius:3px;overflow:hidden}
 .prog>div{height:100%;width:0;background:var(--accent)}
 #toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--bg);color:var(--ink);border:1px solid var(--field);padding:12px;border-radius:var(--r);z-index:30;width:min(360px,calc(100vw - 32px))}
@@ -270,8 +276,8 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 @media (pointer:coarse){
   .selbox .h{width:18px;height:18px;margin:-10px 0 0 -10px}
 }
-.dlg.dwdlg{width:min(980px,100%);height:min(88vh,900px);max-height:none;padding:0;gap:0;overflow:hidden}
-.dw-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.dlg.dwdlg{width:min(1120px,100%);height:min(88vh,900px);max-height:none;padding:0;gap:0;overflow:hidden}
+.dw-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 24px;border-bottom:1px solid var(--line)}
 .dw-bar h2{margin:0 8px 0 0}
 .dw-bar .sp{flex:1}
 .dw-bar input[type=number]{width:64px}
@@ -281,7 +287,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 .dw-body.img{grid-template-columns:minmax(0,1fr) minmax(200px,38%)}
 .dw-grid{overflow:auto;min-height:0}
 .dw-grid table{border-collapse:collapse;width:100%;table-layout:fixed}
-.dw-grid th,.dw-grid td{border:1px solid var(--line);padding:0;height:28px}
+.dw-grid th,.dw-grid td{border:1px solid var(--line);padding:0;height:32px}
 .dw-grid thead th{position:sticky;top:0;background:var(--panel);font-size:12px;color:var(--sub);font-weight:700;text-align:left;padding:0 6px;z-index:1}
 .dw-grid tbody th{background:var(--panel);font-family:var(--num);font-weight:400;color:var(--sub);text-align:right;padding:0 6px;cursor:grab;user-select:none;width:52px}
 .dw-grid tbody tr.sel th{background:var(--accent);color:var(--accent-ink)}
@@ -295,22 +301,22 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 .dw-side img{width:100%;height:auto;display:block}
 #dw-imgs{display:flex;flex-direction:column;gap:4px}
 .dw-side .dw-ib{display:flex;justify-content:flex-end;gap:4px;padding:6px;background:var(--panel);border-bottom:1px solid var(--line)}
-.dw-key{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+.dw-key{display:flex;gap:8px;align-items:center;padding:8px 24px;border-bottom:1px solid var(--line)}
 .dw-key input{flex:1}
-.dw-msg{padding:6px 12px;border-bottom:1px solid var(--line)}
+.dw-msg{padding:8px 24px;border-bottom:1px solid var(--line)}
 .dw-msg.err{color:var(--danger)}
-.dw-foot{display:flex;justify-content:flex-end;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}
+.dw-foot{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:16px 24px;border-top:1px solid var(--line)}
 .dw-foot .sp{flex:1}
 @media (max-width:820px){.dw-body.img{grid-template-columns:minmax(0,1fr);grid-template-rows:30% minmax(0,1fr)}.dw-side{border-left:0;border-top:1px solid var(--line);order:-1}}
 #book{position:fixed;inset:0;z-index:15;background:var(--stage);display:grid;grid-template-rows:auto minmax(0,1fr) auto}
-#book .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:6px max(12px,env(safe-area-inset-right,0px)) 6px max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-bottom:1px solid var(--line)}
-#book .bar .sp{flex:1}
+#book .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:48px;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-bottom:1px solid var(--line)}
+#book .bar .sp{flex:1}#book .bar h2{margin:0;font-size:16px;line-height:24px;font-weight:700}
 #bkGut{width:56px}
 #bkStage{overflow:auto;display:flex;padding:16px;touch-action:pan-y pinch-zoom}
 .bk{position:relative;margin:auto;flex:none;cursor:pointer;user-select:none;-webkit-user-select:none}
 .bk canvas{position:absolute;top:0;display:block;background:var(--paper)}
 .bk .spn{position:absolute;top:0}
-#book .nav{display:flex;align-items:center;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line)}
+#book .nav{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-top:1px solid var(--line)}
 #bkRange{flex:1;min-width:0;accent-color:var(--accent)}
 #bkPos{font-family:var(--num);min-width:9em;text-align:center;white-space:nowrap}
 @media (min-width:821px) and (max-width:1199px){
@@ -357,16 +363,18 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 }
 /* ---------- event sales ---------- */
 #sv{position:fixed;inset:0;z-index:15;background:var(--bg);display:flex;flex-direction:column;font-size:14px;overflow:hidden}
-#sv .svh{display:flex;align-items:center;gap:8px;min-height:48px;padding:6px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
-#sv .svh h2{margin:0;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sv .svh{display:flex;align-items:center;gap:8px;min-height:48px;flex:none;padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);overflow-x:auto}
+#sv .svh>*{flex:none}#sv .svh .sp{flex:1 1 0}
+#sv .svh h2{margin:0;font-size:16px;line-height:24px;font-weight:700;flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sv .svh h2:has(+.num){flex:1 1 auto}
 #sv .svh .num{color:var(--sub)}
 #sv .svt{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
 #sv .svt button{flex:1;border:0;border-radius:0;background:transparent;padding:10px 8px;border-bottom:3px solid transparent;white-space:nowrap}
 #sv .svt button.on{color:var(--accent);background:transparent;border-bottom-color:var(--accent);outline:0;font-weight:700}
-#sv .svb{flex:1;overflow:auto;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
-#sv .svb>*{width:100%;max-width:880px;margin-inline:auto}
-#sv button{padding:8px 12px}
-#sv input,#sv select,#sv textarea{padding:7px 8px}
+#sv .svb{flex:1;overflow:auto;padding:24px max(24px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+#sv .svb>*{width:100%;max-width:1072px;margin-inline:auto}
+#sv button{padding:4px 12px}#sv button.i{padding:0}
+
 #sv h3{margin:0;font-size:12px;color:var(--sub);letter-spacing:.02em}
 #sv .num{font-family:var(--num);font-variant-numeric:tabular-nums}
 #sv .danger{color:var(--danger)}
@@ -391,7 +399,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 .sv-cart .f input{width:100%}
 .sv-line{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center}
 .sv-line .q{display:flex;align-items:center;gap:4px}
-#sv .sv-line .q button{padding:2px 10px}
+
 .sv-big{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .sv-big span{color:var(--sub)}
 .sv-big b{font-family:var(--num);font-size:26px}
@@ -430,6 +438,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 .sv-empty{color:var(--sub);padding:12px 0}
 .sv-cart .sv-empty{padding:0}
 @media (max-width:820px){
+  #sv .svh{flex-wrap:wrap;padding-block:2px}
   .sv-pos{grid-template-columns:minmax(0,1fr)}
   .sv-cart{position:sticky;bottom:0}
   .sv-edit{grid-template-columns:minmax(0,1fr) 80px 64px auto}
@@ -555,7 +564,7 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
   </aside>
   <nav id="mbar"><button data-ms="tools">ツール</button><button data-ms="pages">ページ</button><button data-ms="props">属性</button><button data-ms="doc">書類</button></nav>
   <section id="neta" hidden>
-    <div class="tbar"><button class="i" id="nBack" title="書類に戻る" aria-label="書類に戻る"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><h2>ネタ帳</h2><button id="nImp">読み込み</button><button id="nExp">書き出し</button><span class="sp"></span><button id="nAdd" class="primary">ネタを追加</button></div>
+    <div class="tbar"><button class="i" id="nBack" title="書類に戻る" aria-label="書類に戻る"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><h2>ネタ帳</h2><button id="nImp">読み込み</button><button id="nExp">書き出し</button><span class="sp"></span><button id="nAdd">ネタを追加</button></div>
     <div id="nList">
       <div class="nbar"><input type="search" id="nQ" placeholder="検索" aria-label="検索"><div class="ntags" id="nTagF"></div></div>
       <div id="nItems"></div>
@@ -569,6 +578,7 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
 <div id="toast" hidden></div>
 <div id="book" hidden role="dialog" aria-modal="true" aria-label="仮の本">
   <div class="bar">
+    <h2>仮の本</h2>
     <span class="grp"><button id="bkSaddle">中綴じ</button><button id="bkPerfect">無線綴じ</button></span>
     <label class="chk" id="bkGutW">ノド隠れ<input type="number" id="bkGut" value="3" min="0" max="20" step="0.5">mm</label>
     <button id="bkLoad"></button>
@@ -577,7 +587,7 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
     <button id="bkClose">閉じる</button>
   </div>
   <div id="bkStage"><div class="bk" id="bk"></div></div>
-  <div class="nav"><button id="bkLeft" aria-label="左へめくる">◀</button><input type="range" id="bkRange" min="0" value="0" aria-label="ページ位置"><span id="bkPos"></span><button id="bkRight" aria-label="右へめくる">▶</button></div>
+  <div class="nav"><button id="bkLeft" class="i" title="左へめくる" aria-label="左へめくる"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><input type="range" id="bkRange" min="0" value="0" aria-label="ページ位置"><span id="bkPos"></span><button id="bkRight" class="i" title="右へめくる" aria-label="右へめくる"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
 </div>
 <input type="file" id="fBook" accept=".json,application/json" hidden>
 <input type="file" id="fOpen" accept=".json,application/json,.xlsx,.pptx" hidden>
@@ -614,6 +624,8 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const uid=()=>Math.random().toString(36).slice(2,10);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const r1=v=>Math.round(v*10)/10;
+const IC={minus:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg>',plus:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',x:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',up:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',down:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',left:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',right:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>'};
+const ICB='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const S={doc:null,images:{},media:{},page:0,sel:null,tool:'select',zoom:1,s:PX,guides:true,undo:[],redo:[],last:'',pageEls:[],thumbEls:[],dirty:new Set(),tdirty:new Set(),visible:new Set(),drag:null,tab:'props',single:false};
@@ -1548,8 +1560,17 @@ $('#bUndo').onclick=undo;$('#bRedo').onclick=redo;
 function renderAll(){renderProps();renderDoc();runPreflight()}
 
 /* ---------- new / open / save ---------- */
-function modal(html){const m=$('#modal');m.innerHTML=`<div class="dlg" role="dialog" aria-modal="true">${html}</div>`;m.hidden=false;return m.firstChild}
-function closeModal(){$('#modal').hidden=true;$('#modal').innerHTML=''}
+let modalFrom=null;
+function modal(html){const m=$('#modal');if(m.hidden)modalFrom=document.activeElement;m.innerHTML=`<div class="dlg" role="dialog" aria-modal="true">${html}</div>`;m.hidden=false;const d=m.firstChild;
+  /* 見出し／本文（ここだけスクロール）／フッターの3段に分ける */
+  const kids=[...d.children],h=kids[0],f=kids[kids.length-1];
+  if(h&&h.tagName==='H2'&&f&&f.classList.contains('foot')&&kids.length>2){const b=document.createElement('div');b.className='dlgb';b.append(...kids.slice(1,-1));d.insertBefore(b,f);d.classList.add('d3')}
+  if(h&&h.tagName==='H2'){h.id='dlgh';d.setAttribute('aria-labelledby','dlgh')}
+  setTimeout(()=>{if(m.hidden||!d.isConnected||d.contains(document.activeElement))return;const t=d.querySelector('input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled])')||d.querySelector('.foot .primary:not([disabled])')||d.querySelector('button:not([disabled])');if(t)t.focus({preventScroll:true})},0);
+  return d}
+function closeModal(){$('#modal').hidden=true;$('#modal').innerHTML='';const f=modalFrom;modalFrom=null;if(f&&f.isConnected&&f.offsetParent)f.focus({preventScroll:true});else{const b=$('#mDoc .mb');if(b&&b.offsetParent&&document.activeElement===document.body)b.focus({preventScroll:true})}}
+$('#modal').addEventListener('keydown',e=>{if(e.key!=='Tab')return;const d=$('#modal .dlg');if(!d)return;const f=[...d.querySelectorAll('button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.offsetParent);if(!f.length)return;
+  const a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){z.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement===z){a.focus();e.preventDefault()}});
 $('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal'&&!exporting)closeModal()});
 $('#bNew').onclick=()=>{
   const dlg=modal(`<h2>新規書類</h2>
@@ -1559,7 +1580,6 @@ $('#bNew').onclick=()=>{
     <div class="row">
     <span class="n-book">${F('仕上がりサイズ',`<select id="n-size">${Object.keys(SIZES).map(k=>`<option${k==='A5'?' selected':''}>${k}</option>`).join('')}<option value="custom">カスタム（変形）</option></select>`)}</span>
     <span class="n-book">${F('向き','<select id="n-ori"><option value="p">縦長</option><option value="l">横長</option></select>')}</span>
-    <span class="n-book"></span>
     <span class="n-book">${F('幅（mm）','<input type="number" id="n-w" value="148" step="0.5">')}</span><span class="n-book">${F('高さ（mm）','<input type="number" id="n-h" value="210" step="0.5">')}</span>
     <span class="n-book">${F('綴じ','<select id="n-bind"><option value="right">右綴じ（縦書き）</option><option value="left">左綴じ（横書き）</option></select>')}</span>
     <span class="n-book">${F('カラー','<select id="n-col"><option value="mono">モノクロ</option><option value="cmyk">カラー（CMYK）</option></select>')}</span>
@@ -1870,11 +1890,11 @@ function openAutoDaiwari(){
   const d=S.doc;if(d.kind==='cover'){toast('本文の書類で使えます');return}
   const last=S.autoDw||[{kind:'title',title:'扉',pages:1},{kind:'toc',title:'目次',pages:1},{kind:'body',title:'本編',pages:Math.max(4,d.pages.length-4)},{kind:'body',title:'あとがき',pages:1},{kind:'colophon',title:'奥付',pages:1}];
   const rowH=(s)=>`<div class="dwr"><select data-f="kind">${PLAN_KINDS.map(([k,v])=>`<option value="${k}"${k===s.kind?' selected':''}>${v}</option>`).join('')}</select>
-    <input type="text" data-f="title" value="${esc(s.title||'')}"><input type="number" data-f="pages" value="${s.pages}" min="0" step="1"><button data-del aria-label="削除">−</button></div>`;
+    <input type="text" data-f="title" value="${esc(s.title||'')}"><input type="number" data-f="pages" value="${s.pages}" min="0" step="1"><button class="i" data-del title="削除" aria-label="削除">${IC.minus}</button></div>`;
   const dlg=modal(`<h2>自動台割</h2>
     <div class="dwr dwh"><span>種類</span><span>内容</span><span>ページ</span><span></span></div>
     <div id="dw-rows">${last.map(rowH).join('')}</div>
-    <div class="btns"><button id="dw-add">＋ 行を追加</button></div>
+    <div class="btns"><button id="dw-add">行を追加</button></div>
     <div class="row">${F('ページ数の単位',`<select id="dw-unit">${[[4,'4ページ'],[8,'8ページ'],[16,'16ページ（オフセット1折）']].map(([v,l])=>`<option value="${v}"${v===(S.autoDwUnit||4)?' selected':''}>${l}</option>`).join('')}</select>`)}
       <label class="f"><span>合計</span><output id="dw-sum" class="num"></output></label></div>
     <label class="chk"><input type="checkbox" id="dw-odd"${S.autoDwOdd?' checked':''}> 各項目を奇数ページから始める</label>
@@ -2036,15 +2056,15 @@ function openTocCol(kind){
     <label class="chk" id="tc-rep-l" hidden><input type="checkbox" id="tc-rep"> ページ内のほかの要素を消す</label>
     <div class="foot"><button id="tc-cancel">キャンセル</button><button class="primary" id="tc-ok">作成</button></div>`);
   dlg.classList.add('tcdlg');
-  const rowToc=(r)=>`<div class="tcr"><input type="text" data-f="title" value="${esc(r.title)}" aria-label="タイトル"><input type="text" data-f="by" value="${esc(r.by||'')}" aria-label="作者"><select data-f="pid" aria-label="ページ">${d.pages.map((p,i)=>`<option value="${p.id}"${p.id===r.pid?' selected':''}>${esc(nombreText(i))}</option>`).join('')}</select><button data-del aria-label="削除">−</button></div>`;
-  const rowCol=(r)=>`<div class="tcr col"><input type="text" data-f="label" value="${esc(r.label)}" aria-label="項目"><input type="text" data-f="value" value="${esc(r.value)}" aria-label="内容"><button data-del aria-label="削除">−</button></div>`;
+  const rowToc=(r)=>`<div class="tcr"><input type="text" data-f="title" value="${esc(r.title)}" aria-label="タイトル"><input type="text" data-f="by" value="${esc(r.by||'')}" aria-label="作者"><select data-f="pid" aria-label="ページ">${d.pages.map((p,i)=>`<option value="${p.id}"${p.id===r.pid?' selected':''}>${esc(nombreText(i))}</option>`).join('')}</select><button class="i" data-del title="削除" aria-label="削除">${IC.minus}</button></div>`;
+  const rowCol=(r)=>`<div class="tcr col"><input type="text" data-f="label" value="${esc(r.label)}" aria-label="項目"><input type="text" data-f="value" value="${esc(r.value)}" aria-label="内容"><button class="i" data-del title="削除" aria-label="削除">${IC.minus}</button></div>`;
   const body=()=>kind==='toc'
     ?`${F('見出し',`<input type="text" id="tc-head" value="${esc(st.toc.heading)}">`)}
       <div class="tcr tch"><span>タイトル</span><span>作者</span><span>ページ</span><span></span></div><div id="tc-rows">${st.toc.rows.map(rowToc).join('')}</div>
-      <div class="btns"><button id="tc-add">＋ 行を追加</button><button id="tc-auto">台割から読み込む</button></div>`
+      <div class="btns"><button id="tc-add">行を追加</button><button id="tc-auto">台割から読み込む</button></div>`
     :`${F('書名',`<input type="text" id="tc-title" value="${esc(st.colophon.title)}">`)}
       <div class="tcr col tch"><span>項目</span><span>内容</span><span></span></div><div id="tc-rows">${st.colophon.rows.map(rowCol).join('')}</div>
-      <div class="btns"><button id="tc-add">＋ 行を追加</button></div>`;
+      <div class="btns"><button id="tc-add">行を追加</button></div>`;
   const read=()=>{const s=st[kind],rs=[...dlg.querySelectorAll('#tc-rows .tcr')];
     if(kind==='toc'){s.heading=$('#tc-head').value;s.rows=rs.map(r=>({title:r.querySelector('[data-f=title]').value,by:r.querySelector('[data-f=by]').value,pid:r.querySelector('[data-f=pid]').value}))}
     else{s.title=$('#tc-title').value;s.rows=rs.map(r=>({label:r.querySelector('[data-f=label]').value,value:r.querySelector('[data-f=value]').value}))}
@@ -2494,16 +2514,15 @@ function svHome(){const{up,past}=svSorted();
     const meta=[e.venue&&esc(e.venue),e.space&&'スペース '+esc(e.space),isPast?'売上 '+yen(sold):svDue('申込締切',e.applyDue)+svDue('入稿締切',e.submitDue)].filter(Boolean).join('');
     const n=svDays(e.date);
     return`<button class="sv-ev" data-ev="${e.id}"><span class="d">${svYMD(e.date)}</span><span class="n">${esc(e.name||'無題のイベント')}</span><span class="num">${!isPast&&n!=null?(n===0?'今日':'あと'+n+'日'):''}</span>${meta?`<span class="m">${meta}</span>`:''}</button>`};
-  return`<div class="svh"><button data-act="close">← 冊子</button><h2>イベント</h2><button class="primary" data-act="add">追加</button></div>
+  return`<div class="svh"><button class="i" data-act="close" title="書類に戻る" aria-label="書類に戻る">${ICB}</button><h2>イベント</h2><button data-act="backup">バックアップを保存</button><button data-act="restore">バックアップを読み込む</button><span class="sp"></span><button class="primary" data-act="add">追加</button></div>
   <div class="svb">
     <section class="sv-sec"><h3>予定</h3>${up.length?up.map(e=>row(e,false)).join(''):'<div class="sv-empty">なし</div>'}</section>
     ${past.length?`<section class="sv-sec"><h3>終了</h3>${past.map(e=>row(e,true)).join('')}</section>`:''}
-    <div class="sv-row"><button data-act="backup">バックアップを保存</button><button data-act="restore">バックアップを読み込む</button></div>
   </div>`}
 
 function svEvent(ev){const tabs=[['pos','会計'],['sum','集計'],['items','頒布物'],['memo','反省メモ'],['info','日程・情報']];
   const body={pos:svPos,sum:svSum,items:svItems,memo:svMemo,info:svInfo}[SV.tab](ev);
-  return`<div class="svh"><button data-act="home" aria-label="イベント一覧">←</button><h2>${esc(ev.name||'無題のイベント')}</h2><span class="num">${svYMD(ev.date)}</span></div>
+  return`<div class="svh"><button class="i" data-act="home" title="イベント一覧" aria-label="イベント一覧">${ICB}</button><h2>${esc(ev.name||'無題のイベント')}</h2><span class="num">${svYMD(ev.date)}</span></div>
   <nav class="svt">${tabs.map(([k,l])=>`<button data-tab="${k}" class="${SV.tab===k?'on':''}">${l}</button>`).join('')}</nav>
   <div class="svb">${body}</div>`}
 
@@ -2512,7 +2531,7 @@ function svPos(ev){
   if(!ev.items.length)return`<div class="sv-empty">頒布物が登録されていません</div><div class="sv-row"><button class="primary" data-tab="items">頒布物を登録</button></div>`;
   const sold=svSold(ev),total=svCartTotal(ev),paid=SV.paid,change=paid==null?null:paid-total;
   const lines=Object.entries(SV.cart).map(([i,q])=>{const it=ev.items.find(x=>x.id===i);if(!it)return'';
-    return`<div class="sv-line"><span>${esc(it.name||'無題')}</span><span class="q"><button data-dec="${i}" aria-label="減らす">−</button><b class="num">${q}</b><button data-inc="${i}" aria-label="増やす">＋</button></span><span class="num">${yen((+it.price||0)*q)}</span></div>`}).join('');
+    return`<div class="sv-line"><span>${esc(it.name||'無題')}</span><span class="q"><button class="i" data-dec="${i}" title="減らす" aria-label="減らす">${IC.minus}</button><b class="num">${q}</b><button class="i" data-inc="${i}" title="増やす" aria-label="増やす">${IC.plus}</button></span><span class="num">${yen((+it.price||0)*q)}</span></div>`}).join('');
   return`<div class="sv-pos">
     <div class="sv-items">${ev.items.map(it=>{const l=svLeft(ev,it,sold),c=SV.cart[it.id]||0,rest=l==null?null:l-c;
       return`<button class="sv-it" data-inc="${it.id}"><b>${esc(it.name||'無題')}</b><span class="p">${yen(it.price)}</span>${rest==null?'':`<span class="r${rest<=0?' out':''}">残 ${rest}</span>`}${c?`<span class="c">×${c}</span>`:''}</button>`}).join('')}</div>
@@ -2633,8 +2652,8 @@ function netaRenderEdit(){
   el.innerHTML=`<input type="text" id="nTitle" value="${esc(n.title)}" placeholder="タイトル" aria-label="タイトル">
     ${F('タグ',`<input type="text" id="nTagIn" value="${esc(n.tags.join(', '))}" placeholder="カンマ区切り">`)}
     <textarea id="nBody" spellcheck="false" aria-label="本文">${esc(n.body)}</textarea>
-    <div class="sec"><h3>画像</h3><div class="nimgs" id="nImgs">${n.images.map((im,k)=>`<div class="nimg"><img src="${im.src}" alt="${esc(im.name||'')}"><button data-rm="${k}" aria-label="画像を削除">×</button></div>`).join('')}<button id="nImgAdd" class="nimg" aria-label="画像を追加">＋</button></div></div>
-    <div class="nact"><button id="nDel">削除</button><button class="primary" id="nBook">このネタで新規書類</button></div>`;
+    <div class="sec"><h3>画像</h3><div class="nimgs" id="nImgs">${n.images.map((im,k)=>`<div class="nimg"><img src="${im.src}" alt="${esc(im.name||'')}"><button class="i" data-rm="${k}" title="画像を削除" aria-label="画像を削除">${IC.x}</button></div>`).join('')}<button id="nImgAdd" class="nimg" title="画像を追加" aria-label="画像を追加">${IC.plus}</button></div></div>
+    <div class="nact"><button id="nDel" class="danger">削除</button><button class="primary" id="nBook">このネタで新規書類</button></div>`;
   $('#nTitle').oninput=e=>{n.title=e.target.value;netaTouch(n);netaRenderList()};
   $('#nBody').oninput=e=>{n.body=e.target.value;netaTouch(n)};
   $('#nTagIn').onchange=e=>{n.tags=netaTags(e.target.value);e.target.value=n.tags.join(', ');netaTouch(n);netaRenderList()};
@@ -2699,11 +2718,11 @@ function openDaiwari(){
   if(S.doc.kind==='cover'){toast('表紙の書類には台割はありません');return}
   if(!DW.rows||DW.doc!==S.doc||!DW.dirty)resetDraft();
   const dlg=modal(`<div class="dw-bar"><h2>台割</h2><button id="dw-load">ラフを読み込む</button><button id="dw-sheet">記入用紙</button><span class="sp"></span>
-      <button id="dw-ins">行を挿入</button><button id="dw-del">行を削除</button><button id="dw-up" aria-label="上へ移動">↑</button><button id="dw-dn" aria-label="下へ移動">↓</button>
+      <button id="dw-ins">行を挿入</button><button id="dw-del">行を削除</button><button id="dw-up" class="i" title="上へ移動" aria-label="上へ移動">${IC.up}</button><button id="dw-dn" class="i" title="下へ移動" aria-label="下へ移動">${IC.down}</button>
       <label class="grp">ページ数<input type="number" id="dw-n" min="1" max="1000" step="1"></label><span id="dw-cnt" class="dw-cnt"></span></div>
     <div class="dw-key" id="dw-key" hidden><span>画像の解析にはAnthropic APIキーが必要です</span><input type="password" id="dw-keyv" placeholder="sk-ant-..." autocomplete="off"><button id="dw-keyok">保存して解析</button></div>
     <div class="dw-msg" id="dw-msg" hidden></div>
-    <div class="dw-body" id="dw-body"><div class="dw-grid"><table><colgroup><col style="width:52px"><col style="width:108px"><col><col></colgroup>
+    <div class="dw-body" id="dw-body"><div class="dw-grid"><table><colgroup><col style="width:56px"><col style="width:112px"><col style="min-width:200px"><col style="min-width:200px"></colgroup>
       <thead><tr><th>ページ</th><th>種類</th><th>タイトル</th><th>メモ</th></tr></thead><tbody id="dw-tb"></tbody></table></div>
       <div class="dw-side" id="dw-side" hidden><div class="dw-ib"><button id="dw-re">再解析</button><button id="dw-imgx">画像を閉じる</button></div><div id="dw-imgs"></div></div></div>
     <datalist id="dw-kinds">${PLAN_KINDS.map(([,l])=>`<option value="${l}">`).join('')}</datalist>
@@ -3095,7 +3114,7 @@ async function startPres(){
       <div class="pt"><span>ペース</span><b id="pt-pace"></b></div>
       <b id="pt-no" class="num"></b><span id="pt-rec" hidden>● 録画中</span>
       <span class="sp"></span>
-      <div class="grp"><button id="p-prev" aria-label="前へ">◀</button><button id="p-next" aria-label="次へ">▶</button></div>
+      <div class="grp"><button id="p-prev" class="i" title="前へ" aria-label="前へ">${IC.left}</button><button id="p-next" class="i" title="次へ" aria-label="次へ">${IC.right}</button></div>
       <button id="p-pause">一時停止</button><button id="p-only">スライドのみ</button><button id="p-win">別ウィンドウ</button><button id="p-fs">全画面</button><button id="p-end" class="primary">終了</button>
     </div>
     <div class="pmain"><div class="pcur" id="p-cur"><canvas></canvas></div>
@@ -4787,17 +4806,18 @@ window.__thinbook={S,exportPPTX,importPPTX,parseOutline,applyOutline,createSlide
 
 <!-- ---------- Excel: open an existing .xlsx, edit cells, save without touching anything else ---------- -->
 <style>
-#xl{position:fixed;inset:0;z-index:10;background:var(--bg);display:grid;grid-template-rows:44px auto minmax(0,1fr) auto}
-#xl>header{display:flex;align-items:center;gap:12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);min-width:0}
-#xlName{color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
-.xlbar{display:grid;grid-template-columns:72px minmax(0,1fr);gap:6px;padding:6px max(12px,env(safe-area-inset-right,0px)) 6px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+#xl{position:fixed;inset:0;z-index:13;background:var(--bg);display:grid;grid-template-rows:48px 40px minmax(0,1fr) auto}
+#xl>header{display:flex;flex-direction:row;align-items:center;gap:8px;overflow-x:auto;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);min-width:0}
+#xl>header>*{flex:none}#xl>header h2{margin:0;font-size:16px;line-height:24px;font-weight:700}
+#xl>header>#xlName{color:var(--sub);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
+.xlbar{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:center;padding:4px max(12px,env(safe-area-inset-right,0px)) 6px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--panel)}
 #xlRef{font-family:var(--num);text-align:center}
-#xlIn{font-family:var(--ui);resize:none;height:26px;line-height:18px;white-space:pre;overflow:hidden}
+#xlIn{font-family:var(--ui);resize:none;height:32px;min-height:32px;line-height:22px;white-space:pre;overflow:hidden}
 #xlCell{position:absolute;z-index:0;margin:0;padding:0 4px;border:0;border-radius:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:transparent;font-family:var(--ui);font-size:13px;line-height:20px;white-space:pre;outline:none}
 #xlCell.on{background:var(--bg);color:var(--ink);caret-color:auto;outline:2px solid var(--accent);outline-offset:-2px;z-index:2}
 #xlGrid{overflow:auto;position:relative;outline:none}
 #xlGrid:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-#xlEmpty{display:flex;align-items:center;justify-content:center;position:absolute;inset:0}
+#xlEmpty{display:flex;align-items:flex-start;justify-content:center;position:absolute;inset:0;padding-top:64px}
 .xt{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px}
 .xt td,.xt th{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0 4px;height:21px;white-space:nowrap;overflow:hidden;text-overflow:clip;vertical-align:bottom;max-width:0}
 .xt th{position:sticky;background:var(--panel);color:var(--sub);font-weight:400;font-family:var(--num);font-size:12px;text-align:center;vertical-align:middle;z-index:1}
@@ -4815,15 +4835,14 @@ window.__thinbook={S,exportPPTX,importPPTX,parseOutline,applyOutline,createSlide
 #xlTabs button{border:0;border-right:1px solid var(--line);border-radius:0;background:transparent;padding:6px 14px;white-space:nowrap;border-top:2px solid transparent}
 #xlTabs button.on{outline:0;background:var(--bg);color:var(--ink);border-top-color:var(--accent);font-weight:700}
 #xlTabs button.dirty::after{content:"●";color:var(--accent);margin-left:4px;font-size:9px}
-@media (max-width:820px){#xl>header{flex-wrap:wrap;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}#xl{grid-template-rows:auto auto minmax(0,1fr) auto}#xlName{flex-basis:100%;order:9}}
+@media (max-width:820px){#xl{grid-template-rows:auto auto minmax(0,1fr) auto}#xl>header{flex-wrap:wrap;padding-block:2px}#xl>header>#xlName{display:none}}
 </style>
 <div id="xl" hidden>
   <header>
-    <button id="xlBack">← 冊子</button>
-    <div class="grp"><button id="xlOpen">開く</button><button id="xlSave" class="primary" disabled>保存</button></div>
-    <button id="xlIns" disabled>書類に差し込む</button>
-    <div class="grp"><button id="xlUndo" disabled aria-label="取り消し" title="取り消し Ctrl+Z">↶</button><button id="xlRedo" disabled aria-label="やり直し" title="やり直し Ctrl+Shift+Z">↷</button></div>
-    <span id="xlName"></span>
+    <button id="xlBack" class="i" title="書類に戻る" aria-label="書類に戻る"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><h2>Excel</h2>
+    <button id="xlOpen">開く</button><button id="xlIns" disabled>書類に差し込む</button>
+    <div class="grp"><button id="xlUndo" class="i" disabled aria-label="取り消し" title="取り消し Ctrl+Z"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button id="xlRedo" class="i" disabled aria-label="やり直し" title="やり直し Ctrl+Shift+Z"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></div>
+    <span id="xlName"></span><button id="xlSave" class="primary" disabled>保存</button>
   </header>
   <div class="xlbar"><input id="xlRef" readonly aria-label="セル"><textarea id="xlIn" rows="1" aria-label="値" spellcheck="false" disabled></textarea></div>
   <div id="xlGrid" tabindex="-1"><div id="xlTbl"><div id="xlEmpty"><button id="xlOpen2" class="primary">.xlsx を開く</button></div></div><textarea id="xlCell" rows="1" aria-label="セル入力" spellcheck="false" hidden></textarea></div>
