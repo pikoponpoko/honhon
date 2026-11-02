@@ -1,4 +1,4 @@
-<title>Thinbook</title>
+<title>HonHon</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -609,7 +609,7 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
 <div id="app">
   <header>
     <div class="hr hr1">
-      <div class="mnu" id="mApp"><button class="mb logo" aria-haspopup="true" aria-expanded="false" aria-label="Thinbook"><span class="lt">Thinbook</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><svg class="ic hm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="mnu" id="mApp"><button class="mb logo" aria-haspopup="true" aria-expanded="false" aria-label="HonHon"><span class="lt">HonHon</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><svg class="ic hm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         <div class="mp" role="menu" hidden><div class="mq"><button id="bNew2">新規冊子</button><button id="bNewS2">新規スライド</button><button id="bNewC2">新規名刺</button><button id="bNewD2">新規DM</button><button id="bOpen2">開く</button><button id="bDbx2" hidden>Dropbox</button></div><button id="bNeta">ネタ帳</button><button id="bSales">頒布</button><button id="bXl">Excel</button><div class="mqd"></div></div></div>
       <div class="grp gfile"><div class="mnu" id="mNew"><button class="mb" aria-haspopup="true" aria-expanded="false">新規<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="mp" role="menu" hidden><button id="bNew">冊子</button><button id="bNewS">スライド</button><button id="bNewC">名刺</button><button id="bNewD">DM</button></div></div><button id="bOpen">開く</button><button id="bSave">保存</button><button id="bDbx" hidden>Dropbox</button></div>
       <span id="docInfo"></span>
@@ -769,7 +769,7 @@ function imageItem(o){return Object.assign({id:uid(),type:'image',x:0,y:0,w:40,h
 function sampleDoc(){
   const d=newDoc({kind:'body',name:'サンプル',w:148,h:210,binding:'right',color:'mono',pages:8});
   S.doc=d;
-  const t='縦書き本文の組版確認用テキストです。句読点「、」「。」の位置、二重かぎ括弧『』、長音ー、三点リーダ……、ダッシュ――の向きを確認できます。\n数字は2桁まで縦中横になります（例：12月31日）。英単語 Thinbook は90度回転して組まれます。\n行頭に句読点が来る場合はぶら下げ、閉じ括弧は追い出しで処理します。';
+  const t='縦書き本文の組版確認用テキストです。句読点「、」「。」の位置、二重かぎ括弧『』、長音ー、三点リーダ……、ダッシュ――の向きを確認できます。\n数字は2桁まで縦中横になります（例：12月31日）。英単語 HonHon は90度回転して組まれます。\n行頭に句読点が来る場合はぶら下げ、閉じ括弧は追い出しで処理します。';
   const m0=margBox(0);
   d.pages[0].items.push(textItem({x:m0.x+m0.w-30,y:m0.y+20,w:24,h:120,text:'サンプル本',font:'Shippori Mincho',weight:700,size:28,leading:120,track:100}));
   const m1=margBox(1);
@@ -1210,11 +1210,11 @@ function projectData(file){const used=new Set(),mu=new Set();[...SL(),...MS()].f
   const images={};for(const id of used){const im=S.images[id];if(!im)continue;
     if(fromPptx&&im.part)images[id]={part:im.part,w:im.w,h:im.h,name:im.name||''};
     else images[id]=im.blob?{blob:im.blob,w:im.w,h:im.h,name:im.name||''}:{src:im.src,w:im.w,h:im.h,name:im.name||''}}
-  const o={app:'thinbook',version:1,doc:S.mv?{...S.doc,pages:S.mv.pages}:S.doc,images};if(S.doc.pptx&&S.pptxSrc instanceof Uint8Array&&file)o.pptxSrc=u8b64(S.pptxSrc);
+  const o={app:'honhon',version:1,doc:S.mv?{...S.doc,pages:S.mv.pages}:S.doc,images};if(S.doc.pptx&&S.pptxSrc instanceof Uint8Array&&file)o.pptxSrc=u8b64(S.pptxSrc);
   o.media={};for(const id of mu){const m=S.media[id];if(!m)continue;o.media[id]=fromPptx&&m.part?{part:m.part,name:m.name,type:m.type}:{blob:m.blob,name:m.name,type:m.type}}return o}
 function autosave(){kvSet('project',projectData())}
 async function loadProject(p){
-  if(!p||!['thinbook','kumi'].includes(p.app)||!p.doc)throw new Error('Thinbookのプロジェクトファイルではありません');
+  if(!p||!['honhon','thinbook','kumi'].includes(p.app)||!p.doc)throw new Error('HonHonのプロジェクトファイルではありません');
   S.media={};for(const [id,m] of Object.entries(p.media||{})){const blob=m.blob||(m.data?new Blob([b64u8(m.data)],{type:m.type}):null);if(blob)S.media[id]={blob,name:m.name,type:m.type}}
   S.images={};S.pptxSrc=p.pptxSrc?(typeof p.pptxSrc==='string'?b64u8(p.pptxSrc):new Uint8Array(p.pptxSrc)):null;
   if(!S.pptxSrc&&p.doc.pptx){const r=await kvGet('pptxsrc');if(r&&r.blob&&r.key===p.doc.pptx.key)S.pptxSrc=r.blob}
@@ -1852,11 +1852,11 @@ $('#bOpen').onclick=()=>$('#fOpen').click();
 $('#fOpen').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(/\.xlsx$/i.test(f.name)){XL.openFile(f);return}try{if(/\.pptx$/i.test(f.name))await importPPTX(f);else await loadProject(JSON.parse(await f.text()));toast('開きました：'+f.name)}catch(err){toast(err.message||'開けませんでした')}});
 async function saveProject(){if(S.doc.pptx&&S.pptxSrc){try{toast('保存中…');await saveFile(S.doc.pptx.name,await exportPPTX())}catch(e){toast('保存できませんでした：'+(e.message||e))}return}
   const pd=projectData(true);for(const m of Object.values(pd.media)){m.data=u8b64(new Uint8Array(await m.blob.arrayBuffer()));delete m.blob}
-  for(const m of Object.values(pd.images))if(m.blob){m.src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(m.blob)});delete m.blob}const j=JSON.stringify(pd);saveFile((S.doc.name||'無題')+'.thinbook.json',new Blob([j],{type:'application/json'}))}
+  for(const m of Object.values(pd.images))if(m.blob){m.src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(m.blob)});delete m.blob}const j=JSON.stringify(pd);saveFile((S.doc.name||'無題')+'.honhon.json',new Blob([j],{type:'application/json'}))}
 $('#bSave').onclick=saveProject;
 
 /* ---------- Dropbox backup ---------- */
-const DBX='Dropbox',DROOT='/Thinbook',CH=600000;
+const DBX='Dropbox',DROOT='/HonHon',DOLD='/Thinbook',CH=600000;
 const DB={mcp:null,busy:false,folders:new Set(),imgs:null,lastJ:null,lastAt:0,auto:false,timer:0};
 try{if(window.claude&&window.claude.use)window.claude.use('mcp').then(m=>{if(!m)return;DB.mcp=m;$('#bDbx').hidden=false;$('#bDbx2').hidden=false;
   kvGet('dbxAuto').then(v=>{DB.auto=!!v;dbxSchedule()})}).catch(()=>{})}catch(e){}
@@ -1894,22 +1894,22 @@ async function dbxBackup(progress){
     for(let i=0;i<parts.length;i++){const nm=`${id}.${i+1}.txt`;if(DB.imgs.has(nm))continue;
       progress&&progress(`画像 ${k+1}/${used.size}`);await dbxCall('create_file',{path:DROOT+'/images/'+nm,content:parts[i]});DB.imgs.add(nm)}
     k++}
-  const j=JSON.stringify({app:'thinbook',version:1,store:'dropbox',doc:S.doc,images}),parts=chunks(j),t=Date.now(),base=`${stamp(t)}_${safeName(S.doc.name)}`;
+  const j=JSON.stringify({app:'honhon',version:1,store:'dropbox',doc:S.doc,images}),parts=chunks(j),t=Date.now(),base=`${stamp(t)}_${safeName(S.doc.name)}`;
   for(let i=0;i<parts.length;i++){progress&&progress('書類');await dbxCall('create_file',{path:`${dir}/${base}.${i+1}-${parts.length}.txt`,content:parts[i]})}
   DB.lastJ=S.last;DB.lastAt=t;return base}
 async function dbxBackups(){const out=[];
-  for(const f of await dbxList(DROOT+'/backups')){if(f.object_type==='file')continue;
-    for(const e of await dbxList(DROOT+'/backups/'+f.name)){const m=/^(\d{8}-\d{6})_(.*)\.1-(\d+)\.txt$/.exec(e.name);
-      if(m)out.push({docId:f.name,stamp:m[1],name:m[2],n:+m[3],dir:DROOT+'/backups/'+f.name})}}
+  for(const root of [DROOT,DOLD])for(const f of await dbxList(root+'/backups')){if(f.object_type==='file')continue;
+    for(const e of await dbxList(root+'/backups/'+f.name)){const m=/^(\d{8}-\d{6})_(.*)\.1-(\d+)\.txt$/.exec(e.name);
+      if(m)out.push({docId:f.name,stamp:m[1],name:m[2],n:+m[3],root,dir:root+'/backups/'+f.name})}}
   return out.sort((a,b)=>a.stamp<b.stamp?1:-1)}
 async function dbxRestore(b,progress){let j='';
   for(let i=1;i<=b.n;i++){progress&&progress('書類');j+=await dbxText(`${b.dir}/${b.stamp}_${b.name}.${i}-${b.n}.txt`)}
   const p=JSON.parse(j),images={};let k=0;const ids=Object.keys(p.images||{});
   for(const id of ids){const m=p.images[id];let src='';progress&&progress(`画像 ${++k}/${ids.length}`);
-    for(let i=1;i<=m.parts;i++)src+=await dbxText(`${DROOT}/images/${id}.${i}.txt`);
+    for(let i=1;i<=m.parts;i++)src+=await dbxText(`${b.root||DROOT}/images/${id}.${i}.txt`);
     src=src.replace(/\s+/g,'');if(m.len&&src.length!==m.len)throw new Error('画像データが壊れています：'+(m.name||id));
     images[id]={src,w:m.w,h:m.h,name:m.name}}
-  await loadProject({app:'thinbook',version:1,doc:p.doc,images});DB.lastJ=S.last}
+  await loadProject({app:'honhon',version:1,doc:p.doc,images});DB.lastJ=S.last}
 function dbxSchedule(){clearInterval(DB.timer);if(!DB.auto||!DB.mcp)return;
   DB.timer=setInterval(async()=>{if(DB.busy||exporting||!S.doc||S.last===DB.lastJ)return;DB.busy=true;
     try{await dbxBackup()}catch(e){DB.auto=false;dbxSchedule();toast('自動バックアップを停止しました：'+dbxErr(e))}finally{DB.busy=false}},10*60*1000)}
@@ -2045,7 +2045,7 @@ function pdfFrom(pages,title){
   obj(1,'<< /Type /Catalog /Pages 2 0 R /OutputIntents [3 0 R] >>');
   obj(2,`<< /Type /Pages /Kids [${kids.map(x=>x+' 0 R').join(' ')}] /Count ${kids.length} >>`);
   obj(3,'<< /Type /OutputIntent /S /GTS_PDFX /OutputConditionIdentifier (JC200103) /OutputCondition (Japan Color 2001 Coated) /RegistryName (http://www.color.org) /Info (Japan Color 2001 Coated) >>');
-  obj(4,`<< /Title ${pdfStr(title||'無題')} /Creator (Thinbook) /Producer (Thinbook) /CreationDate (${dt}) /ModDate (${dt}) /GTS_PDFXVersion (PDF/X-1:2001) /GTS_PDFXConformance (PDF/X-1a:2001) /Trapped /False >>`);
+  obj(4,`<< /Title ${pdfStr(title||'無題')} /Creator (HonHon) /Producer (HonHon) /CreationDate (${dt}) /ModDate (${dt}) /GTS_PDFXVersion (PDF/X-1:2001) /GTS_PDFXConformance (PDF/X-1a:2001) /Trapped /False >>`);
   const xref=len,N=id;let x=`xref\n0 ${N}\n0000000000 65535 f \n`;for(let j=1;j<N;j++)x+=String(offs[j]).padStart(10,'0')+' 00000 n \n';
   const fid=[...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('');
   push(x+`trailer\n<< /Size ${N} /Root 1 0 R /Info 4 0 R /ID [<${fid}> <${fid}>] >>\nstartxref\n${xref}\n%%EOF\n`);
@@ -2463,7 +2463,7 @@ function jpegPDF(pages,dup){
   const vp=`/ViewerPreferences << /PrintScaling /None /Duplex /${dup==='short'?'DuplexFlipShortEdge':dup==='long'?'DuplexFlipLongEdge':'Simplex'} >>`;
   obj(1,`<< /Type /Catalog /Pages 2 0 R ${vp} >>`);
   obj(2,`<< /Type /Pages /Kids [${kids.map(x=>x+' 0 R').join(' ')}] /Count ${kids.length} >>`);
-  obj(3,`<< /Title ${pdfStr(S.doc.name||'無題')} /Creator (Thinbook) /Producer (Thinbook) >>`);
+  obj(3,`<< /Title ${pdfStr(S.doc.name||'無題')} /Creator (HonHon) /Producer (HonHon) >>`);
   const xref=len,N=id;let x=`xref\n0 ${N}\n0000000000 65535 f \n`;for(let j=1;j<N;j++)x+=String(offs[j]).padStart(10,'0')+' 00000 n \n';
   push(x+`trailer\n<< /Size ${N} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
   return new Blob(parts,{type:'application/pdf'});
@@ -2860,7 +2860,7 @@ $('#sv').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
     case'csv':svCSV(ev);break;
     case'additem':ev.items.push({id:uid(),name:'',price:500,stock:''});svSave();svRender();{const r=$$('#sv .sv-edit[data-item] input[data-f="name"]');r[r.length-1]?.focus()}break;
     case'delev':if(confirm(`「${ev.name||'無題のイベント'}」を削除しますか？販売記録も削除されます。`)){SV.data.events=SV.data.events.filter(x=>x!==ev);SV.ev=null;svSave(true);svRender()}break;
-    case'backup':saveFile(`thinbook_イベント_${svToday()}.json`,new Blob([JSON.stringify({app:'thinbook-sales',version:1,...SV.data})],{type:'application/json'}));break;
+    case'backup':saveFile(`honhon_イベント_${svToday()}.json`,new Blob([JSON.stringify({app:'honhon-sales',version:1,...SV.data})],{type:'application/json'}));break;
     case'restore':$('#fSales').click();break;
   }});
 $('#sv').addEventListener('input',e=>{const t=e.target,ev=svCur();if(!ev)return;
@@ -2873,7 +2873,7 @@ $('#sv').addEventListener('input',e=>{const t=e.target,ev=svCur();if(!ev)return;
     it[t.dataset.f]=t.dataset.f==='name'?t.value:t.value===''?(t.dataset.f==='stock'?'':0):+t.value;svSave()}});
 $('#sv').addEventListener('change',e=>{if(e.target.dataset.ef==='date')svRender()});
 $('#fSales').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const j=JSON.parse(await f.text());if(j.app!=='thinbook-sales'||!Array.isArray(j.events))throw new Error('イベントのバックアップファイルではありません');
+  try{const j=JSON.parse(await f.text());if(!['honhon-sales','thinbook-sales'].includes(j.app)||!Array.isArray(j.events))throw new Error('イベントのバックアップファイルではありません');
     const have=new Set(SV.data.events.map(x=>x.id));let n=0;for(const ev of j.events)if(!have.has(ev.id)){SV.data.events.push(ev);n++}
     svSave(true);svRender();toast(n+'件のイベントを読み込みました')}catch(err){toast(err.message||'読み込めませんでした')}});
 window.addEventListener('keydown',e=>{if($('#sv').hidden)return;e.stopPropagation();
@@ -2947,10 +2947,10 @@ $('#nEdit').addEventListener('dragleave',e=>{if(!e.currentTarget.contains(e.rela
 $('#nEdit').addEventListener('drop',e=>{e.preventDefault();const g=$('#nImgs');if(g)g.classList.remove('drop');netaAddImages([...e.dataTransfer.files])});
 $('#nEdit').addEventListener('paste',e=>{const fs=[...(e.clipboardData&&e.clipboardData.files)||[]].filter(f=>f.type.startsWith('image/'));if(fs.length){e.preventDefault();netaAddImages(fs)}});
 document.addEventListener('keydown',e=>{if(N8.open){if(e.key==='Escape'&&!$('#modal').hidden)return;e.stopImmediatePropagation()}},true);
-$('#nExp').onclick=()=>saveFile('ネタ帳.thinbook-neta.json',new Blob([JSON.stringify({app:'thinbook-neta',version:1,notes:N8.list})],{type:'application/json'}));
+$('#nExp').onclick=()=>saveFile('ネタ帳.honhon-neta.json',new Blob([JSON.stringify({app:'honhon-neta',version:1,notes:N8.list})],{type:'application/json'}));
 $('#nImp').onclick=()=>$('#fNeta').click();
 $('#fNeta').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const p=JSON.parse(await f.text());if(!p||p.app!=='thinbook-neta'||!Array.isArray(p.notes))throw new Error('ネタ帳のファイルではありません');
+  try{const p=JSON.parse(await f.text());if(!p||!['honhon-neta','thinbook-neta'].includes(p.app)||!Array.isArray(p.notes))throw new Error('ネタ帳のファイルではありません');
     const have=new Set(N8.list.map(n=>n.id));let k=0;for(const n of p.notes){if(!n||!n.id||have.has(n.id))continue;N8.list.push({title:'',body:'',tags:[],images:[],created:Date.now(),updated:Date.now(),...n});k++}
     N8.list.sort((a,b)=>b.updated-a.updated);netaSave();netaRenderList();netaRenderEdit();toast(k+'件読み込みました')}
   catch(err){toast(err.message||'読み込めませんでした')}});
@@ -3068,7 +3068,7 @@ const DW_PROMPT=`画像は冊子（同人誌など）の台割ラフで、紙に
 - total は総ページ数。書かれていなければ最後のページ番号。
 - ページ番号がない場合は、枠の並び順（右綴じなら右から左、上から下）で数える。
 - 読めない文字は推測せず、読めた部分だけを入れる。
-専用記入用紙（上部に「Thinbook 台割」と印字、四隅に黒い四角、ページごとの枠）の場合:
+専用記入用紙（上部に「HonHon 台割」と印字、四隅に黒い四角、ページごとの枠）の場合:
 - 各枠の左上の太字の数字が印字済みのページ番号。これをそのまま from/to に使う。
 - 種類は枠内のチェックボックス（本文・扉・目次・イラスト・奥付・白）のうち、レ点・×・塗りつぶし・丸囲みのあるもの。何も印がなく、タイトルもメモも空なら、その枠は出力しない。
 - 「タイトル」欄の手書きを title、「メモ」欄の手書きを note にする。「〃」「同上」や前の枠から続く矢印・線は、前のページと同じ種類・タイトルを意味する。
@@ -3136,7 +3136,7 @@ function scaffold(i){
 }
 const SHEET_KINDS=[['本文','扉','目次'],['イラスト','奥付','白']];
 async function printSheet(){
-  await document.fonts.load('700 20px "BIZ UDPGothic"','Thinbook台割書名総ページ数本文扉目次イラスト奥付白タイトルメモ〃＝前のページと同じ0123456789/').catch(()=>{});
+  await document.fonts.load('700 20px "BIZ UDPGothic"','HonHon台割書名総ページ数本文扉目次イラスト奥付白タイトルメモ〃＝前のページと同じ0123456789/').catch(()=>{});
   const per=32,n=Math.max(per,Math.ceil(((DW.rows&&DW.rows.length)||0)/per)*per),sheets=n/per,st=S.doc.nombre.start;
   const W=210,H=297,k=200/25.4,cv=document.createElement('canvas');cv.width=Math.round(W*k);cv.height=Math.round(H*k);
   const x=cv.getContext('2d'),out=[],F=(w,sz)=>{x.font=`${w} ${sz}px "BIZ UDPGothic", sans-serif`};
@@ -3145,7 +3145,7 @@ async function printSheet(){
     x.setTransform(1,0,0,1,0,0);x.fillStyle='#ffffff';x.fillRect(0,0,cv.width,cv.height);x.setTransform(k,0,0,k,0,0);
     x.fillStyle='#000000';x.strokeStyle='#000000';x.textBaseline='middle';x.textAlign='left';
     for(const[fx,fy]of[[6,6],[W-14,6],[6,H-14],[W-14,H-14]])x.fillRect(fx,fy,8,8);
-    F(700,5);x.fillText('Thinbook 台割',18,10);F(400,3);x.fillText(`${sh+1} / ${sheets}`,62,10);
+    F(700,5);x.fillText('HonHon 台割',18,10);F(400,3);x.fillText(`${sh+1} / ${sheets}`,62,10);
     x.textAlign='right';F(400,2.8);x.fillText('〃＝前のページと同じ',W-18,10);x.textAlign='left';
     F(400,3.2);x.fillText('書名',18,21);line(28,23.5,130,23.5,0.3);
     x.fillText('総ページ数',140,21);x.lineWidth=0.3;x.strokeRect(158,17,24,7);
@@ -3253,7 +3253,7 @@ $('#bkLeft').onclick=()=>bkSide('L');$('#bkRight').onclick=()=>bkSide('R');
 $('#bkRange').oninput=e=>bkJump(+e.target.value);
 $('#bkLoad').onclick=()=>$('#fBook').click();
 $('#fBook').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-  try{const p=JSON.parse(await f.text());if(!p||!['thinbook','kumi'].includes(p.app)||!p.doc)throw new Error('Thinbookのプロジェクトファイルではありません');
+  try{const p=JSON.parse(await f.text());if(!p||!['honhon','thinbook','kumi'].includes(p.app)||!p.doc)throw new Error('HonHonのプロジェクトファイルではありません');
     const want=S.doc.kind==='cover'?'body':'cover';
     if(p.doc.kind!==want)throw new Error(want==='cover'?'表紙のファイルを選んでください':'本文のファイルを選んでください');
     const images={};
@@ -5082,10 +5082,10 @@ function nombreItem(i){const d=S.doc,nb=d.nombre;if(d.kind!=='body'||nb.mode==='
 const NOTE_SP=(paras,pr='')=>`<p:sp><p:nvSpPr><p:cNvPr id="2" name="ノート"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr>${pr}</p:spPr><p:txBody><a:bodyPr/><a:lstStyle/>${paras}</p:txBody></p:sp>`;
 function themeXml(T){
   const c=v=>`<a:srgbClr val="${v.replace('#','').toUpperCase()}"/>`,ph='<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>';
-  return XH+`<a:theme xmlns:a="${NA}" name="Thinbook"><a:themeElements><a:clrScheme name="Thinbook"><a:dk1>${c(T.ink)}</a:dk1><a:lt1>${c(T.bg)}</a:lt1><a:dk2>${c(T.ink)}</a:dk2><a:lt2>${c(T.sub)}</a:lt2>`+
+  return XH+`<a:theme xmlns:a="${NA}" name="HonHon"><a:themeElements><a:clrScheme name="HonHon"><a:dk1>${c(T.ink)}</a:dk1><a:lt1>${c(T.bg)}</a:lt1><a:dk2>${c(T.ink)}</a:dk2><a:lt2>${c(T.sub)}</a:lt2>`+
   `<a:accent1>${c(T.accent)}</a:accent1><a:accent2>${c(T.sub)}</a:accent2><a:accent3>${c(T.ink)}</a:accent3><a:accent4>${c(T.accent)}</a:accent4><a:accent5>${c(T.sub)}</a:accent5><a:accent6>${c(T.ink)}</a:accent6><a:hlink>${c(T.accent)}</a:hlink><a:folHlink>${c(T.sub)}</a:folHlink></a:clrScheme>`+
-  `<a:fontScheme name="Thinbook"><a:majorFont><a:latin typeface="${X(T.head)}"/><a:ea typeface="${X(T.head)}"/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="${X(T.body)}"/><a:ea typeface="${X(T.body)}"/><a:cs typeface=""/></a:minorFont></a:fontScheme>`+
-  `<a:fmtScheme name="Thinbook"><a:fillStyleLst>${ph}${ph}${ph}</a:fillStyleLst><a:lnStyleLst>${`<a:ln w="6350">${ph}</a:ln>`.repeat(3)}</a:lnStyleLst><a:effectStyleLst>${'<a:effectStyle><a:effectLst/></a:effectStyle>'.repeat(3)}</a:effectStyleLst><a:bgFillStyleLst>${ph}${ph}${ph}</a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`;
+  `<a:fontScheme name="HonHon"><a:majorFont><a:latin typeface="${X(T.head)}"/><a:ea typeface="${X(T.head)}"/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="${X(T.body)}"/><a:ea typeface="${X(T.body)}"/><a:cs typeface=""/></a:minorFont></a:fontScheme>`+
+  `<a:fmtScheme name="HonHon"><a:fillStyleLst>${ph}${ph}${ph}</a:fillStyleLst><a:lnStyleLst>${`<a:ln w="6350">${ph}</a:ln>`.repeat(3)}</a:lnStyleLst><a:effectStyleLst>${'<a:effectStyle><a:effectLst/></a:effectStyle>'.repeat(3)}</a:effectStyleLst><a:bgFillStyleLst>${ph}${ph}${ph}</a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>`;
 }
 async function exportPPTX(){
   if(S.mv)exitMaster();
@@ -5135,8 +5135,8 @@ async function exportPPTX(){
       ov('ppt/presProps.xml',CT+'presentationml.presProps+xml')+ov('ppt/viewProps.xml',CT+'presentationml.viewProps+xml')+ov('ppt/tableStyles.xml',CT+'presentationml.tableStyles+xml')+
       ov('docProps/core.xml','application/vnd.openxmlformats-package.core-properties+xml')+ov('docProps/app.xml',CT+'extended-properties+xml')+'</Types>'},
     {name:'_rels/.rels',data:relsXml([rel('rId1','officeDocument','ppt/presentation.xml'),rel('rId2','http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties','docProps/core.xml'),rel('rId3','extended-properties','docProps/app.xml')])},
-    {name:'docProps/core.xml',data:XH+`<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${X(d.name||'')}</dc:title><dc:creator>Thinbook</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`},
-    {name:'docProps/app.xml',data:XH+`<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Thinbook</Application><Slides>${n}</Slides></Properties>`},
+    {name:'docProps/core.xml',data:XH+`<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${X(d.name||'')}</dc:title><dc:creator>HonHon</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`},
+    {name:'docProps/app.xml',data:XH+`<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>HonHon</Application><Slides>${n}</Slides></Properties>`},
     {name:'ppt/presentation.xml',data:XH+`<p:presentation ${NS} saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>${hasNotes?`<p:notesMasterIdLst><p:notesMasterId r:id="rId${n+6}"/></p:notesMasterIdLst>`:''}<p:sldIdLst>${d.pages.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+3}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${cx}" cy="${cy}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`},
     {name:'ppt/_rels/presentation.xml.rels',data:relsXml([rel('rId1','slideMaster','slideMasters/slideMaster1.xml'),rel('rId2','theme','theme/theme1.xml'),...d.pages.map((_,i)=>rel('rId'+(i+3),'slide',`slides/slide${i+1}.xml`)),
       rel('rId'+(n+3),'presProps','presProps.xml'),rel('rId'+(n+4),'viewProps','viewProps.xml'),rel('rId'+(n+5),'tableStyles','tableStyles.xml'),...(hasNotes?[rel('rId'+(n+6),'notesMaster','notesMasters/notesMaster1.xml')]:[])])},
@@ -5478,7 +5478,7 @@ $('#bPptx').onclick=()=>{
   modal(`<h2>PowerPoint書き出し</h2>${F('ファイル名',`<input type="text" id="p-name" value="${esc(base)}.pptx">`)}
     <div class="ok" id="p-msg"></div><div class="foot"><button id="p-cancel">閉じる</button><button class="primary" id="p-go">書き出し</button></div>`);
   $('#p-cancel').onclick=closeModal;
-  $('#p-go').onclick=async()=>{let name=$('#p-name').value.trim()||'thinbook.pptx';if(!/\.pptx$/i.test(name))name+='.pptx';
+  $('#p-go').onclick=async()=>{let name=$('#p-name').value.trim()||'honhon.pptx';if(!/\.pptx$/i.test(name))name+='.pptx';
     $('#p-go').disabled=true;$('#p-msg').textContent='作成中…';
     try{const blob=await exportPPTX();$('#p-msg').textContent=`完了：${(blob.size/1048576).toFixed(1)}MB`;await saveFile(name,blob)}
     catch(err){console.error(err);$('#p-msg').textContent='書き出しに失敗しました：'+(err.message||err)}
