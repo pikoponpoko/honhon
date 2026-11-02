@@ -33,3 +33,13 @@ python3 tools/boards/own.py src/boards.json
 ```
 
 `boards.json` の先頭に「自分の企画書」（id `own`）を入れ直す。ボードを作り直したときは convert.py のあとにもう一度実行する。
+
+## 画像・映像／タイトル／連絡先
+
+`tools/boards/media.py` に配置（mm）を書いてある。画像は端まで裁ち落とし、空の画像枠（`i`）と動画枠（`v`）だけで組む。動画の上には文字を重ねない（発表中は動画が最前面に出るため）。
+
+```
+python3 tools/boards/media.py src/boards.json
+```
+
+「自分の企画書」の後ろに、id `media`（画像・映像）・`titles`（タイトル）・`contact`（連絡先）を入れ直す。ボードを作り直したときは own.py のあとに実行する。スライド名は「短い名前：説明」の形にし、短い名前（6文字以内）が「後ろに追加」のボタン名になる。
