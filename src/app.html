@@ -29,6 +29,8 @@
 html,body{height:100%}
 body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.5;letter-spacing:.02em;overflow:hidden}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea,select,[contenteditable],[contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 button{background:var(--bg);border:1px solid var(--field);border-radius:var(--r);padding:4px 12px;min-height:32px;min-width:32px;cursor:pointer;line-height:21px;white-space:nowrap}
 button:hover{background:var(--hover)}
