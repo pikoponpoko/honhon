@@ -4405,7 +4405,10 @@ function cardRect(o){return Object.assign({id:uid(),type:'rect',x:0,y:0,w:10,h:1
 const cardV=(f,k)=>(f[k]||'').trim()||CARD_PH[k]||'';
 /* ローマ字の名前は1語1行の大文字。幅に収まる大きさ（pt）を求める */
 function cardRoman(f){return cardV(f,'roman').toUpperCase().split(/\s+/).filter(Boolean).join('\n')}
-function cardFitPt(t,wmm,max,track=0){const u=Math.max(...t.split('\n').map(l=>[...l].reduce((a,c)=>a+(c.charCodeAt(0)<128?0.76:1)+track/1000,0)));return Math.max(5,Math.min(max,Math.floor(wmm/(u*PT)*2)/2))}
+/* 実際のフォントで1行ずつ幅を測り、語の途中で折り返さない大きさ（pt、0.5刻み）にする */
+let cardMc=null;
+function cardFitPt(t,wmm,max,track=0,weight=700){const c=cardMc||(cardMc=document.createElement('canvas').getContext('2d'));c.font=`${weight} 100px ${FF('Noto Sans JP')}`;
+  const u=Math.max(...t.split('\n').map(l=>(c.measureText(l).width+[...l].length*track/10)/100));return Math.max(5,Math.min(max,Math.floor(wmm*0.94/(u*PT)*2)/2))}
 /* 小さな文字のかたまり：名前・肩書き・（所属）・連絡先 */
 function cardInfo(x,y,w,h,f,o={}){const c=o.c||'ink',s=o.s||'sub',al=o.align||'start',org=(f.org||'').trim(),out=[];let yy=y;
   if(o.roman){const t=cardRoman(f),sz=cardFitPt(t,w,o.roman,20),n=t.split('\n').length,hh=n*sz*PT*1.02+0.6;out.push(cardText({x,y:yy,w,h:hh,text:t,size:sz,weight:700,leading:100,track:20,align:al,colorRole:o.rc||'accent'}));yy+=hh+2.4}
@@ -4418,10 +4421,11 @@ function cardFront(lay,W,H,b,f){const M=5,P=H>W,pg={id:uid(),items:[],noNombre:t
     pg.items.push(cardText({x:W-M-lw,y:M,w:lw,h:Math.min(40,H-2*M),text:cardV(f,'title'),size:5.5,track:120,dir:'v',colorRole:g?'on':'sub'}));
     A(cardInfo(M,M+hh+3,w,H-2*M-hh-3,f,{c:g?'on':'ink',s:g?'on':'sub'}).slice(0,1));
     A(cardInfo(M,M,w,H-2*M,f,{c:g?'on':'ink'}).slice(2))}
-  else if(lay==='full'){I({x:-b,y:-b,w:W+2*b,h:H+2*b});const lw=Math.min(W*0.5,40);
-    pg.items.push(cardRect({x:0,y:H-11,w:lw,h:11+b,fillRole:'bg'}));
-    pg.items.push(cardText({x:M-1,y:H-8.6,w:lw-2*M+2,h:3.2,text:cardV(f,'roman').toUpperCase(),size:6.5,weight:700,track:60,colorRole:'accent'}));
-    pg.items.push(cardText({x:M-1,y:H-4.8,w:lw-2*M+2,h:2.8,text:cardV(f,'title'),size:5,track:20,colorRole:'sub'}))}
+  else if(lay==='full'){I({x:-b,y:-b,w:W+2*b,h:H+2*b});const lw=Math.min(W*0.5,40),w=lw-2*M+2;
+    let t=cardV(f,'roman').toUpperCase(),sz=cardFitPt(t,w,6.5,60);if(sz<5.5){t=cardRoman(f);sz=cardFitPt(t,w,6.5,60)}const nh=t.split('\n').length*sz*PT*1.2+0.4,top=H-nh-8.2;
+    pg.items.push(cardRect({x:0,y:top-2.6,w:lw,h:H-top+2.6+b,fillRole:'bg'}));
+    pg.items.push(cardText({x:M-1,y:top,w,h:nh,text:t,size:sz,weight:700,track:60,leading:120,colorRole:'accent'}));
+    pg.items.push(cardText({x:M-1,y:H-4.8,w,h:2.8,text:cardV(f,'title'),size:5,track:20,colorRole:'sub'}))}
   else if(lay==='window'){const s=P?W-2*M:H-2*M;I(P?{x:M,y:M,w:s,h:s}:{x:W-M-s,y:M,w:s,h:s});A(P?cardInfo(M,M+s+4,W-2*M,H-s-2*M-4,f,{roman:11}):cardInfo(M,M,W-s-2*M-5,H-2*M,f,{roman:12}))}
   else{const t=P?H*0.56:W*0.56;I(P?{x:-b,y:-b,w:W+2*b,h:t+b}:{x:-b,y:-b,w:t+b,h:H+2*b});A(P?cardInfo(M,t+M,W-2*M,H-t-2*M,f,{roman:12}):cardInfo(t+M,M,W-t-2*M,H-2*M,f,{roman:13}))}
   return pg}
@@ -4459,7 +4463,7 @@ function newCardDlg(){
   const draw=()=>{const g={...o};
     for(const b of $$('#c-front button')){const r=cardPages({...g,front:b.dataset.v,back:'none'});drawCardPv(b.querySelector('canvas'),r.ps[0],r.W,r.H)}
     for(const b of $$('#c-back button')){const c=b.querySelector('canvas');if(!c)continue;const r=cardPages({...g,back:b.dataset.v});drawCardPv(c,r.ps[1],r.W,r.H)}};
-  const redraw=()=>{draw();document.fonts.ready.then(()=>setTimeout(draw,60))};
+  const redraw=()=>{draw();Promise.all([document.fonts.load(`700 20px ${FF('Noto Sans JP')}`,'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),document.fonts.ready]).then(()=>setTimeout(draw,60),()=>{})};
   const keyRe=()=>{$('#c-key').innerHTML=cardKeyPick(o);bindKeyPick($('#c-key'),o,keyRe);redraw()};bindKeyPick($('#c-key'),o,keyRe);
   const pick=(sel,k)=>{$(sel).onclick=e=>{const b=e.target.closest('button');if(!b)return;o[k]=b.dataset.v;$$(sel+' button').forEach(x=>x.classList.toggle('on',x===b))}};pick('#c-front','front');pick('#c-back','back');
   $('#c-size').onchange=()=>{o.size=$('#c-size').value;redraw()};$('#c-ori').onchange=()=>{o.ori=$('#c-ori').value;redraw()};
