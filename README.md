@@ -2,6 +2,8 @@
 
 同人誌印刷所へそのまま入稿できる冊子組版アプリ。現在はブラウザ版のみ。
 
+公開版（https://honhon.pikoponpoko.workers.dev）はブラウザからアプリとしてインストールできる（PWA。Chrome／Edgeはアドレスバーのインストールボタン、Safariは「Dockに追加」／「ホーム画面に追加」）。manifest・service worker・アイコンは `src/pwa/` にあり、`scripts/build.sh` が `dist/` に置く。
+
 ## 機能
 
 - 本文・表紙（表1／背／表4）書類、右綴じ／左綴じ、モノクロ／カラー
