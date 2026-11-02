@@ -1,0 +1,10 @@
+{
+  "name": "honhon",
+  "compatibility_date": "2026-10-01",
+  "build": {
+    "command": "sh scripts/build.sh"
+  },
+  "assets": {
+    "directory": "./dist"
+  }
+}
