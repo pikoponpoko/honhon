@@ -227,11 +227,21 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .kc{flex:0 0 32px;width:32px;height:32px;min-width:0;min-height:0;padding:0;border:1px solid var(--line);position:relative;overflow:hidden}
 .kc.on{border-color:var(--ink);outline:2px solid var(--ink);outline-offset:1px}
 .kc s{position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--sub);transform:rotate(45deg)}
+.ktg{display:flex;gap:8px}
+.kt{display:flex;align-items:center;gap:8px}
+.kt i{width:16px;height:16px;border:1px solid var(--line);position:relative;overflow:hidden}
+.kt i s{position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--sub);transform:rotate(45deg)}
+.ksv{position:relative;height:140px;touch-action:none;cursor:crosshair;border:1px solid var(--line);background:linear-gradient(to top,#000,rgba(0,0,0,0)),linear-gradient(to right,#fff,hsl(var(--h),100%,50%))}
+.ksv b{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border:2px solid #fff;outline:1px solid #1a1a1a;border-radius:50%;pointer-events:none}
+.ksv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.khue{-webkit-appearance:none;appearance:none;width:100%;height:16px;margin:0;padding:0;border:1px solid var(--line);background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);min-height:0}
+.khue::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:22px;background:#fff;border:1px solid #1a1a1a;cursor:pointer}
+.khue::-moz-range-thumb{width:10px;height:22px;background:#fff;border:1px solid #1a1a1a;border-radius:0;cursor:pointer}
 .kin{display:flex;gap:8px;align-items:center}
-.kbig{flex:0 0 44px;width:44px;height:44px;cursor:pointer}
-.kbig input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
-.khex{width:120px;height:44px;min-height:44px;padding-top:0;padding-bottom:0;box-sizing:border-box;font-variant-numeric:tabular-nums;text-transform:uppercase}
+.kcur{width:32px;height:32px;border:1px solid var(--line);flex:none}
+.kp input.khex{width:104px;height:32px;min-height:32px;padding-top:0;padding-bottom:0;box-sizing:border-box;font-size:13px;font-variant-numeric:tabular-nums;text-transform:uppercase}
 .khex.bad{border-color:var(--danger)}
+.kauto{height:24px;min-height:24px;padding:0 8px;font-size:12px}
 .kpre .kc{flex-basis:24px;width:24px;height:24px}
 .seg{display:flex}.seg button{min-width:48px}.seg button+button{margin-left:-1px}
 .rr{margin-bottom:8px}.rr .kc{flex-basis:26px;width:26px;height:26px}
@@ -414,6 +424,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
   button{min-height:44px;min-width:44px}
   button.i{width:44px}
   input:not([type=checkbox]):not([type=radio]):not([type=range]),select{min-height:44px;font-size:16px;line-height:24px}
+  .kcur{width:44px;height:44px}
   textarea{font-size:16px}
   #bSave{min-width:56px}#bExport,#bPptx{min-width:88px}
   #bExport .lf,#bPptx .lf{display:none}#bExport .ls,#bPptx .ls{display:inline}
@@ -1478,7 +1489,7 @@ const SEL=(k,v,opts)=>`<select id="i-${k.replace(/\./g,'-')}" data-k="${k}">${op
 /* スライドの色を役割で選ぶ。役割を持つ色はテーマを変えると追従する */
 const ROLES=[['accent','キーカラー'],['keyDark','キーの濃色'],['keyLight','キーの淡色'],['keyPale','キーのごく淡い色'],['accent2','対比色'],['ink','文字'],['sub','補足'],['line','罫線'],['bg','地']];
 function roleRow(k,it){const d=S.doc;if((d.kind!=='slide'&&!isFlat(d))||d.pptx||!d.key&&isFlat(d))return'';const T=theme(),cur=it[k+'Role'];
-  return`<div class="kcs rr">${ROLES.filter(([r])=>(r!=='accent2'||d.key2)&&T[r]).filter(([r],i,a)=>a.findIndex(([q])=>T[q].toLowerCase()===T[r].toLowerCase())===i).map(([r,n])=>`<button type="button" class="kc${cur===r?' on':''}" data-role="${r}" data-rk="${k}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div>`}
+  return`<div class="kcs rr">${ROLES.filter(([r])=>T[r]).filter(([r],i,a)=>a.findIndex(([q])=>T[q].toLowerCase()===T[r].toLowerCase())===i).map(([r,n])=>`<button type="button" class="kc${cur===r?' on':''}" data-role="${r}" data-rk="${k}" title="${n}" aria-label="${n}" style="background:${T[r]}"></button>`).join('')}</div>`}
 $('#tab-props').addEventListener('click',e=>{const b=e.target.closest('[data-role]'),sel=selItem();if(!b||!sel)return;const k=b.dataset.rk,it=k==='color'&&sel.type==='text'?headOf(sel):sel,T=theme();
   it[k+'Role']=b.dataset.role;it[k]=hexC(T[b.dataset.role]);if(k==='color'&&sel.type==='text'&&(sel.next||headOf(sel)!==sel))dirtyAll();else dirty(S.sel.page);commit();renderProps()});
 function colorFields(k,c){if(S.doc.color==='mono')return `<div class="row">${F('K（%）',N(k+'.k',c.k,1,'min="0" max="100"'))}</div>`;
@@ -3534,7 +3545,7 @@ function groundHex(key,g){const t=keyTones(key);return g==='tint'?t.keyPale:g===
 function mkTheme(key,ground,key2){const g=GROUNDS.some(([v])=>v===ground)?ground:'light',dk=g==='dark'||g==='shade',t=keyTones(key),bg=groundHex(key,g),ink=dk?'#ffffff':'#1a1a1a';
   const sub=g==='shade'?t.keyLight:dk?'#cccccc':g==='tint'?mixH(key,'#1a1a1a',0.6):'#666666',line=g==='shade'?mixH(key,'#000000',0.3):dk?'#666666':g==='tint'?t.keyLight:'#cccccc';
   const div=g==='tint'?t.keyDark:g==='shade'?t.keyPale:dk?'#ffffff':'#1a1a1a',onDiv=dk?bg:'#ffffff';
-  const fit=c=>[0,0.2,0.4,0.6].map(x=>mixH(c,dk?'#ffffff':'#000000',x)).find(x=>conH(x,bg)>=3)||ink,k=fit(key),k2=key2?fit(key2):k;
+  const fit=c=>[0,0.2,0.4,0.6].map(x=>mixH(c,dk?'#ffffff':'#000000',x)).find(x=>conH(x,bg)>=2.2)||ink,k=fit(key),k2=fit(key2||autoK2(key));
   return{bg,ink,sub,line,accent:k,accent2:k2,...t,on:conH('#ffffff',k)>=conH('#1a1a1a',k)?'#ffffff':'#1a1a1a',div,onDiv,keyDiv:[key,t.keyDark,t.keyLight].find(c=>conH(c,div)>=3)||onDiv,head:'Noto Sans JP',body:'Noto Sans JP'}}
 function hexC(h){const n=parseInt(String(h).replace('#',''),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,k=1-Math.max(r,g,b);
   if(k>=0.9999)return{c:0,m:0,y:0,k:100};const f=v=>Math.round((1-v-k)/(1-k)*1000)/10;return{c:f(r),m:f(g),y:f(b),k:Math.round(k*1000)/10}}
@@ -3706,24 +3717,46 @@ const KPV=['title','section_big','number'],KPT={title:'タイトル',sub:'サブ
 /* 色はピッカーとカラーコードで決めるのが基本。使った色は端末に残し、プリセットの前に並べる */
 const recentKeys=()=>{try{return JSON.parse(localStorage.getItem('tb-keys')||'[]').filter(v=>/^#[0-9a-f]{6}$/.test(v))}catch(e){return[]}};
 function rememberKey(v){if(!v||KEYS.some(([k])=>k===v))return;try{localStorage.setItem('tb-keys',JSON.stringify([v,...recentKeys().filter(x=>x!==v)].slice(0,8)))}catch(e){}}
-function keyPick(o,two){const sw=(v,n,cur,nm)=>`<button type="button" class="kc${cur===v?' on':''}" data-${nm}="${v}" aria-label="${n}" title="${n}" style="background:${v||'transparent'}">${v?'':'<s></s>'}</button>`,
-  pal=(cur,nm,skip)=>[...recentKeys().map(v=>[v,v.toUpperCase()]),...KEYS].filter(([v])=>v!==skip).map(([v,n])=>sw(v,n,cur,nm)).join(''),
-  inp=(cur,nm,ph)=>`<div class="kin"><label class="kc kbig"${cur?` style="background:${cur}"`:''}><input type="color" data-${nm}="" value="${cur||'#1d8b56'}" aria-label="色を選ぶ"></label><input type="text" class="khex" data-hex="${nm}" value="${cur?cur.toUpperCase():''}" placeholder="${ph}" maxlength="7" spellcheck="false" autocomplete="off" aria-label="カラーコード"></div>`;
-  return`<div class="kp"><div class="kr"><span>キーカラー</span>${inp(o.key,'key','#000000')}<div class="kcs kpre">${pal(o.key,'key')}</div></div>`+
-  (two?`<div class="kr"><span>対比色</span>${inp(o.key2,'key2','なし')}<div class="kcs kpre">${sw('','なし',o.key2||'','key2')}${pal(o.key2,'key2',o.key)}</div></div>`:'')+
+function hexHsv(h){const n=parseInt(h.slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),d=mx-Math.min(r,g,b);
+  let hu=0;if(d){hu=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;hu=(hu*60+360)%360}return[hu,mx?d/mx:0,mx]}
+function hsvHex(h,s,v){const f=n=>{const k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return'#'+[f(5),f(3),f(1)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('')}
+let KT='key';
+/* 対比色の自動生成：キーの補色相。彩度の低いキー（黒・灰）は赤にする */
+function autoK2(key){const[h,s,v]=hexHsv(key);if(s<0.15)return'#ec0000';return hsvHex((h+180)%360,Math.max(s,0.75),Math.min(0.92,Math.max(0.8,v)))}
+/* 色の面（彩度・明度）と色相スライダーで選ぶ。カラーコードも入力できる。対比色があるときは上のボタンでどちらを編集するか切り替える */
+function keyPick(o,two){const t=two&&KT==='key2'?'key2':'key',cur=o[t]||(t==='key2'?autoK2(o.key):''),base=cur||o.key||'#1d8b56',[hu,sa,va]=hexHsv(base);
+  const sw=(v,n,c,nm)=>`<button type="button" class="kc${c===v?' on':''}" data-${nm}="${v}" aria-label="${n}" title="${n}" style="background:${v||'transparent'}">${v?'':'<s></s>'}</button>`,
+    pal=[...recentKeys().map(v=>[v,v.toUpperCase()]),...KEYS].filter(([v])=>t==='key'||v!==o.key).map(([v,n])=>sw(v,n,t==='key2'?o.key2:cur,t)).join(''),
+    tg=(k,n)=>`<button type="button" class="kt${t===k?' on':''}" data-kt="${k}"><i style="background:${k==='key2'?o.key2||autoK2(o.key):o[k]}"></i>${n}</button>`;
+  return`<div class="kp">${two?`<div class="ktg">${tg('key','キーカラー')}${tg('key2','対比色')}</div>`:'<div class="kr"><span>キーカラー</span></div>'}
+  <div class="ksv" style="--h:${hu}" aria-label="彩度と明度" role="slider" tabindex="0"><b style="left:${sa*100}%;top:${(1-va)*100}%"></b></div>
+  <input type="range" class="khue" min="0" max="359" value="${Math.round(hu)}" aria-label="色相">
+  <div class="kin"><i class="kcur" style="background:${cur||'transparent'}"></i><input type="text" class="khex" data-hex="${t}" value="${cur?cur.toUpperCase():''}"  maxlength="7" spellcheck="false" autocomplete="off" aria-label="カラーコード"></div>
+  <div class="kcs kpre">${t==='key2'?`<button type="button" class="kauto${o.key2?'':' on'}" data-key2="">自動</button>`:''}${pal}</div>`+
   `<div class="kr"><span>地</span><div class="kcs">${GROUNDS.map(([v,n])=>`<button type="button" class="kc${(o.ground||'light')===v?' on':''}" data-ground="${v}" title="${n}" aria-label="${n}" style="background:${groundHex(o.key,v)}"></button>`).join('')}</div></div>`+
   `<div class="kpv">${KPV.map(k=>`<canvas data-pv="${k}"></canvas>`).join('')}</div></div>`}
 function drawKeyPv(root,o){const T=mkTheme(o.key,o.ground,o.key2),dpr=window.devicePixelRatio||1;
   for(const c of root.querySelectorAll('.kpv canvas')){const pg=makeSlide(c.dataset.pv,KPT,T);c.width=Math.round(c.clientWidth*dpr)||160;c.height=Math.round(c.width*SH/SW);
     const ctx=c.getContext('2d'),s=c.width/SW;ctx.setTransform(s,0,0,s,0,0);ctx.fillStyle=cmykCss(pg.bg);ctx.fillRect(0,0,SW,SH);for(const it of pg.items)drawItem(ctx,it,null,false)}}
 /* キーカラー選択の操作。o を書き換えて cb を呼ぶ */
-function bindKeyPick(root,o,cb){const kp=root.querySelector('.kp'),done=nm=>{rememberKey(o[nm]);cb()};
-  kp.onclick=e=>{const b=e.target.closest('button');if(!b)return;if('key' in b.dataset)o.key=b.dataset.key;else if('key2' in b.dataset)o.key2=b.dataset.key2;else if(b.dataset.ground)o.ground=b.dataset.ground;else return;cb()};
-  for(const i of kp.querySelectorAll('input[type=color]'))i.oninput=i.onchange=e=>{const nm='key' in i.dataset?'key':'key2';o[nm]=i.value.toLowerCase();if(e.type==='change')done(nm);else{i.parentNode.style.background=i.value;const h=kp.querySelector(`[data-hex="${nm}"]`);if(h)h.value=i.value.toUpperCase();drawKeyPv(root,o)}};
-  for(const h of kp.querySelectorAll('.khex')){const nm=h.dataset.hex,ok=()=>{const m=h.value.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);if(!m)return null;const x=m[1].length===3?[...m[1]].map(c=>c+c).join(''):m[1];return'#'+x.toLowerCase()};
-    h.oninput=()=>{delete h.dataset.done;const v=ok();h.classList.toggle('bad',!!h.value.trim()&&!v);if(v){o[nm]=v;h.previousElementSibling.style.background=v;drawKeyPv(root,o)}};
-    h.onchange=()=>{if(!h.isConnected||h.dataset.done)return;h.dataset.done=1;const v=ok();if(v){o[nm]=v;done(nm)}else if(nm==='key2'&&!h.value.trim()){o.key2='';cb()}};
-    h.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();h.onchange()}};h.onfocus=()=>{delete h.dataset.done}}
+function bindKeyPick(root,o,cb){const kp=root.querySelector('.kp'),t=kp.querySelector('.ktg')&&KT==='key2'?'key2':'key',done=()=>{rememberKey(o[t]);cb()};
+  kp.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.kt){KT=b.dataset.kt;cb();return}
+    if('key' in b.dataset)o.key=b.dataset.key;else if('key2' in b.dataset)o.key2=b.dataset.key2;else if(b.dataset.ground)o.ground=b.dataset.ground;else return;cb()};
+  const sv=kp.querySelector('.ksv'),th=sv.querySelector('b'),hue=kp.querySelector('.khue'),hx=kp.querySelector('.khex'),cu=kp.querySelector('.kcur');
+  let [h,sa,va]=hexHsv(o[t]||(t==='key2'?autoK2(o.key):o.key)||'#1d8b56'),raf=0;
+  const live=()=>{const v=hsvHex(h,sa,va);o[t]=v;sv.style.setProperty('--h',h);th.style.left=sa*100+'%';th.style.top=(1-va)*100+'%';cu.style.background=v;hx.value=v.toUpperCase();hx.classList.remove('bad');
+    const tb=kp.querySelector(`[data-kt="${t}"] i`);if(tb){tb.style.background=v;tb.innerHTML=''}
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;drawKeyPv(root,o)})};
+  const at=e=>{const r=sv.getBoundingClientRect();sa=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));va=1-Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));live()};
+  sv.onpointerdown=e=>{e.preventDefault();sv.setPointerCapture(e.pointerId);sv.focus();at(e);sv.onpointermove=at};
+  sv.onpointerup=sv.onpointercancel=e=>{sv.onpointermove=null;if(e.type==='pointerup')done()};
+  sv.onkeydown=e=>{const d=e.shiftKey?0.1:0.02,m={ArrowLeft:[-d,0],ArrowRight:[d,0],ArrowUp:[0,d],ArrowDown:[0,-d]}[e.key];if(!m)return;e.preventDefault();sa=Math.min(1,Math.max(0,sa+m[0]));va=Math.min(1,Math.max(0,va+m[1]));live()};
+  sv.onkeyup=e=>{if(e.key.startsWith('Arrow'))done()};
+  hue.oninput=()=>{h=+hue.value;if(!o[t]&&sa===0)sa=0.7;live()};hue.onchange=done;
+  const ok=()=>{const m=hx.value.trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i);if(!m)return null;const x=m[1].length===3?[...m[1]].map(c=>c+c).join(''):m[1];return'#'+x.toLowerCase()};
+  hx.oninput=()=>{delete hx.dataset.done;const v=ok();hx.classList.toggle('bad',!!hx.value.trim()&&!v);if(v){o[t]=v;[h,sa,va]=hexHsv(v);hue.value=Math.round(h);sv.style.setProperty('--h',h);th.style.left=sa*100+'%';th.style.top=(1-va)*100+'%';cu.style.background=v;drawKeyPv(root,o)}};
+  hx.onchange=()=>{if(!hx.isConnected||hx.dataset.done)return;hx.dataset.done=1;const v=ok();if(v){o[t]=v;done()}};
+  hx.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();hx.onchange()}};hx.onfocus=()=>{delete hx.dataset.done};
   drawKeyPv(root,o)}
 const layThumbCache=new Map();
 /* ---------- スライドマスター ---------- */
