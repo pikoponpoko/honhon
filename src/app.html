@@ -84,7 +84,7 @@ button.i{width:32px;padding:0;display:inline-flex;align-items:center;justify-con
 #app.k-slide header .bk-only,#app:not(.k-slide) header .sl-only{display:none}
 #app.k-master .ph .grp,#app.k-master .tabs [data-tab=notes]{display:none}
 .tslot.mlay{padding-left:16px}
-#docInfo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
+#docInfo{color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
 aside{background:var(--panel);overflow:auto;min-height:0}
 #left{border-right:1px solid var(--line);display:flex;flex-direction:column}
 #right{border-left:1px solid var(--line);display:flex;flex-direction:column}
@@ -218,8 +218,8 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 #nEdit>.nempty{display:flex;justify-content:center;padding:64px 0 0}
 #neta.empty #nAdd{display:none}
 @media (max-width:820px){
-  #neta{grid-template-columns:minmax(0,1fr);grid-template-rows:48px auto auto;align-content:start;overflow:auto}
-  .tbar{position:sticky;top:0;z-index:2}
+  #neta{grid-template-columns:minmax(0,1fr);grid-template-rows:40px auto auto;align-content:start;overflow:auto}
+  .tbar{position:sticky;top:0;z-index:2;height:40px}
   #nEdit{overflow:visible}
   #nList{border-right:0;border-bottom:1px solid var(--line)}
   #nItems{max-height:40vh}
@@ -427,12 +427,13 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
   html,body{height:100dvh}
   #app{position:fixed;inset:0;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;height:auto}
   .hr{gap:4px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
-  .hr2{height:48px}
+  .hr1,.hr2{height:40px}
+  #docInfo{font-size:12px}
   .hr2 .vr,#mDoc,#bPres{display:none}
   .mp .mqd{display:flex}
-  button{min-height:44px;min-width:44px}
-  button.i{width:44px}
-  input:not([type=checkbox]):not([type=radio]):not([type=range]),select{min-height:44px;font-size:16px;line-height:24px}
+  button{min-height:32px;min-width:44px;padding-block:2px}
+  button.i{width:48px}
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),select{min-height:32px;font-size:16px;line-height:24px;padding-block:2px}
   .kcur{width:44px;height:44px}
   textarea{font-size:16px}
   #bSave{min-width:56px}#bExport,#bPptx{min-width:88px}
@@ -531,7 +532,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 .sv-empty{color:var(--sub);padding:12px 0}
 .sv-cart .sv-empty{padding:0}
 @media (max-width:820px){
-  #sv .svh{flex-wrap:wrap;padding-block:2px}
+  #sv .svh{flex-wrap:wrap;padding-block:2px;min-height:40px}
   .sv-pos{grid-template-columns:minmax(0,1fr)}
   .sv-cart{position:sticky;bottom:0}
   .sv-edit{grid-template-columns:minmax(0,1fr) 80px 64px auto}
