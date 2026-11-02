@@ -168,6 +168,10 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .hpf>i{font-style:normal;text-align:center;line-height:28px;color:var(--ink)}
 .hpf>i+i{border-left:1px dashed var(--line)}
 .hpf>i.b{color:var(--sub)}
+.lf-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);max-height:min(360px,50vh);overflow:auto}
+.lf-i{border:0;border-radius:0;text-align:left;padding:6px 12px;font-size:16px;line-height:24px;min-height:37px;background:transparent;content-visibility:auto;contain-intrinsic-size:auto 37px;flex:none}
+.lf-i+.lf-i{border-top:1px solid var(--line)}
+.lf-st{margin:0;color:var(--sub);font-size:12px}.lf-st:empty{display:none}
 .dbx-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow:auto}
 .dbx-g{font-size:12px;color:var(--sub);font-weight:700;margin-top:4px}
 .dbx-i{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;padding:6px 8px}
@@ -729,9 +733,70 @@ const ROT=new Set([...'ー－—―…‥～〜（）「」『』【】〔〕［
 const PUNCT=new Set([...'、。，．']);
 const mctx=document.createElement('canvas').getContext('2d');
 const wcache=new Map(), lcache=new Map(), fontReq=new Set();
-function cw(ch,f,w){const k=f+'|'+w+'|'+ch;let v=wcache.get(k);if(v==null){mctx.font=`${w} 100px "${f}", serif`;v=mctx.measureText(ch).width/100;wcache.set(k,v)}return v}
+function cw(ch,f,w){const k=f+'|'+w+'|'+ch;let v=wcache.get(k);if(v==null){mctx.font=`${w} 100px ${FF(f)}`;v=mctx.measureText(ch).width/100;wcache.set(k,v)}return v}
 function needFont(f,w,text){const k=f+'|'+w+'|'+text;if(fontReq.has(k))return;fontReq.add(k);
-  if(document.fonts&&document.fonts.load)document.fonts.load(`${w} 20px "${f}"`,text||'あ').then(()=>{wcache.clear();lcache.clear();dirtyAll()}).catch(()=>{})}
+  if(document.fonts&&document.fonts.load)document.fonts.load(`${w} 20px ${FF(f)}`,text||'あ').then(()=>{wcache.clear();lcache.clear();dirtyAll()}).catch(()=>{})}
+/* ---------- フォント：同梱フォント＋この端末のフォント。無い端末では同系統の同梱フォントで代替し、フォント名は書類に残す ---------- */
+const FONT_FB={serif:'Noto Serif JP',sans:'Noto Sans JP',maru:'Zen Maru Gothic',mono:'Noto Sans Mono'};
+const FONT_IN=new Set([...FONTS.map(f=>f[0]),'Noto Sans Mono']);
+const fq=s=>String(s||'').replace(/["\\]/g,'');
+function fcat(f){f=String(f||'');return /丸|Maru|Rounded|Round/i.test(f)?'maru':/Mono|Code|Courier|Consol|等幅/i.test(f)?'mono':
+  !/Sans|ゴシック|Gothic/i.test(f)&&/明朝|Mincho|Serif|Song|Ming|Times|Garamond|Georgia|Baskerville|Bodoni|Didot|Caslon|Palatino|教科書|Kyokasho|楷|Kaisho|Antiqua/i.test(f)?'serif':'sans'}
+function FF(f){const c=fcat(f),g=c==='serif'?'serif':c==='mono'?'monospace':'sans-serif';return FONT_IN.has(f)?`"${fq(f)}", ${g}`:`"${fq(f)}", "${FONT_FB[c]}", ${g}`}
+const fontHas=new Map();
+function hasFont(f){if(!f||FONT_IN.has(f))return true;let v=fontHas.get(f);if(v!=null)return v;
+  const s='mmwwiil10OQ&@あ永アﾊ',m=g=>{mctx.font=`72px ${g}`;return mctx.measureText(s).width};
+  v=['monospace','serif','sans-serif'].some(g=>Math.abs(m(`"${fq(f)}", ${g}`)-m(g))>0.01);fontHas.set(f,v);return v}
+function docFonts(d=S.doc){const s=new Set();if(!d)return s;
+  const w=(o,n)=>{if(!o||typeof o!=='object'||n>9)return;if(Array.isArray(o)){for(const x of o)w(x,n+1);return}
+    for(const k in o){const v=o[k];if(typeof v==='string'){if(k==='font'&&v&&v[0]!=='+')s.add(v)}
+      else if(v&&typeof v==='object'){if(k==='fonts'||k==='mfont'){for(const x of Object.values(v))if(typeof x==='string'&&x&&x[0]!=='+')s.add(x)}else w(v,n+1)}}};
+  w(d,0);return s}
+function missingFonts(d){return [...docFonts(d)].filter(f=>!hasFont(f))}
+function fontNotice(){setTimeout(()=>{const m=missingFonts();if(!m.length)return;const t=$('#toast'),go=()=>toast(`この端末にないフォントを代替表示しています：${m.join('、')}`);if(t&&!t.hidden)setTimeout(go,3300);else go()},0)}
+const LF={all:null,recent:[],alias:{}};
+try{LF.recent=JSON.parse(localStorage.getItem('tb.fonts.recent')||'[]');LF.alias=JSON.parse(localStorage.getItem('tb.fonts.alias')||'{}')}catch(e){}
+const LF_PICK='queryLocalFonts' in window||matchMedia('(pointer:fine)').matches;
+/* ファミリー名で引けないフォントは PostScript 名の local() で別名登録する（この端末だけ） */
+function aliasFont(fam,map){const ps=[];for(const [w,n] of Object.entries(map)){try{const ff=new FontFace(fam,`local("${fq(n)}")`,{weight:w});document.fonts.add(ff);ps.push(ff.load().catch(()=>{}))}catch(e){}}
+  return Promise.all(ps).then(()=>{fontHas.delete(fam);wcache.clear();lcache.clear()})}
+for(const [f,m] of Object.entries(LF.alias))aliasFont(f,m);
+async function queryFonts(){if(LF.all)return LF.all;if(!('queryLocalFonts' in window))return null;
+  const fs=await queryLocalFonts(),m=new Map();
+  for(const f of fs){if(FONT_IN.has(f.family))continue;let e=m.get(f.family);if(!e)m.set(f.family,e={fam:f.family,st:{}});e.st[f.style]=f.postscriptName}
+  LF.all=[...m.values()].sort((a,b)=>a.fam.localeCompare(b.fam,'ja'));return LF.all}
+function lfStyles(e){const st=e.st,k=Object.keys(st),f=re=>{const x=k.find(s=>re.test(s));return x&&st[x]};
+  const r=st.Regular||st.Normal||f(/^(Book|Roman|Medium|W3|W4|R)$/i)||f(/^(?!.*(Italic|Oblique)).*$/i)||st[k[0]],b=st.Bold||f(/^(W6|W7|W8|B|Heavy|Semibold|DemiBold|Black)$/i);
+  const o={};if(r)o[400]=r;if(b)o[700]=b;return o}
+async function useLocalFont(name,e){
+  LF.recent=[name,...LF.recent.filter(x=>x!==name)].slice(0,8);
+  if(e&&!hasFont(name)){const m=lfStyles(e);if(Object.keys(m).length){LF.alias[name]=m;await aliasFont(name,m)}}
+  try{localStorage.setItem('tb.fonts.recent',JSON.stringify(LF.recent));localStorage.setItem('tb.fonts.alias',JSON.stringify(LF.alias))}catch(err){}}
+function fontOptions(cur){const o=(v,l)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(l)}</option>`;
+  const loc=[...new Set([...LF.recent,...docFonts(),cur])].filter(f=>f&&!FONT_IN.has(f));
+  return FONTS.map(([a,b])=>o(a,b)).join('')+(loc.length?`<optgroup label="システムフォント">${loc.map(f=>o(f,hasFont(f)?f:`${f}（未インストール）`)).join('')}</optgroup>`:'')+(LF_PICK?o('__lf','その他のフォント…'):'')}
+const FSEL=(attrs,cur)=>`<select class="fsel" ${attrs}>${fontOptions(cur)}</select>`;
+function pickLocalFont(cur,cb){
+  const dlg=modal(`<h2>システムフォント</h2>
+    <input type="search" id="lf-q" placeholder="フォント名" spellcheck="false" autocomplete="off" value="${esc(cur&&!FONT_IN.has(cur)?cur:'')}">
+    <div class="lf-list" id="lf-list" role="listbox" aria-label="システムフォント"></div><p class="lf-st" id="lf-st" aria-live="polite"></p>
+    <div class="foot"><button id="lf-cancel">キャンセル</button><button class="primary" id="lf-ok">使用</button></div>`);
+  const q=$('#lf-q'),L=$('#lf-list'),stE=$('#lf-st');let all=[],pick=null,flt=q.value.trim().toLowerCase();
+  const name=()=>q.value.trim(),find=n=>all.find(e=>e.fam===n)||null;
+  const status=()=>{const n=name();stE.textContent=!n?'':find(n)||hasFont(n)?'':`この端末にありません（${FONT_FB[fcat(n)]}で代替表示）`;$('#lf-ok').disabled=!n};
+  const draw=()=>{const k=flt,hit=(k?all.filter(e=>e.fam.toLowerCase().includes(k)):all).slice(0,300);L.hidden=!all.length;L.replaceChildren(...hit.map(e=>{const b=document.createElement('button');b.type='button';b.className='lf-i'+(e.fam===name()?' on':'');b.setAttribute('role','option');
+    b.textContent=e.fam;b.style.fontFamily=FF(e.fam);b.onclick=()=>{q.value=e.fam;pick=e;draw();status()};b.ondblclick=()=>done();return b}))};
+  const done=async()=>{const n=name();if(!n)return;await useLocalFont(n,pick&&pick.fam===n?pick:find(n));closeModal();cb(n)};
+  q.oninput=()=>{pick=null;flt=name().toLowerCase();draw();status()};q.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();done()}};
+  $('#lf-cancel').onclick=closeModal;$('#lf-ok').onclick=done;L.hidden=true;status();
+  queryFonts().then(r=>{if(!r||!dlg.isConnected)return;all=r;if(flt&&!all.some(e=>e.fam.toLowerCase().includes(flt)))flt='';draw();status()}).catch(()=>{})}
+/* フォントの選択肢「その他のフォント…」を横取りしてダイアログを開き、選んだ名前を通常の変更として流す */
+document.addEventListener('focusin',e=>{const s=e.target;if(s instanceof HTMLSelectElement&&s.classList.contains('fsel'))s.dataset.v=s.value},true);
+['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const s=e.target;if(!(s instanceof HTMLSelectElement)||!s.classList.contains('fsel'))return;
+  if(s.value!=='__lf'){s.dataset.v=s.value;return}
+  e.stopImmediatePropagation();if(ev!=='change')return;const d0=[...s.options].find(o=>o.defaultSelected),prev=s.dataset.v??(d0?d0.value:'');s.value=prev;
+  pickLocalFont(prev,n=>{if(!s.isConnected)return;if(![...s.options].some(o=>o.value===n)){const o=document.createElement('option');o.value=n;o.textContent=n;s.insertBefore(o,s.querySelector('option[value="__lf"]'))}
+    s.value=n;s.dataset.v=n;s.dispatchEvent(new Event('input',{bubbles:true}));s.dispatchEvent(new Event('change',{bubbles:true}))})},true));
 function units(str,it,V){
   const out=[],sz=it.size*PT,tr=it.track/1000*sz,ch=Array.isArray(str)?str:[...str];
   for(let i=0;i<ch.length;){
@@ -870,10 +935,10 @@ function drawText(ctx,it,ch,preview){
   needFont(it.font,it.weight,storyText(it).slice(0,4000));
   if(it.ps)for(const q of it.ps)if(q&&q.b!=null&&(q.b?700:400)!==it.weight)needFont(it.font,q.b?700:400,storyText(it).slice(0,4000));
   ctx.save();ctx.fillStyle=col(it.color,ch);ctx.textAlign='center';ctx.textBaseline='middle';
-  const F0=`${it.weight} ${sz*K}px "${it.font}", serif`;ctx.font=F0;let cf=F0;
+  const F0=`${it.weight} ${sz*K}px ${FF(it.font)}`;ctx.font=F0;let cf=F0;
   for(const g of L.glyphs){
     if(!g.s.trim())continue;
-    if(g.fs){const f=`${g.fw} ${g.fs*K}px "${it.font}", serif`;if(f!==cf){ctx.font=f;cf=f}}
+    if(g.fs){const f=`${g.fw} ${g.fs*K}px ${FF(it.font)}`;if(f!==cf){ctx.font=f;cf=f}}
     ctx.save();ctx.translate(it.x+g.x,it.y+g.y);ctx.scale(1/K,1/K);
     if(g.rot)ctx.rotate(Math.PI/2);
     if(g.sx!==1)ctx.scale(g.sx,1);
@@ -919,7 +984,7 @@ function drawNombre(ctx,i,ch){
   const it={font:nb.font,weight:400};needFont(nb.font,400,'0123456789');
   ctx.save();ctx.fillStyle=col({c:0,m:0,y:0,k:100},ch);ctx.textBaseline='middle';
   ctx.textAlign=nb.mode==='outer'?(L?'left':'right'):'center';
-  const K=100;ctx.translate(x,y);ctx.scale(1/K,1/K);ctx.font=`400 ${size*PT*K}px "${nb.font}", sans-serif`;ctx.fillText(t,0,0);ctx.restore();
+  const K=100;ctx.translate(x,y);ctx.scale(1/K,1/K);ctx.font=`400 ${size*PT*K}px ${FF(nb.font)}`;ctx.fillText(t,0,0);ctx.restore();
 }
 function drawGuides(ctx,i){
   const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH;
@@ -1057,7 +1122,7 @@ function afterChange(){clearTimeout(saveT);saveT=setTimeout(autosave,800);clearT
 function restore(j){S.last=j;S.doc=JSON.parse(j);if(S.mv){ensureMasters();swapIn()}S.lmap=null;if(S.sel&&!findItem(S.sel))S.sel=null;S.page=Math.min(S.page,S.doc.pages.length-1);rebuild();renderAll();afterChange()}
 function undo(){if(!S.undo.length)return;S.redo.push(S.last);restore(S.undo.pop())}
 function redo(){if(!S.redo.length)return;S.undo.push(S.last);restore(S.redo.pop())}
-function resetHistory(){S.undo=[];S.redo=[];S.last=JSON.stringify(S.doc);afterChange()}
+function resetHistory(){S.undo=[];S.redo=[];S.last=JSON.stringify(S.doc);afterChange();fontNotice()}
 function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('thinbook',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 async function kvSet(k,v){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){}}
 async function kvGet(k){try{const db=await idb();return await new Promise((res,rej)=>{const t=db.transaction('kv','readonly');const r=t.objectStore('kv').get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}catch(e){return null}}
@@ -1103,7 +1168,7 @@ function editText(pi,it){
   const pe=S.pageEls[pi];if(!pe||!it||it.type!=='text')return;if(S.editing)S.editing.blur();
   const st=styled(it),h=headOf(it),b=S.doc.bleed,s=S.s,linked=chainOf(it).length>1;
   const ta=document.createElement('textarea');ta.className='ined';ta.value=h.text;ta.spellcheck=false;
-  Object.assign(ta.style,{left:(it.x+b)*s+'px',top:(it.y+b)*s+'px',width:it.w*s+'px',height:it.h*s+'px',fontFamily:`"${st.font}",serif`,fontWeight:st.weight,
+  Object.assign(ta.style,{left:(it.x+b)*s+'px',top:(it.y+b)*s+'px',width:it.w*s+'px',height:it.h*s+'px',fontFamily:FF(st.font),fontWeight:st.weight,
     fontSize:st.size*PT*s+'px',lineHeight:st.leading/100,letterSpacing:st.track/1000+'em',writingMode:st.dir==='v'?'vertical-rl':'horizontal-tb',color:cmykCss(st.color)});
   pe.el.append(ta);S.editing=ta;ta.focus();
   ta.addEventListener('input',()=>{h.text=ta.value;if(linked)dirtyAll();else dirty(pi)});
@@ -1409,7 +1474,7 @@ function renderProps(){
     const ch=chainOf(it),ci=ch.indexOf(it),st=styled(it);
     h+=`<div class="sec"><h3>テキスト${ch.length>1?`（連結 ${ci+1} / ${ch.length}）`:''}</h3><textarea id="tText" data-k="text" spellcheck="false">${esc(storyText(it))}</textarea>
       <div class="btns"><button id="tLink"${S.linkFrom?' class="on"':''}>${it.next?'連結先を変更':'次のフレームに連結'}</button>${it.next?'<button id="tUnlink">連結を解除</button>':''}<button id="tFlow">自動流し込み</button><button id="tLoad">テキストを読み込む</button></div></div>
-    <div class="sec"><h3>文字</h3>${F('フォント',SEL('font',st.font,FONTS.some(f=>f[0]===st.font)?FONTS:[...FONTS,[st.font,st.font]]))}
+    <div class="sec"><h3>文字</h3>${F('フォント',FSEL('id="i-font" data-k="font"',st.font))}
       <div class="row">${F('太さ',SEL('weight',st.weight,[[400,'標準'],[700,'太字']]))}${F('サイズ（pt）',N('size',st.size,0.5,'min="1"'))}
       ${F('行送り（%）',N('leading',st.leading,5,'min="80"'))}${F('字送り（1/1000em）',N('track',st.track,10))}
       ${F('組方向',SEL('dir',st.dir,[['v','縦組み'],['h','横組み']]))}${F('揃え',SEL('align',st.align,[['start','行頭'],['center','中央'],['end','行末']]))}
@@ -1427,7 +1492,7 @@ function renderProps(){
     h+=`<div class="sec"><h3>動画</h3><div class="btns"><button id="bVPick">${m?'動画を差し替え':'動画を選択'}</button>${m?'<button id="bVPlay">再生</button>':''}</div>${m?`<div class="ok">${esc(m.name||'')} ・ ${((m.blob?m.blob.size:m.size||0)/1048576).toFixed(1)}MB</div>`:''}</div>`;
   }else if(it.type==='table'){const L=it.link||{},open=XL.book()===L.book;
     h+=`<div class="sec"><h3>表</h3>${L.book?`<div class="ok">${esc(L.book)} ・ ${esc(L.sheet)}</div>`:''}
-      <div class="row">${F('範囲',`<input type="text" id="tbRange" value="${esc(L.range||'')}" spellcheck="false">`)}${F('フォント',SEL('font',it.font,FONTS.some(f=>f[0]===it.font)?FONTS:[...FONTS,[it.font,it.font]]))}${F('サイズ（pt）',N('size',it.size,0.5,'min="1"'))}</div>
+      <div class="row">${F('範囲',`<input type="text" id="tbRange" value="${esc(L.range||'')}" spellcheck="false">`)}${F('フォント',FSEL('id="i-font" data-k="font"',it.font))}${F('サイズ（pt）',N('size',it.size,0.5,'min="1"'))}</div>
       <div class="btns"><button id="tbSync">${open?'表を更新':'Excel ファイルから更新'}</button>${open?'<button id="tbOpen">Excel で開く</button>':''}<button id="tbFit">行の高さを文字に合わせる</button></div></div>
     <div class="sec"><h3>文字色</h3>${colorFields('color',it.color)}</div>
     <div class="sec"><h3><label class="chk"><input type="checkbox" data-null="line" ${it.line?'checked':''}> 罫線</label></h3>${it.line?colorFields('line',it.line)+`<div class="row">${F('線幅（mm）',N('sw',it.sw,0.05,'min="0"'))}</div>`:''}</div>`;
@@ -1495,7 +1560,7 @@ function renderDoc(){
     ${F('開始番号',`<input type="number" id="d-nbs" data-dk="nombre.start" value="${nb.start}" step="1" min="1">`)}
     ${F('サイズ（pt）',`<input type="number" id="d-nbz" data-dk="nombre.size" value="${nb.size}" step="0.5" min="4">`)}
     ${F('下端からの距離（mm）',`<input type="number" id="d-nbo" data-dk="nombre.offset" value="${nb.offset}" step="0.5">`)}</div>
-    ${F('フォント',`<select id="d-nbf" data-dk="nombre.font">${FONTS.map(([a,b])=>`<option value="${a}"${a===nb.font?' selected':''}>${b}</option>`).join('')}</select>`)}</div>`;
+    ${F('フォント',FSEL('id="d-nbf" data-dk="nombre.font"',nb.font))}</div>`;
   $('#tab-doc').innerHTML=h;
   if(d.kind==='cover'){const calc=()=>{const v=spineOf(+$('#sc-p').value,+$('#sc-pa').value,$('#sc-co')?+$('#sc-co').value:0);$('#sc-out').textContent=v+' mm';return v};calc();
     for(const x of['#sc-p','#sc-pa','#sc-co'])if($(x))$(x).addEventListener('input',calc);
@@ -1535,6 +1600,7 @@ function preflight(){
       if(pr.nbReq){const off=d.pages.map((p,i)=>p.noNombre?nombreText(i):null).filter(Boolean);if(off.length)out.push({lv:'warn',page:null,msg:`ノンブルを表示しないページがあります（${off.slice(0,6).join('、')}${off.length>6?' ほか':''}）。白紙ページにもノンブルが必要です`})}
     }
   }
+  {const mf=missingFonts(d);if(mf.length)out.push({lv:'warn',page:null,msg:`この端末にないフォントを代替表示しています（${mf.map(f=>f+' → '+FONT_FB[fcat(f)]).join('、')}）。書き出しも代替フォントになります`})}
   if(d.kind==='cover'&&!(d.spine>0))out.push({lv:'warn',page:0,msg:'背幅が0mmです。印刷所の背幅計算で確認してください'});
   let rgb=false;
   d.pages.forEach((pg,i)=>{
@@ -1792,8 +1858,8 @@ function tifEnc(r){
 function pdfStr(s){let h='FEFF';for(const c of s){const cp=c.codePointAt(0);if(cp>0xffff){const v=cp-0x10000;h+=((0xd800+(v>>10)).toString(16)+(0xdc00+(v&0x3ff)).toString(16)).toUpperCase()}else h+=cp.toString(16).padStart(4,'0').toUpperCase()}return '<'+h+'>'}
 async function ensureFonts(){
   const ps=[];const d=S.doc;
-  for(const pg of d.pages)for(const it of pg.items)if(it.type==='text')ps.push(document.fonts.load(`${it.weight} 20px "${it.font}"`,storyText(it)||'あ'));
-  ps.push(document.fonts.load(`400 20px "${d.nombre.font}"`,'0123456789'));
+  for(const pg of d.pages)for(const it of pg.items)if(it.type==='text')ps.push(document.fonts.load(`${it.weight} 20px ${FF(it.font)}`,storyText(it)||'あ'));
+  ps.push(document.fonts.load(`400 20px ${FF(d.nombre.font)}`,'0123456789'));
   await Promise.all(ps.map(p=>p.catch(()=>{})));await document.fonts.ready;wcache.clear();lcache.clear();
 }
 /* mode: gray(1ch, 255=白) / cmyk(4ch, インキ量) / rgb(3ch) */
@@ -2350,7 +2416,7 @@ S.pp={lay:'one',paper:'A4',cover:true,num:true,frame:true,duplex:'simplex',hidde
 const PP_LAYS=[['one','1枚'],['notes','1枚＋ノート'],['three','3枚＋ノート'],['two','2枚'],['four','4枚'],['six','6枚']];
 const PP_KINSOKU='、。，．,.・：；:;？！?!ー－)）]］}｝」』】〕〉》’”…‥ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々ゝゞヽヾ';
 function ppWrap(mctx,text,font,fs,w){
-  const K=100;mctx.font=`400 ${fs*K}px "${font}", sans-serif`;const mw=s=>mctx.measureText(s).width/K,out=[];
+  const K=100;mctx.font=`400 ${fs*K}px ${FF(font)}`;const mw=s=>mctx.measureText(s).width/K,out=[];
   for(const para of String(text||'').replace(/\r/g,'').split('\n')){
     const tk=para.match(/[A-Za-z0-9.,'’\-_/:%&@#()]+ ?| +|[\s\S]/gu)||[];let line='';
     for(let t of tk){
@@ -2408,7 +2474,7 @@ function ppDrawPage(ctx,P,pg,o){
   }
   const K=100;ctx.fillStyle='#000000';ctx.textBaseline='middle';ctx.textAlign='left';
   for(const n of pg.notes){
-    n.lines.forEach((l,j)=>{if(!l)return;ctx.save();ctx.translate(n.x,n.y+n.fs*n.lh*(j+0.5));ctx.scale(1/K,1/K);ctx.font=`400 ${n.fs*K}px "${n.font}", sans-serif`;ctx.fillText(l,0,0);ctx.restore()});
+    n.lines.forEach((l,j)=>{if(!l)return;ctx.save();ctx.translate(n.x,n.y+n.fs*n.lh*(j+0.5));ctx.scale(1/K,1/K);ctx.font=`400 ${n.fs*K}px ${FF(n.font)}`;ctx.fillText(l,0,0);ctx.restore()});
   }
   if(o.num&&pg.num){ctx.save();ctx.translate(P.pW/2,P.pH-12+4.5);ctx.scale(1/K,1/K);ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`400 ${9*PT*K}px "Noto Sans JP", sans-serif`;ctx.fillText(String(pg.num),0,0);ctx.restore()}
   ctx.restore();
@@ -2488,7 +2554,7 @@ function drawTable(ctx,it,ch,preview){
     needFont(it.font,w8,c.t);const ls=String(c.t).split('\n'),a=c.a;
     ctx.save();ctx.beginPath();ctx.rect(x0,y0,x1-x0,y1-y0);ctx.clip();
     ctx.translate(a==='r'?x1-pad:a==='c'?(x0+x1)/2:x0+pad,(y0+y1)/2-(ls.length-1)*fs*0.6);ctx.scale(1/K,1/K);
-    ctx.font=`${w8} ${fs*K}px "${it.font}", sans-serif`;ctx.textAlign=a==='r'?'right':a==='c'?'center':'left';
+    ctx.font=`${w8} ${fs*K}px ${FF(it.font)}`;ctx.textAlign=a==='r'?'right':a==='c'?'center':'left';
     ls.forEach((l,j)=>ctx.fillText(l,0,j*fs*1.2*K));ctx.restore();
   }));
   if(it.line&&it.sw>0){ctx.strokeStyle=col(it.line,ch);ctx.lineWidth=it.sw;ctx.beginPath();
@@ -3650,7 +3716,7 @@ function setMasterFont(M,k,font){const d=S.doc;
 function renderMasterProps(el){
   const d=S.doc,e=d.pages[S.page];if(!e){el.innerHTML='';return}
   const T=theme(),fv=d.pptx?(e.fonts||{}):{mj:T.head,mn:T.body};
-  const fsel=(k,v)=>`<select data-mf="${k}">${(FONTS.some(f=>f[0]===v)||!v?FONTS:[...FONTS,[v,v]]).map(([a,b])=>`<option value="${esc(a)}"${a===v?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
+  const fsel=(k,v)=>FSEL(`data-mf="${k}"`,v);
   el.innerHTML=bgSec(e,e.mk==='layout')+(e.mk==='master'?`<div class="sec"><h3>フォント</h3>${F('見出し',fsel('mj',fv.mj||''))}${F('本文',fsel('mn',fv.mn||''))}</div>`:'');
   wireBg(e);el.querySelectorAll('[data-mf]').forEach(s=>s.onchange=()=>setMasterFont(e,s.dataset.mf,s.value))}
 function bgBlipXml(rid,im,W,H){const r=W/H,ir=(im.w||1)/(im.h||1);let l=0,t=0;if(ir>r)l=(1-r/ir)/2;else t=(1-ir/r)/2;const p=v=>Math.round(v*100000);
