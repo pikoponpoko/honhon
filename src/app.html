@@ -118,6 +118,10 @@ aside{background:var(--panel);overflow:auto;min-height:0}
 .selbox{position:absolute;border:1px solid var(--accent);pointer-events:none}
 .selbox .h{position:absolute;width:8px;height:8px;background:var(--bg);border:1px solid var(--accent);pointer-events:auto;margin:-5px 0 0 -5px}
 .tmpbox{position:absolute;border:1px dashed var(--accent)}
+.selbox.key{border-width:2px;margin:-1px 0 0 -1px}
+.sguide{position:absolute;pointer-events:none}.sguide.v{top:0;bottom:0;border-left:1px solid var(--guide)}.sguide.h{left:0;right:0;border-top:1px solid var(--guide)}
+.alg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}.alg button,.dist button{padding:0;display:flex;align-items:center;justify-content:center}
+.dist{display:grid;grid-template-columns:minmax(0,1fr) 40px 40px;gap:4px;align-items:end}
 .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--line)}
 #app.k-slide:not(.k-master) .tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pfrow{display:flex;align-items:center;gap:8px;min-height:32px;height:32px;padding:0 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;width:100%}
@@ -708,6 +712,26 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const uid=()=>Math.random().toString(36).slice(2,10);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const r1=v=>Math.round(v*10)/10;
+const ALI=(d)=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const AL_IC={l:ALI('<path d="M4 3v18"/><rect x="8" y="6" width="12" height="4"/><rect x="8" y="14" width="7" height="4"/>'),c:ALI('<path d="M12 3v18"/><rect x="6" y="6" width="12" height="4"/><rect x="8.5" y="14" width="7" height="4"/>'),
+  r:ALI('<path d="M20 3v18"/><rect x="4" y="6" width="12" height="4"/><rect x="9" y="14" width="7" height="4"/>'),t:ALI('<path d="M3 4h18"/><rect x="6" y="8" width="4" height="12"/><rect x="14" y="8" width="4" height="7"/>'),
+  m:ALI('<path d="M3 12h18"/><rect x="6" y="6" width="4" height="12"/><rect x="14" y="8.5" width="4" height="7"/>'),b:ALI('<path d="M3 20h18"/><rect x="6" y="4" width="4" height="12"/><rect x="14" y="9" width="4" height="7"/>'),
+  dx:ALI('<rect x="3" y="6" width="3" height="12"/><rect x="10.5" y="6" width="3" height="12"/><rect x="18" y="6" width="3" height="12"/>'),dy:ALI('<rect x="6" y="3" width="12" height="3"/><rect x="6" y="10.5" width="12" height="3"/><rect x="6" y="18" width="12" height="3"/>')};
+const AL_NAME={l:'左揃え',c:'左右中央',r:'右揃え',t:'上揃え',m:'上下中央',b:'下揃え',dx:'横に等間隔',dy:'縦に等間隔'};
+function alignSecHTML(m){const ar=alignRefOf(),opts=(m?[['sel','選択範囲'],['key','キーオブジェクト']]:[]).concat([['margin','版面'],['trim','仕上がり'],['bleed','塗り足し']]);
+  return `<div class="sec"><h3>整列</h3>${F('基準',`<select id="aRef">${opts.map(([k,v])=>`<option value="${k}"${ar===k?' selected':''}>${v}</option>`).join('')}</select>`)}
+    <div class="alg">${['l','c','r','t','m','b'].map(k=>`<button data-al="${k}" title="${AL_NAME[k]}" aria-label="${AL_NAME[k]}">${AL_IC[k]}</button>`).join('')}</div>
+    ${m?`<div class="dist">${F('間隔（mm）','<input type="number" id="aGap" step="0.5" placeholder="自動">')}${['dx','dy'].map(k=>`<button data-ds="${k[1]}" title="${AL_NAME[k]}" aria-label="${AL_NAME[k]}">${AL_IC[k]}</button>`).join('')}</div>`
+      :'<div class="btns"><button data-al="fit">基準に合わせる</button></div>'}</div>`}
+function wireAlign(){$('#aRef').onchange=e=>{if(multi())S.alignRefM=e.target.value;else S.alignRef=e.target.value;if(S.sel)drawOverlay(S.sel.page)};
+  $$('[data-al]').forEach(b=>b.onclick=()=>alignSel(b.dataset.al));
+  $$('[data-ds]').forEach(b=>b.onclick=()=>{const v=$('#aGap').value.trim();distSel(b.dataset.ds,v===''?null:parseFloat(v))})}
+function multiProps(el){const n=selIds().length;
+  el.innerHTML=`<div class="sec"><h3>${n}個を選択中</h3></div>${alignSecHTML(true)}
+    <div class="sec"><h3>サイズ</h3><div class="row"><button id="aSw" title="キーオブジェクトの幅に合わせる">幅をそろえる</button><button id="aSh" title="キーオブジェクトの高さに合わせる">高さをそろえる</button></div></div>
+    <div class="sec"><h3>重なり</h3><div class="btns"><button id="bFront">最前面へ</button><button id="bBack">最背面へ</button><button id="bDup">複製</button><button id="bDel">削除</button></div></div>`;
+  wireAlign();$('#aSw').onclick=()=>sizeSel('w');$('#aSh').onclick=()=>sizeSel('h');
+  $('#bFront').onclick=()=>order(1);$('#bBack').onclick=()=>order(-1);$('#bDup').onclick=dupSel;$('#bDel').onclick=delSel}
 const IC={minus:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg>',plus:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',x:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',up:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',down:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',left:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',right:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>'};
 const ICB='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1140,25 +1164,37 @@ function renderThumb(i){
 }
 function drawOverlay(i){
   const pe=S.pageEls[i];if(!pe)return;const b=S.doc.bleed,s=S.s;pe.ov.innerHTML='';
-  const it=S.sel&&S.sel.page===i?findItem(S.sel):null;
+  const its=S.sel&&S.sel.page===i?selItems():[],it=its.length===1?its[0]:null;
+  if(its.length>1){const kr=S.alignRefM==='key';for(const o of its){const box=document.createElement('div');box.className='selbox'+(kr&&o.id===S.sel.id?' key':'');
+    Object.assign(box.style,{left:(o.x+b)*s+'px',top:(o.y+b)*s+'px',width:o.w*s+'px',height:o.h*s+'px'});pe.ov.append(box)}}
+  const G=S.snapG;if(G&&G.pi===i){for(const x of G.xs){const g=document.createElement('div');g.className='sguide v';g.style.left=(x+b)*s+'px';pe.ov.append(g)}
+    for(const y of G.ys){const g=document.createElement('div');g.className='sguide h';g.style.top=(y+b)*s+'px';pe.ov.append(g)}}
   if(it){const box=document.createElement('div');box.className='selbox';
     Object.assign(box.style,{left:(it.x+b)*s+'px',top:(it.y+b)*s+'px',width:it.w*s+'px',height:it.h*s+'px'});
     for(const [dn,l,t] of [['nw',0,0],['n',50,0],['ne',100,0],['e',100,50],['se',100,100],['s',50,100],['sw',0,100],['w',0,50]]){
       const h=document.createElement('div');h.className='h';h.dataset.d=dn;h.style.left=l+'%';h.style.top=t+'%';h.style.cursor=dn+'-resize';box.append(h)}
     pe.ov.append(box)}
-  if(S.drag&&S.drag.mode==='create'&&S.drag.pi===i){const r=S.drag.rect;if(r){const t=document.createElement('div');t.className='tmpbox';
+  if(S.drag&&(S.drag.mode==='create'||S.drag.mode==='marquee')&&S.drag.pi===i){const r=S.drag.rect;if(r){const t=document.createElement('div');t.className='tmpbox';
     Object.assign(t.style,{left:(r.x+b)*s+'px',top:(r.y+b)*s+'px',width:r.w*s+'px',height:r.h*s+'px'});pe.ov.append(t)}}
 }
 function findItem(sel){const pg=S.doc.pages[sel.page];return pg&&pg.items.find(x=>x.id===sel.id)}
 function selItem(){return S.sel?findItem(S.sel):null}
-function select(pi,id){const prev=S.sel;S.sel=id?{page:pi,id}:null;if(prev&&S.pageEls[prev.page])drawOverlay(prev.page);if(S.sel)drawOverlay(pi);renderProps()}
+/* 複数選択：S.sel がキーオブジェクト、S.more が同じページの追加分 */
+function selIds(){return S.sel?[S.sel.id,...(S.more||[])]:[]}
+function selItems(){if(!S.sel)return[];const pg=S.doc.pages[S.sel.page];if(!pg)return[];const ids=new Set(selIds());return pg.items.filter(x=>ids.has(x.id))}
+function isSel(pi,id){return !!S.sel&&S.sel.page===pi&&(S.sel.id===id||(S.more||[]).includes(id))}
+function multi(){return !!S.sel&&!!(S.more&&S.more.length)}
+function selectMany(pi,ids){if(!ids.length){select(null);return}const prev=S.sel;S.sel={page:pi,id:ids[0]};S.more=ids.slice(1);if(prev&&prev.page!==pi&&S.pageEls[prev.page])drawOverlay(prev.page);drawOverlay(pi);renderProps()}
+function toggleSel(pi,id){if(!S.sel||S.sel.page!==pi){select(pi,id);return}const ids=selIds(),k=ids.indexOf(id);if(k<0)ids.push(id);else ids.splice(k,1);selectMany(pi,ids)}
+function setKey(id){if(!S.sel||S.sel.id===id)return;const ids=selIds().filter(x=>x!==id);S.sel={page:S.sel.page,id};S.more=ids;drawOverlay(S.sel.page);renderProps()}
+function select(pi,id){const prev=S.sel;S.more=[];S.sel=id?{page:pi,id}:null;if(prev&&S.pageEls[prev.page])drawOverlay(prev.page);if(S.sel)drawOverlay(pi);renderProps()}
 function setPage(i){if(S.page===i)return;const o=S.page;S.page=i;if(S.thumbEls[o])S.thumbEls[o].classList.remove('cur');if(S.thumbEls[i])S.thumbEls[i].classList.add('cur');if(S.tab==='props'&&!S.sel)renderProps();if(S.tab==='notes')renderNotes()}
 
 /* ---------- history & persistence ---------- */
 let saveT=0;
 function commit(){S.lmap=null;const j=JSON.stringify(S.doc);if(j===S.last)return;S.undo.push(S.last);if(S.undo.length>100)S.undo.shift();S.redo=[];S.last=j;afterChange()}
 function afterChange(){clearTimeout(saveT);saveT=setTimeout(autosave,800);clearTimeout(pfT);pfT=setTimeout(runPreflight,400);$('#bUndo').disabled=!S.undo.length;$('#bRedo').disabled=!S.redo.length}
-function restore(j){S.last=j;S.doc=JSON.parse(j);if(S.mv){ensureMasters();swapIn()}S.lmap=null;if(S.sel&&!findItem(S.sel))S.sel=null;S.page=Math.min(S.page,S.doc.pages.length-1);rebuild();renderAll();afterChange()}
+function restore(j){S.last=j;S.doc=JSON.parse(j);if(S.mv){ensureMasters();swapIn()}S.lmap=null;if(S.sel&&!findItem(S.sel))S.sel=null;if(S.sel)S.more=(S.more||[]).filter(id=>findItem({page:S.sel.page,id}));else S.more=[];S.page=Math.min(S.page,S.doc.pages.length-1);rebuild();renderAll();afterChange()}
 function undo(){if(!S.undo.length)return;S.redo.push(S.last);restore(S.undo.pop())}
 function redo(){if(!S.redo.length)return;S.undo.push(S.last);restore(S.redo.pop())}
 function resetHistory(){S.undo=[];S.redo=[];S.last=JSON.stringify(S.doc);afterChange();fontNotice()}
@@ -1314,11 +1350,28 @@ window.addEventListener('focus',()=>checkLinks());
 function alignBox(pi,ref){const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH;
   if(ref==='trim')return{x:0,y:0,w:W,h:H};if(ref==='bleed')return{x:-b,y:-b,w:W+2*b,h:H+2*b};
   return d.kind==='cover'?{x:d.margins.outer,y:d.margins.top,w:W-2*d.margins.outer,h:H-d.margins.top-d.margins.bottom}:margBox(pi)}
-function alignSel(how){const it=selItem();if(!it)return;const r=alignBox(S.sel.page,S.alignRef||'margin');
-  if(how==='l')it.x=r.x;else if(how==='c')it.x=r.x+(r.w-it.w)/2;else if(how==='r')it.x=r.x+r.w-it.w;
-  else if(how==='t')it.y=r.y;else if(how==='m')it.y=r.y+(r.h-it.h)/2;else if(how==='b')it.y=r.y+r.h-it.h;
-  else if(how==='fit'){it.x=r.x;it.y=r.y;it.w=r.w;it.h=r.h}
-  it.x=r1(it.x);it.y=r1(it.y);it.w=r1(it.w);it.h=r1(it.h);dirty(S.sel.page);commit();renderProps()}
+function bboxOf(its){const x0=Math.min(...its.map(o=>o.x)),y0=Math.min(...its.map(o=>o.y)),x1=Math.max(...its.map(o=>o.x+o.w)),y1=Math.max(...its.map(o=>o.y+o.h));return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
+function alignRefOf(){return multi()?(S.alignRefM||'sel'):(S.alignRef||'margin')}
+function alignSel(how){const its=selItems();if(!its.length)return;const pi=S.sel.page,ref=alignRefOf(),key=selItem();
+  let r,movers=its,each=false;
+  if(ref==='sel')r=bboxOf(its);else if(ref==='key'){r={x:key.x,y:key.y,w:key.w,h:key.h};movers=its.filter(o=>o!==key)}else{r=alignBox(pi,ref);each=true}
+  if(how==='fit'&&its.length>1)return;
+  for(const it of movers){
+    if(how==='l')it.x=r.x;else if(how==='c')it.x=r.x+(r.w-it.w)/2;else if(how==='r')it.x=r.x+r.w-it.w;
+    else if(how==='t')it.y=r.y;else if(how==='m')it.y=r.y+(r.h-it.h)/2;else if(how==='b')it.y=r.y+r.h-it.h;
+    else if(how==='fit'){it.x=r.x;it.y=r.y;it.w=r.w;it.h=r.h}
+    it.x=r1(it.x);it.y=r1(it.y);it.w=r1(it.w);it.h=r1(it.h)}
+  dirty(pi);commit();renderProps()}
+/* 等間隔：gap 指定なしは両端を固定して間隔をそろえる。基準が版面などのときはその枠の両端まで広げる */
+function distSel(axis,gap){const its=selItems();if(!its.length)return;const pi=S.sel.page,ref=alignRefOf(),X=axis==='x',P=X?'x':'y',L=X?'w':'h';
+  const a=its.slice().sort((p,q)=>(p[P]+p[L]/2)-(q[P]+q[L]/2));const sum=a.reduce((t,o)=>t+o[L],0);
+  if(gap!=null&&!isNaN(gap)){if(a.length<2)return;const key=selItem(),ki=ref==='key'?a.indexOf(key):0;
+    let pos=a[ki][P];for(let i=ki+1;i<a.length;i++){pos+=a[i-1][L]+gap;a[i][P]=r1(pos)}
+    pos=a[ki][P];for(let i=ki-1;i>=0;i--){pos-=gap+a[i][L];a[i][P]=r1(pos)}}
+  else{let lo,hi;if(ref==='sel'||ref==='key'){if(a.length<3)return;const b=bboxOf(a);lo=b[P];hi=b[P]+b[L]}else{const b=alignBox(pi,ref);lo=b[P];hi=b[P]+b[L]}
+    const g=a.length>1?(hi-lo-sum)/(a.length-1):0;let pos=a.length>1?lo:lo+(hi-lo-sum)/2;for(const o of a){o[P]=r1(pos);pos+=o[L]+g}}
+  dirty(pi);commit();renderProps()}
+function sizeSel(k){const key=selItem();if(!key)return;for(const o of selItems())o[k]=key[k];dirty(S.sel.page);commit();renderProps()}
 function dupPage(i){const d=S.doc,c=JSON.parse(JSON.stringify(d.pages[i]));c.id=uid();const map={};for(const it of c.items){const n=uid();map[it.id]=n;it.id=n}
   for(const it of c.items)if(it.next)it.next=map[it.next]||null;
   d.pages.splice(i+1,0,c);rebuild();commit();setPage(i+1);toast('ページを複製しました')}
@@ -1327,9 +1380,12 @@ function movePage(i,dir){const d=S.doc,j=i+dir;if(j<0||j>=d.pages.length)return;
 /* ---------- interaction ---------- */
 function toMM(e,el){const r=el.getBoundingClientRect(),b=S.doc.bleed;return{x:(e.clientX-r.left)/S.s-b,y:(e.clientY-r.top)/S.s-b}}
 function hit(pi,p){const its=S.doc.pages[pi].items;for(let k=its.length-1;k>=0;k--){const it=its[k];if(p.x>=it.x&&p.x<=it.x+it.w&&p.y>=it.y&&p.y<=it.y+it.h)return it}return null}
-function snapLines(pi){const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH,m=d.kind==='cover'?{x:d.margins.outer,y:d.margins.top,w:W-2*d.margins.outer,h:H-d.margins.top-d.margins.bottom}:margBox(pi);
-  const xs=[-b,0,W/2,W,W+b,m.x,m.x+m.w],ys=[-b,0,H/2,H,H+b,m.y,m.y+m.h];if(d.kind==='cover')xs.push(d.trimW,d.trimW+d.spine);return{xs,ys}}
-function snap1(vals,lines){const th=6/S.s;let best=null;for(const v of vals)for(const l of lines){const dd=l-v;if(Math.abs(dd)<th&&(best===null||Math.abs(dd)<Math.abs(best)))best=dd}return best||0}
+function snapLines(pi,ex){const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH,m=d.kind==='cover'?{x:d.margins.outer,y:d.margins.top,w:W-2*d.margins.outer,h:H-d.margins.top-d.margins.bottom}:margBox(pi);
+  const xs=[-b,0,W/2,W,W+b,m.x,m.x+m.w],ys=[-b,0,H/2,H,H+b,m.y,m.y+m.h];if(d.kind==='cover')xs.push(d.trimW,d.trimW+d.spine);
+  for(const o of d.pages[pi].items){if(ex&&ex.has(o.id))continue;xs.push(o.x,o.x+o.w/2,o.x+o.w);ys.push(o.y,o.y+o.h/2,o.y+o.h)}return{xs,ys}}
+/* g を渡すと吸着した線を記録（ドラッグ中のガイド表示用）。Alt を押している間は吸着しない */
+function snap1(vals,lines,g){if(S.noSnap)return 0;const th=6/S.s;let best=null;for(const v of vals)for(const l of lines){const dd=l-v;if(Math.abs(dd)<th&&(best===null||Math.abs(dd)<Math.abs(best)))best=dd}
+  if(best===null)return 0;if(g)for(const v of vals)for(const l of lines)if(Math.abs(l-v-best)<0.01&&!g.includes(l))g.push(l);return best}
 spreadsEl.addEventListener('pointerdown',e=>{
   if(e.target.classList.contains('ined'))return;
   const pg=e.target.closest('.page');if(!pg||e.button>0)return;
@@ -1339,8 +1395,12 @@ spreadsEl.addEventListener('pointerdown',e=>{
   if(S.tool==='select'){
     if(e.target.classList.contains('h')){const it=selItem();S.drag={mode:'resize',pi,id:it.id,dir:e.target.dataset.d,p0:p,o:{x:it.x,y:it.y,w:it.w,h:it.h}}}
     else{const it=hit(pi,p),touch=e.pointerType==='touch',pl=it&&inl&&inl.id===it.id?it.id:playHit(it,p)?it.id:null;if(!pl||!inl||inl.id!==pl)stopInline();
-      if(touch&&!(it&&S.sel&&S.sel.page===pi&&S.sel.id===it.id)){S.drag={mode:'pan',pi,tap:it?it.id:null,x0:e.clientX,y0:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop,moved:false,play:pl}}
-      else if(it){select(pi,it.id);S.drag={mode:'move',pi,id:it.id,p0:p,o:{x:it.x,y:it.y,w:it.w,h:it.h},x0:e.clientX,y0:e.clientY,live:!touch&&!pl,play:pl}}
+      const add=!touch&&(e.shiftKey||e.ctrlKey||e.metaKey);
+      if(touch&&!(it&&isSel(pi,it.id))){S.drag={mode:'pan',pi,tap:it?it.id:null,x0:e.clientX,y0:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop,moved:false,play:pl}}
+      else if(it&&add){toggleSel(pi,it.id);e.preventDefault();return}
+      else if(it){const grp=multi()&&isSel(pi,it.id);if(!grp)select(pi,it.id);const os={};for(const o of selItems())os[o.id]={x:o.x,y:o.y,w:o.w,h:o.h};
+        S.drag={mode:'move',pi,id:it.id,grp,os,p0:p,o:{x:it.x,y:it.y,w:it.w,h:it.h},x0:e.clientX,y0:e.clientY,live:!touch&&!pl&&!grp,play:pl}}
+      else if(!touch){if(!add)select(null);S.drag={mode:'marquee',pi,p0:p,rect:null,add,base:add&&S.sel&&S.sel.page===pi?selIds():[]}}
       else{select(null);return}}
   }else S.drag={mode:'create',pi,p0:p,rect:null};
   pg.setPointerCapture(e.pointerId);e.preventDefault();
@@ -1348,18 +1408,21 @@ spreadsEl.addEventListener('pointerdown',e=>{
 spreadsEl.addEventListener('pointermove',e=>{
   const D=S.drag;if(!D)return;if(D.mode==='pan'){if(!D.moved&&Math.hypot(e.clientX-D.x0,e.clientY-D.y0)>8)D.moved=true;if(D.moved){stage.scrollLeft=D.sl-(e.clientX-D.x0);stage.scrollTop=D.st-(e.clientY-D.y0)}return}
   if(D.mode==='move'&&!D.live){if(Math.hypot(e.clientX-D.x0,e.clientY-D.y0)<=8)return;D.live=true}const pe=S.pageEls[D.pi];const p=toMM(e,pe.el);let dx=p.x-D.p0.x,dy=p.y-D.p0.y;
-  if(D.mode==='create'){const x=Math.min(p.x,D.p0.x),y=Math.min(p.y,D.p0.y);D.rect={x,y,w:Math.abs(dx),h:Math.abs(dy)};drawOverlay(D.pi);return}
-  const it=findItem({page:D.pi,id:D.id});if(!it)return;const o=D.o,L=snapLines(D.pi);
+  if(D.mode==='create'||D.mode==='marquee'){const x=Math.min(p.x,D.p0.x),y=Math.min(p.y,D.p0.y);D.rect={x,y,w:Math.abs(dx),h:Math.abs(dy)};drawOverlay(D.pi);return}
+  const it=findItem({page:D.pi,id:D.id});if(!it)return;const o=D.o;S.noSnap=e.altKey;
+  const ex=new Set(D.mode==='move'?Object.keys(D.os):[D.id]),L=snapLines(D.pi,ex),G={pi:D.pi,xs:[],ys:[]};
   if(D.mode==='move'){
     if(e.shiftKey){if(Math.abs(dx)>Math.abs(dy))dy=0;else dx=0}
-    let nx=o.x+dx,ny=o.y+dy;nx+=snap1([nx,nx+o.w/2,nx+o.w],L.xs);ny+=snap1([ny,ny+o.h/2,ny+o.h],L.ys);it.x=r1(nx);it.y=r1(ny);
+    const bb=bboxOf(Object.values(D.os));let nx=bb.x+dx,ny=bb.y+dy;
+    if(!e.shiftKey||dx)nx+=snap1([nx,nx+bb.w/2,nx+bb.w],L.xs,G.xs);if(!e.shiftKey||dy)ny+=snap1([ny,ny+bb.h/2,ny+bb.h],L.ys,G.ys);
+    const mx=nx-bb.x,my=ny-bb.y;for(const q of S.doc.pages[D.pi].items){const b0=D.os[q.id];if(b0){q.x=r1(b0.x+mx);q.y=r1(b0.y+my)}}
   }else{
     let x0=o.x,y0=o.y,x1=o.x+o.w,y1=o.y+o.h;const dd=D.dir;
-    if(dd.includes('w')){x0+=dx;x0+=snap1([x0],L.xs)}if(dd.includes('e')){x1+=dx;x1+=snap1([x1],L.xs)}
-    if(dd.includes('n')){y0+=dy;y0+=snap1([y0],L.ys)}if(dd.includes('s')){y1+=dy;y1+=snap1([y1],L.ys)}
+    if(dd.includes('w')){x0+=dx;x0+=snap1([x0],L.xs,G.xs)}if(dd.includes('e')){x1+=dx;x1+=snap1([x1],L.xs,G.xs)}
+    if(dd.includes('n')){y0+=dy;y0+=snap1([y0],L.ys,G.ys)}if(dd.includes('s')){y1+=dy;y1+=snap1([y1],L.ys,G.ys)}
     it.x=r1(Math.min(x0,x1-1));it.y=r1(Math.min(y0,y1-1));it.w=r1(Math.max(1,Math.abs(x1-x0)));it.h=r1(Math.max(1,Math.abs(y1-y0)));
   }
-  dirty(D.pi);
+  S.snapG=G.xs.length||G.ys.length?G:null;dirty(D.pi);
 });
 /* 編集画面：動画の再生ボタンを押すとその場で再生（動かしたときは再生しない） */
 document.addEventListener('pointerdown',e=>{if(inl&&!e.target.closest('.page'))stopInline()},true);
@@ -1381,7 +1444,11 @@ async function inlinePlay(pi,id){stopInline();const it=findItem({page:pi,id}),m=
   pe.el.append(el)}
 function endDrag(){
   const D=S.drag;if(!D)return;S.drag=null;if(D.mode==='pan'){if(!D.moved){select(D.tap?D.pi:null,D.tap);if(D.play)inlineTap(D.pi,D.play)}return}
-  if(D.mode==='move'&&!D.live){if(D.play)inlineTap(D.pi,D.play);return}
+  if(S.snapG){const g=S.snapG.pi;S.snapG=null;drawOverlay(g)}
+  if(D.mode==='marquee'){const r=D.rect;if(!r||r.w<1&&r.h<1){drawOverlay(D.pi);return}
+    const hitIds=S.doc.pages[D.pi].items.filter(o=>o.x<r.x+r.w&&o.x+o.w>r.x&&o.y<r.y+r.h&&o.y+o.h>r.y).map(o=>o.id);
+    const ids=[...D.base];for(const id of hitIds)if(!ids.includes(id))ids.push(id);if(ids.length)selectMany(D.pi,ids);else{select(null);drawOverlay(D.pi)}return}
+  if(D.mode==='move'&&!D.live){if(D.grp)setKey(D.id);if(D.play)inlineTap(D.pi,D.play);return}
   if(D.mode==='move')stopInline();
   if(D.mode==='create'){
     let r=D.rect;if(!r||r.w<2||r.h<2){const W=S.tool==='text'?40:40;r={x:D.p0.x,y:D.p0.y,w:W,h:W}}
@@ -1414,10 +1481,13 @@ spreadsEl.addEventListener('drop',async e=>{
 pagesEl.addEventListener('click',e=>{const c=e.target.closest('.thumb');if(!c)return;const i=+c.dataset.i;setPage(i);centerStage(i)});
 function setTool(t){S.tool=t;$$('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));stage.style.cursor=t==='select'?'':'crosshair'}
 $$('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
-function nudge(dx,dy){const it=selItem();if(!it)return;it.x=r1(it.x+dx);it.y=r1(it.y+dy);dirty(S.sel.page);commit();renderProps()}
-function delSel(){const it=selItem();if(!it)return;const pg=S.doc.pages[S.sel.page];pg.items=pg.items.filter(x=>x!==it);const p=S.sel.page;select(null);dirty(p);commit()}
-function dupSel(){const it=selItem();if(!it)return;const c=JSON.parse(JSON.stringify(it));c.id=uid();c.x+=5;c.y+=5;S.doc.pages[S.sel.page].items.push(c);select(S.sel.page,c.id);dirty(S.sel.page);commit()}
-function order(dir){const it=selItem();if(!it)return;const a=S.doc.pages[S.sel.page].items,i=a.indexOf(it);a.splice(i,1);if(dir>0)a.push(it);else a.unshift(it);dirty(S.sel.page);commit()}
+function nudge(dx,dy){const its=selItems();if(!its.length)return;for(const it of its){it.x=r1(it.x+dx);it.y=r1(it.y+dy)}dirty(S.sel.page);commit();renderProps()}
+function delSel(){const its=new Set(selItems());if(!its.size)return;const pg=S.doc.pages[S.sel.page];pg.items=pg.items.filter(x=>!its.has(x));const p=S.sel.page;select(null);dirty(p);commit()}
+function dupSel(){const its=selItems();if(!its.length)return;const pi=S.sel.page,key=S.sel.id,ids=[];let k=null;
+  for(const it of its){const c=JSON.parse(JSON.stringify(it));c.id=uid();c.x+=5;c.y+=5;S.doc.pages[pi].items.push(c);if(it.id===key)k=c.id;else ids.push(c.id)}
+  selectMany(pi,[k,...ids]);dirty(pi);commit()}
+function order(dir){const its=selItems();if(!its.length)return;const pg=S.doc.pages[S.sel.page],set=new Set(its),rest=pg.items.filter(x=>!set.has(x));pg.items=dir>0?[...rest,...its]:[...its,...rest];dirty(S.sel.page);commit()}
+function selAll(){const pi=S.page,pg=S.doc.pages[pi];if(!pg)return;const ids=pg.items.filter(o=>!o.locked).map(o=>o.id);if(ids.length)selectMany(pi,ids)}
 document.addEventListener('keydown',e=>{
   const tg=e.target.tagName;const typing=tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT';const mod=e.ctrlKey||e.metaKey;
   if(mod&&e.key.toLowerCase()==='s'){e.preventDefault();saveProject();return}
@@ -1425,6 +1495,7 @@ document.addEventListener('keydown',e=>{
   if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
   if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}
   if(mod&&e.key.toLowerCase()==='d'){e.preventDefault();dupSel();return}
+  if(mod&&e.key.toLowerCase()==='a'){e.preventDefault();selAll();return}
   if(mod&&(e.key==='='||e.key==='+')){e.preventDefault();zoomBy(1.25);return}
   if(mod&&e.key==='-'){e.preventDefault();zoomBy(0.8);return}
   if(e.key==='Delete'||e.key==='Backspace'){if(S.sel){e.preventDefault();delSel()}return}
@@ -1441,7 +1512,8 @@ function pinchInfo(){const [a,b]=[...touches.values()];return{d:Math.hypot(a.x-b
 stage.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(touches.size!==2)return;e.stopPropagation();e.preventDefault();
   const D=S.drag;S.drag=null;
-  if(D&&(D.mode==='move'||D.mode==='resize')){const it=findItem({page:D.pi,id:D.id});if(it)Object.assign(it,D.o);dirty(D.pi)}
+  if(D&&(D.mode==='move'||D.mode==='resize')){for(const q of S.doc.pages[D.pi].items){const b0=D.mode==='move'?D.os[q.id]:q.id===D.id?D.o:null;if(b0)Object.assign(q,b0)}S.snapG=null;dirty(D.pi)}
+  else if(D&&D.mode==='marquee')drawOverlay(D.pi);
   else if(D&&D.mode==='create')drawOverlay(D.pi);
   const p=pinchInfo(),r=spreadsEl.getBoundingClientRect();
   pinch={d0:p.d,z0:S.zoom,k:1,ox:p.cx-r.left,oy:p.cy-r.top,cx:p.cx,cy:p.cy};
@@ -1496,6 +1568,7 @@ function colorFields(k,c){if(S.doc.color==='mono')return `<div class="row">${F('
   return `<div class="row4">${['c','m','y','k'].map(x=>F(x.toUpperCase(),N(k+'.'+x,c[x],1,'min="0" max="100"'))).join('')}</div>`}
 function renderProps(){
   if(S.tab!=='props')return;const el=$('#tab-props'),it=selItem(),d=S.doc;
+  if(it&&multi()){multiProps(el);return}
   if(!it){
     if(d.kind==='slide'){if(S.mv)renderMasterProps(el);else renderSlideProps(el);return}
     if(isFlat(d)){cardPageProps(el);return}
@@ -1547,9 +1620,7 @@ function renderProps(){
     <div class="sec"><h3><label class="chk"><input type="checkbox" data-null="stroke" ${it.stroke?'checked':''}> 線</label></h3>${it.stroke?colorFields('stroke',it.stroke)+`<div class="row">${F('線幅（mm）',N('sw',it.sw,0.05,'min="0"'))}</div>`:''}</div>`;
   }
   if(it.type==='image')h+=imgLaySec(S.sel.page);
-  const ar=S.alignRef||'margin';
-  h+=`<div class="sec"><h3>整列</h3><div class="row">${F('基準',`<select id="aRef"><option value="margin"${ar==='margin'?' selected':''}>版面</option><option value="trim"${ar==='trim'?' selected':''}>仕上がり</option><option value="bleed"${ar==='bleed'?' selected':''}>塗り足し</option></select>`)}</div>
-    <div class="btns">${[['l','左'],['c','左右中央'],['r','右'],['t','上'],['m','上下中央'],['b','下'],['fit','基準に合わせる']].map(([k,v])=>`<button data-al="${k}">${v}</button>`).join('')}</div></div>`;
+  h+=alignSecHTML(false);
   h+=`<div class="sec"><h3>重なり</h3><div class="btns"><button id="bFront">最前面へ</button><button id="bBack">最背面へ</button><button id="bDup">複製</button><button id="bDel">削除</button></div></div>`;
   el.innerHTML=h;if(it.type==='image')wireImgLay(S.sel.page);
   const pick=$('#bPick');if(pick)pick.onclick=()=>pickImage(it);
@@ -1559,7 +1630,7 @@ function renderProps(){
     $('#tFlow').onclick=()=>autoFlow(it);
     $('#tLoad').onclick=()=>{txtTarget=it;$('#fTxt').click()};
   }
-  $('#aRef').onchange=e=>{S.alignRef=e.target.value};$$('[data-al]').forEach(b=>b.onclick=()=>alignSel(b.dataset.al));
+  wireAlign();
   if($('#bRelink'))$('#bRelink').onclick=()=>relink(it.imageId);
   if(it.type==='table'){const pi=S.sel.page;
     $('#tbSync').onclick=async()=>{if(XL.book()===(it.link&&it.link.book)){if(await tblRefresh(it)){dirty(pi);commit();renderProps();toast('表を更新しました')}else toast('範囲を読み込めません')}else $('#fXl').click()};
