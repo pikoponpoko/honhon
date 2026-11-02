@@ -1434,8 +1434,12 @@ async function inlinePlay(pi,id){stopInline();const it=findItem({page:pi,id}),m=
   el.addEventListener('ended',()=>{if(p.loop){el.currentTime=st;el.play().catch(()=>{})}else if(inl===tok)stopInline()});
   el.addEventListener('error',()=>{toast(wc&&el.error&&el.error.message?el.error.message:'このブラウザでは再生できない形式です');if(inl===tok)stopInline()});
   pe.el.append(el)}
-function endDrag(){
-  const D=S.drag;if(!D)return;S.drag=null;if(D.mode==='pan'){if(!D.moved){select(D.tap?D.pi:null,D.tap);if(D.play)inlineTap(D.pi,D.play)}return}
+/* 画像・動画が未設定（×印）の枠をタップしたら、その枠に入れるファイルを選ぶ */
+function emptyFrame(it){if(!it||it.locked)return false;if(it.type==='image'){const im=it.imageId&&S.images[it.imageId];return!im||!(im.img||im.pending)}return it.type==='video'&&!it.mediaId}
+function fillEmpty(it){if(!emptyFrame(it))return false;if(it.type==='image')pickImage(it);else{vidTarget=it;$('#fVid').click()}return true}
+function endDrag(e){
+  const D=S.drag;if(!D)return;S.drag=null;if(D.mode==='pan'){if(!D.moved){select(D.tap?D.pi:null,D.tap);if(D.play)inlineTap(D.pi,D.play);else if(D.tap)fillEmpty(findItem({page:D.pi,id:D.tap}))}return}
+  if(D.mode==='move'&&!D.grp&&!D.play&&e&&e.type==='pointerup'&&Math.hypot(e.clientX-D.x0,e.clientY-D.y0)<=4){const it=findItem({page:D.pi,id:D.id});if(emptyFrame(it)){Object.assign(it,{x:D.o.x,y:D.o.y});if(S.snapG){const g=S.snapG.pi;S.snapG=null;drawOverlay(g)}dirty(D.pi);fillEmpty(it);return}}
   if(S.snapG){const g=S.snapG.pi;S.snapG=null;drawOverlay(g)}
   if(D.mode==='marquee'){const r=D.rect;if(!r||r.w<1&&r.h<1){drawOverlay(D.pi);return}
     const hitIds=S.doc.pages[D.pi].items.filter(o=>o.x<r.x+r.w&&o.x+o.w>r.x&&o.y<r.y+r.h&&o.y+o.h>r.y).map(o=>o.id);
@@ -1455,8 +1459,8 @@ function endDrag(){
   }
   commit();renderProps();
 }
-spreadsEl.addEventListener('pointerup',endDrag);spreadsEl.addEventListener('pointercancel',()=>{if(S.drag&&S.drag.mode==='pan'){S.drag=null;return}endDrag()});
-spreadsEl.addEventListener('dblclick',e=>{if(e.target.classList.contains('ined'))return;const it=selItem();if(it&&it.type==='text')editText(S.sel.page,it);else if(it&&it.type==='image')pickImage(it);else if(it&&it.type==='video'){if(it.mediaId)playVideo(it);else{vidTarget=it;$('#fVid').click()}}});
+spreadsEl.addEventListener('pointerup',e=>endDrag(e));spreadsEl.addEventListener('pointercancel',()=>{if(S.drag&&S.drag.mode==='pan'){S.drag=null;return}endDrag()});
+spreadsEl.addEventListener('dblclick',e=>{if(e.target.classList.contains('ined'))return;const it=selItem();if(emptyFrame(it))return;if(it&&it.type==='text')editText(S.sel.page,it);else if(it&&it.type==='image')pickImage(it);else if(it&&it.type==='video'){if(it.mediaId)playVideo(it);else{vidTarget=it;$('#fVid').click()}}});
 stage.addEventListener('pointerdown',e=>{if(e.target===stage||e.target===spreadsEl||e.target.classList.contains('spread')||e.target.classList.contains('slot'))select(null)});
 let imgTarget=null;
 $('#fImg').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';const cb=bgPick;bgPick=null;if(f&&cb)cb(f);else if(f&&imgTarget)placeImageInto(imgTarget,f)});
