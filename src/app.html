@@ -4355,34 +4355,44 @@ $('#bOutline').onclick=openOutline;
 /* ---------- 名刺 ---------- */
 /* 表・裏の2面（pages[0]=表、pages[1]=裏）。色は作品のキーカラーから役割で決め、テーマを変えると追従する */
 const CARD_SIZES=[['jp','日本（91×55mm）',91,55],['us','欧米（89×51mm）',89,51],['cc','カード（85×55mm）',85,55]];
-const CARD_FRONT=[['left','左揃え'],['band','キーカラーの帯'],['center','中央'],['ground','キーカラーの地'],['image','作品画像']];
-const CARD_BACK=[['none','なし'],['key','キーカラー'],['image','作品画像'],['blank','白']];
-const CARD_PH={org:'所属・屋号',title:'肩書き',name:'名前',roman:'NAME',contact:'メール\nURL\nSNS'};
+const CARD_FRONT=[['side','作品を大きく'],['big','名前を大きく'],['full','作品を全面'],['ground','キーカラーの地'],['window','作品を小窓']];
+const CARD_BACK=[['info','連絡先'],['key','キーカラー'],['art','作品を全面'],['none','なし']];
+const CARD_PH={title:'肩書き',name:'名前',roman:'YOUR NAME',contact:'メール\nURL\nSNS'};
 function cardText(o){return Object.assign({id:uid(),type:'text',x:0,y:0,w:20,h:5,text:'',font:'Noto Sans JP',weight:400,size:7,leading:150,track:0,dir:'h',align:'start',colorRole:'ink'},o)}
 function cardRect(o){return Object.assign({id:uid(),type:'rect',x:0,y:0,w:10,h:1,fill:null,stroke:null,sw:0.3},o)}
-/* 文字のかたまり：上に所属・肩書き、中ほどに名前とローマ字、下に連絡先 */
-function cardStack(b,f,o){const v=k=>(f[k]||'').trim()||CARD_PH[k],al=o.align||'start',c=o.c||'ink',s=o.s||'sub',ny=b.y+Math.max(10,b.h*0.34);
-  return[cardText({x:b.x,y:b.y,w:b.w,h:3.6,text:v('org'),size:7,weight:700,align:al,colorRole:c}),
-    cardText({x:b.x,y:b.y+4,w:b.w,h:3.4,text:v('title'),size:6.5,align:al,colorRole:s}),
-    cardText({x:b.x,y:ny,w:b.w,h:6.6,text:v('name'),size:14,weight:700,track:60,leading:120,align:al,colorRole:c}),
-    cardText({x:b.x,y:ny+7,w:b.w,h:3.2,text:v('roman'),size:6,track:100,align:al,colorRole:s}),
-    cardRect({x:al==='center'?b.x+b.w/2-4:b.x,y:ny+11.6,w:8,h:0.6,fillRole:o.bar||'accent'}),
-    cardText({x:b.x,y:b.y+b.h-13,w:b.w,h:13,text:v('contact'),size:6,leading:165,anchor:'b',align:al,colorRole:c})]}
-function cardFront(lay,W,H,b,f){const M=6,P=H>W,pg={id:uid(),items:[],noNombre:true,bgRole:'bg'},box={x:M,y:M,w:W-2*M,h:H-2*M};
-  if(lay==='band'){const t=P?22:20;pg.items.push(cardRect({x:-b,y:-b,w:P?W+2*b:t+b,h:P?t+b:H+2*b,fillRole:'accent'}));pg.items.push(...cardStack(P?{x:M,y:t+M,w:W-2*M,h:H-t-2*M}:{x:t+M,y:M,w:W-t-2*M,h:H-2*M},f,{}))}
-  else if(lay==='center')pg.items.push(...cardStack(box,f,{align:'center'}));
-  else if(lay==='ground'){pg.bgRole='accent';pg.items.push(...cardStack(box,f,{c:'on',s:'on',bar:'on'}))}
-  else if(lay==='image'){const t=P?H*0.42:W*0.46;pg.items.push(imageItem(P?{x:-b,y:-b,w:W+2*b,h:t+b}:{x:W-t,y:-b,w:t+b,h:H+2*b}));pg.items.push(...cardStack(P?{x:M,y:t+M,w:W-2*M,h:H-t-2*M}:{x:M,y:M,w:W-t-2*M,h:H-2*M},f,{}))}
-  else pg.items.push(...cardStack(box,f,{}));
+const cardV=(f,k)=>(f[k]||'').trim()||CARD_PH[k]||'';
+/* ローマ字の名前は1語1行の大文字。幅に収まる大きさ（pt）を求める */
+function cardRoman(f){return cardV(f,'roman').toUpperCase().split(/\s+/).filter(Boolean).join('\n')}
+function cardFitPt(t,wmm,max,track=0){const u=Math.max(...t.split('\n').map(l=>[...l].reduce((a,c)=>a+(c.charCodeAt(0)<128?0.76:1)+track/1000,0)));return Math.max(5,Math.min(max,Math.floor(wmm/(u*PT)*2)/2))}
+/* 小さな文字のかたまり：名前・肩書き・（所属）・連絡先 */
+function cardInfo(x,y,w,h,f,o={}){const c=o.c||'ink',s=o.s||'sub',al=o.align||'start',org=(f.org||'').trim(),out=[];let yy=y;
+  if(o.roman){const t=cardRoman(f),sz=cardFitPt(t,w,o.roman,20),n=t.split('\n').length,hh=n*sz*PT*1.02+0.6;out.push(cardText({x,y:yy,w,h:hh,text:t,size:sz,weight:700,leading:100,track:20,align:al,colorRole:o.rc||'accent'}));yy+=hh+2.4}
+  out.push(cardText({x,y:yy,w,h:3.4,text:cardV(f,'name'),size:7,weight:700,track:40,align:al,colorRole:c}));yy+=3.8;
+  out.push(cardText({x,y:yy,w,h:3,text:cardV(f,'title')+(org?'　'+org:''),size:5.5,track:20,align:al,colorRole:s}));
+  out.push(cardText({x,y:y+h-11,w,h:11,text:cardV(f,'contact'),size:5.5,leading:165,anchor:'b',align:al,colorRole:c}));return out}
+function cardFront(lay,W,H,b,f){const M=5,P=H>W,pg={id:uid(),items:[],noNombre:true,bgRole:'bg'},I=o=>pg.items.push(imageItem(o)),A=a=>pg.items.push(...a);
+  if(lay==='big'||lay==='ground'){const g=lay==='ground';if(g)pg.bgRole='accent';const t=cardRoman(f),lw=4,w=W-2*M-lw-3,sz=cardFitPt(t,w,P?30:26,10),n=t.split('\n').length,hh=n*sz*PT*0.98+1;
+    pg.items.push(cardText({x:M,y:M,w,h:hh,text:t,size:sz,weight:700,leading:96,track:10,colorRole:g?'on':'accent'}));
+    pg.items.push(cardText({x:W-M-lw,y:M,w:lw,h:Math.min(40,H-2*M),text:cardV(f,'title'),size:5.5,track:120,dir:'v',colorRole:g?'on':'sub'}));
+    A(cardInfo(M,M+hh+3,w,H-2*M-hh-3,f,{c:g?'on':'ink',s:g?'on':'sub'}).slice(0,1));
+    A(cardInfo(M,M,w,H-2*M,f,{c:g?'on':'ink'}).slice(2))}
+  else if(lay==='full'){I({x:-b,y:-b,w:W+2*b,h:H+2*b});const lw=Math.min(W*0.5,40);
+    pg.items.push(cardRect({x:0,y:H-11,w:lw,h:11+b,fillRole:'bg'}));
+    pg.items.push(cardText({x:M-1,y:H-8.6,w:lw-2*M+2,h:3.2,text:cardV(f,'roman').toUpperCase(),size:6.5,weight:700,track:60,colorRole:'accent'}));
+    pg.items.push(cardText({x:M-1,y:H-4.8,w:lw-2*M+2,h:2.8,text:cardV(f,'title'),size:5,track:20,colorRole:'sub'}))}
+  else if(lay==='window'){const s=P?W-2*M:H-2*M;I(P?{x:M,y:M,w:s,h:s}:{x:W-M-s,y:M,w:s,h:s});A(P?cardInfo(M,M+s+4,W-2*M,H-s-2*M-4,f,{roman:11}):cardInfo(M,M,W-s-2*M-5,H-2*M,f,{roman:12}))}
+  else{const t=P?H*0.56:W*0.56;I(P?{x:-b,y:-b,w:W+2*b,h:t+b}:{x:-b,y:-b,w:t+b,h:H+2*b});A(P?cardInfo(M,t+M,W-2*M,H-t-2*M,f,{roman:12}):cardInfo(t+M,M,W-t-2*M,H-2*M,f,{roman:13}))}
   return pg}
-function cardBack(lay,W,H,b,f){const pg={id:uid(),items:[],noNombre:true,bgRole:'bg'};
-  if(lay==='key'){pg.bgRole='accent';pg.items.push(cardText({x:6,y:6,w:W-12,h:H-12,text:(f.roman||'').trim()||(f.name||'').trim()||CARD_PH.roman,size:9,weight:700,track:150,align:'center',anchor:'ctr',colorRole:'on'}))}
-  else if(lay==='image')pg.items.push(imageItem({x:-b,y:-b,w:W+2*b,h:H+2*b}));
+function cardBack(lay,W,H,b,f){const M=5,pg={id:uid(),items:[],noNombre:true,bgRole:'bg'};
+  if(lay==='key'){pg.bgRole='accent';const t=cardRoman(f),sz=cardFitPt(t,W*0.62,24,10);pg.items.push(cardText({x:M,y:M,w:W-2*M,h:H-2*M,text:t,size:sz,weight:700,leading:96,track:10,align:'center',anchor:'ctr',colorRole:'on'}))}
+  else if(lay==='art')pg.items.push(imageItem({x:-b,y:-b,w:W+2*b,h:H+2*b}));
+  else if(lay==='info'){const lw=4;pg.items.push(cardRect({x:M,y:M,w:6,h:0.8,fillRole:'accent'}));pg.items.push(...cardInfo(M,M+4,W-2*M-lw-3,H-2*M-4,f,{roman:9}));
+    pg.items.push(cardText({x:W-M-lw,y:M,w:lw,h:Math.min(40,H-2*M),text:cardV(f,'title'),size:5.5,track:120,dir:'v',colorRole:'sub'}))}
   return pg}
 function cardDims(size,ori){const z=CARD_SIZES.find(x=>x[0]===size)||CARD_SIZES[0];return ori==='p'?[z[3],z[2]]:[z[2],z[3]]}
 function cardDocBase(W,H,o){const d=newDoc({kind:'card',name:'名刺',printer:'generic',w:W,h:H,binding:'left',color:'cmyk',pages:1});
   d.margins={top:4,bottom:4,inner:4,outer:4};d.nombre.mode='none';if(o&&o.key){d.key=o.key;d.ground=o.ground||'light'}return d}
-function cardPages(o){const [W,H]=cardDims(o.size,o.ori),b=3,T=mkTheme(o.key,o.ground),ps=[cardFront(o.front,W,H,b,o.f)];if(o.back!=='none')ps.push(cardBack(o.back,W,H,b,o.f));ps.forEach(p=>themePage(p,T));return{W,H,b,T,ps}}
+function cardPages(o){const [W,H]=cardDims(o.size,o.ori),b=3,T=mkTheme(o.key,o.ground),ps=[cardFront(o.front,W,H,b,o.f)];if(o.back!=='none')ps.push(cardBack(o.back,W,H,b,o.f));ps.forEach(p=>{themePage(p,T);if(o.art)for(const it of p.items)if(it.type==='image'&&!it.imageId)it.imageId=o.art});return{W,H,b,T,ps}}
 /* ダイアログの見本。塗り足しを含めず仕上がりで描く */
 function drawCardPv(c,pg,W,H){const dpr=window.devicePixelRatio||1;c.width=Math.round((c.clientWidth||104)*dpr);c.height=Math.round(c.width*H/W);
   const ctx=c.getContext('2d'),s=c.width/W;ctx.setTransform(s,0,0,s,0,0);ctx.fillStyle=pg.bg?cmykCss(pg.bg):'#ffffff';ctx.fillRect(0,0,W,H);
@@ -4390,17 +4400,18 @@ function drawCardPv(c,pg,W,H){const dpr=window.devicePixelRatio||1;c.width=Math.
 function cardKeyPick(o){return keyPick(o).replace(/<div class="kpv">[\s\S]*?<\/div><\/div>$/,'</div>')}
 $('#bNewC').onclick=()=>newCardDlg();
 function newCardDlg(){
-  const o={mode:'design',size:'jp',ori:'l',front:'left',back:'key',key:KEYS[0][0],ground:'light',f:{org:'',title:'',name:'',roman:'',contact:''},imp:null};
+  const o={mode:'design',size:'jp',ori:'l',front:'side',back:'info',art:null,key:KEYS[0][0],ground:'light',f:{org:'',title:'',name:'',roman:'',contact:''},imp:null};
   const dlg=modal(`<h2>新規名刺</h2>
     <div class="kinds" id="c-mode"><button data-m="design" class="on">デザイン</button><button data-m="import">データを読み込む</button></div>
     <div id="c-design"><div class="row">${F('サイズ',`<select id="c-size">${CARD_SIZES.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>`)}${F('向き','<select id="c-ori"><option value="l">横</option><option value="p">縦</option></select>')}</div>
+    <div class="cim"><button id="c-art">作品画像を選ぶ</button><span class="ok" id="c-artn"></span></div>
     <div class="sec"><h3>表</h3><div class="cpv" id="c-front">${CARD_FRONT.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===o.front?' class="on"':''}><canvas></canvas></button>`).join('')}</div></div>
     <div class="sec"><h3>裏</h3><div class="cpv" id="c-back">${CARD_BACK.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===o.back?' class="on"':''}>${k==='none'?`<span class="cno">${n}</span>`:'<canvas></canvas>'}</button>`).join('')}</div></div>
     <div class="sec" id="c-key">${cardKeyPick(o)}</div>
     <div class="sec"><h3>記載内容</h3><div class="row">${F('名前','<input type="text" data-f="name">')}${F('ローマ字','<input type="text" data-f="roman">')}${F('所属・屋号','<input type="text" data-f="org">')}${F('肩書き','<input type="text" data-f="title">')}</div>${F('連絡先','<textarea data-f="contact" rows="3"></textarea>',1)}</div></div>
     <div id="c-import" hidden><div class="cim"><button id="c-file">ファイルを選ぶ</button><span class="ok" id="c-st">PDF・AI（PDF互換）・PNG・JPEG・PSD</span></div>
     <div class="cpv" id="c-ipv"></div></div>
-    <input type="file" id="c-in" accept=".pdf,.ai,.png,.jpg,.jpeg,.psd,image/png,image/jpeg,application/pdf" multiple hidden>
+    <input type="file" id="c-artin" accept="image/png,image/jpeg,.psd" hidden><input type="file" id="c-in" accept=".pdf,.ai,.png,.jpg,.jpeg,.psd,image/png,image/jpeg,application/pdf" multiple hidden>
     <div class="foot"><button id="c-cancel">キャンセル</button><button class="primary" id="c-ok">作成</button></div>`);
   dlg.classList.add('owide');
   const draw=()=>{const g={...o};
@@ -4412,6 +4423,8 @@ function newCardDlg(){
   $('#c-size').onchange=()=>{o.size=$('#c-size').value;redraw()};$('#c-ori').onchange=()=>{o.ori=$('#c-ori').value;redraw()};
   let ft=0;$('#c-design').addEventListener('input',e=>{const k=e.target.dataset.f;if(!k)return;o.f[k]=e.target.value;clearTimeout(ft);ft=setTimeout(redraw,200)});
   $('#c-mode').onclick=e=>{const b=e.target.closest('button');if(!b)return;o.mode=b.dataset.m;$$('#c-mode button').forEach(x=>x.classList.toggle('on',x===b));$('#c-design').hidden=o.mode!=='design';$('#c-import').hidden=o.mode!=='import'};
+  $('#c-art').onclick=()=>$('#c-artin').click();
+  $('#c-artin').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const im=await readImage(f),id=uid();S.images[id]=im;o.art=id;$('#c-artn').textContent=f.name;redraw()}catch(err){toast(err.message)}};
   $('#c-file').onclick=()=>$('#c-in').click();
   $('#c-in').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;$('#c-st').textContent='読み込み中…';$('#c-file').disabled=true;
     try{o.imp=await cardImport(fs);Object.assign(S.images,o.imp.images);$('#c-st').textContent=cardImpLabel(o.imp);$('#c-ipv').innerHTML=o.imp.faces.map((_,i)=>`<div><canvas></canvas></div>`).join('');
@@ -4420,7 +4433,7 @@ function newCardDlg(){
   $('#c-cancel').onclick=closeModal;
   $('#c-ok').onclick=()=>{let d;
     if(o.mode==='import'){if(!o.imp){toast('名刺のファイルを選んでください');return}d=cardImpDoc(o.imp);S.images=o.imp.images}
-    else{const r=cardPages(o);d=cardDocBase(r.W,r.H,o);d.pages=r.ps;S.images={}}
+    else{const r=cardPages(o);d=cardDocBase(r.W,r.H,o);d.pages=r.ps;S.images=o.art?{[o.art]:S.images[o.art]}:{}}
     S.doc=d;S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;closeModal();fitZoom();rebuild();renderAll();resetHistory()};
   redraw()}
 function cardPageProps(el){const d=S.doc,pg=d.pages[S.page],T=d.key?theme():null,two=d.pages.length>1;
