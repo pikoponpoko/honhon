@@ -273,8 +273,8 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 #c-ipv canvas{border:1px solid var(--line)}
 .cpv .cno{aspect-ratio:91/55;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sub)}
 .cim{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.cpv.cvl{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:12px}
-#d-cover .cpv.cvl{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cpv.cvl{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px;margin-bottom:12px}
+#d-cover .cpv.cvl{grid-template-columns:repeat(3,minmax(0,1fr))}
 #d-cover .cim{margin:4px 0 12px}
 .th{display:flex;flex-direction:column;gap:4px;padding:5px;text-align:left;font-size:12px}
 .th.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent);outline:1px solid var(--accent)}
@@ -291,8 +291,9 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .tcseg button:hover{background:var(--hover)}.tcseg button:focus-visible{outline-offset:-2px}
 .tcseg button.on{color:var(--accent);background:transparent;border-bottom-color:var(--accent);outline:0;font-weight:700}
 .tcseg button.on:focus-visible{outline:2px solid var(--focus)}
-.tcg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-@media (max-width:820px){.tcg{grid-template-columns:repeat(2,minmax(0,1fr))}.dlg .row{grid-template-columns:minmax(0,1fr)}}
+.tcg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:max-content;align-content:start;gap:6px;max-height:min(420px,46vh);overflow:auto;padding:2px}
+.tcg .lay{min-height:0;height:auto}
+@media (max-width:820px){.tcg{grid-template-columns:repeat(3,minmax(0,1fr))}.dlg .row{grid-template-columns:minmax(0,1fr)}}
 .tcg .lay canvas{aspect-ratio:auto}
 .tcr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,9em) 64px 32px;gap:4px;margin-bottom:4px}
 .tcr.col{grid-template-columns:7em minmax(0,1fr) 32px}
@@ -2225,10 +2226,10 @@ function gLine(sz){return r1(sz*PT*1.45+0.2)}
 function tocRowH(kind,g,o){const{x,y,w,sz,r}=o,F=g.font,h=gLine(sz),out=[],nw=o.nw||10;
   out.push(gT(kind,{x:r1(x+w-nw),y,w:nw,h,text:r.num,font:F[0],weight:700,size:sz,align:'end',color:o.ncol||GK(100)}));
   let right=x+w-nw-2;
-  if(r.by){const bs=Math.max(6,sz*0.8),bw=Math.min(w*0.35,gAdv(r.by,bs,F[1],400,false)+0.5);right-=bw;out.push(gT(kind,{x:r1(right),y:r1(y+(sz-bs)*PT*0.5),w:r1(bw),h:gLine(bs),text:r.by,font:F[1],size:bs,color:GK(70)}));right-=3}
+  if(r.by){const bs=Math.max(6,sz*0.8),bw=Math.min(w*0.35,gAdv(r.by,bs,F[1],400,false)+0.5);right-=bw;out.push(gT(kind,{x:r1(right),y:r1(y+(sz-bs)*PT*0.5),w:r1(bw),h:gLine(bs),text:r.by,font:F[1],size:bs,color:o.bcol||GK(70)}));right-=3}
   const tw=Math.min(right-x,gAdv(r.title,sz,F[0],o.tw||400,false)+0.5);
-  out.push(gT(kind,{x,y,w:r1(Math.max(5,right-x)),h,text:r.title,font:F[0],weight:o.tw||400,size:sz}));
-  if(o.lead){const lx=x+tw+1.5,lw=right-lx-0.5,n=Math.floor(lw/(sz*PT));if(n>1)out.push(gT(kind,{x:r1(lx),y,w:r1(lw),h,text:'…'.repeat(n),font:F[1],size:sz,align:'end',color:GK(60)}))}
+  out.push(gT(kind,{x,y,w:r1(Math.max(5,right-x)),h,text:r.title,font:F[0],weight:o.tw||400,size:sz,color:o.col||GK(100)}));
+  if(o.lead){const lx=x+tw+1.5,lw=right-lx-0.5,n=Math.floor(lw/(sz*PT));if(n>1)out.push(gT(kind,{x:r1(lx),y,w:r1(lw),h,text:'…'.repeat(n),font:F[1],size:sz,align:'end',color:o.lcol||GK(60)}))}
   return out}
 function tocFit(n,avail,max,min){const p=n?avail/n:max;return Math.max(min,Math.min(max,p))}
 const TOC_DESIGNS={
@@ -2279,7 +2280,99 @@ const TOC_DESIGNS={
     g.rows.forEach((r,k)=>{const x=r1(x1-k*p-cw1),n=gNum(r.num,true),nh=r1(gAdv(n,sz,F[0],700,true)+0.5),t=r.title+(r.by?'　'+r.by:''),th=Math.min(m.h*0.75,gAdv(t,sz,F[0],400,true)+0.5);
       out.push(gT(K,{x,y:m.y,w:cw1,h:r1(m.h*0.8),text:t,font:F[0],size:sz,dir:'v'}));
       out.push(gT(K,{x,y:r1(m.y+m.h-nh),w:cw1,h:nh,text:n,font:F[0],weight:700,size:sz,dir:'v'}));
-      const ly=m.y+th+1.5,lh=m.y+m.h-nh-1.5-ly,c=Math.floor(lh/(sz*PT));if(c>1)out.push(gT(K,{x,y:r1(ly),w:cw1,h:r1(lh),text:'…'.repeat(c),font:F[1],size:sz,dir:'v',align:'end',color:GK(60)}))});return out}}
+      const ly=m.y+th+1.5,lh=m.y+m.h-nh-1.5-ly,c=Math.floor(lh/(sz*PT));if(c>1)out.push(gT(K,{x,y:r1(ly),w:cw1,h:r1(lh),text:'…'.repeat(c),font:F[1],size:sz,dir:'v',align:'end',color:GK(60)}))});return out}}  ,
+  twocol:{name:'2段',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=20,gap=8;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    out.push(gR(K,{x:m.x,y:r1(m.y+gLine(hs)+2),w:m.w,h:0.6}));
+    const y0=m.y+gLine(hs)+10,half=Math.max(1,Math.ceil(g.rows.length/2)),p=tocFit(half,m.y+m.h-y0,12,5),sz=Math.min(9,p*0.42/PT),cw=(m.w-gap)/2;
+    g.rows.forEach((r,k)=>{const x=r1(m.x+(k<half?0:cw+gap)),y=r1(y0+(k%half)*p);out.push(...tocRowH(K,g,{x,y,w:r1(cw),sz,r}));out.push(gR(K,{x,y:r1(y+p*0.72),w:r1(cw),h:0.1}))});
+    if(g.rows.length>1)out.push(gR(K,{x:r1(m.x+cw+gap/2-0.05),y:r1(y0),w:0.1,h:r1(half*p-p*0.28)}));return out}},
+  pagefirst:{name:'ノンブル先',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=12;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs,track:400}));
+    out.push(gR(K,{x:m.x,y:r1(m.y+gLine(hs)+2),w:8,h:0.8}));
+    const y0=m.y+gLine(hs)+14,p=tocFit(g.rows.length,m.y+m.h-y0,12,5),sz=Math.min(10,p*0.45/PT),nw=r1(gAdv('000',sz,F[0],700,false)+6);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);let right=m.x+m.w;
+      out.push(gT(K,{x:m.x,y,w:nw,h:gLine(sz),text:r.num,font:F[0],weight:700,size:sz}));
+      if(r.by){const bs=Math.max(6,sz*0.8),bw=Math.min(m.w*0.35,gAdv(r.by,bs,F[1],400,false)+0.5);right-=bw;out.push(gT(K,{x:r1(right),y:r1(y+(sz-bs)*PT*0.5),w:r1(bw),h:gLine(bs),text:r.by,font:F[1],size:bs,color:GK(70)}));right-=3}
+      out.push(gT(K,{x:r1(m.x+nw),y,w:r1(Math.max(5,right-m.x-nw)),h:gLine(sz),text:r.title,font:F[0],size:sz}))});return out}},
+  serial:{name:'通し番号',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=24;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    out.push(gR(K,{x:m.x,y:r1(m.y+gLine(hs)+2),w:12,h:1.2}));
+    const y0=m.y+gLine(hs)+12,p=tocFit(g.rows.length,m.y+m.h-y0,13,6),sz=Math.min(10,p*0.42/PT),sw=r1(gAdv('00',sz,F[0],700,false)+5);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);
+      out.push(gT(K,{x:m.x,y,w:sw,h:gLine(sz),text:String(k+1).padStart(2,'0'),font:F[0],weight:700,size:sz,color:GK(50)}));
+      out.push(...tocRowH(K,g,{x:r1(m.x+sw),y,w:r1(m.w-sw),sz,r,tw:700}));out.push(gR(K,{x:m.x,y:r1(y+p*0.72),w:m.w,h:0.1}))});return out}},
+  timeline:{name:'線と点',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=20;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    const y0=m.y+gLine(hs)+12,n=g.rows.length,p=tocFit(n,m.y+m.h-y0,13,6),sz=Math.min(10,p*0.42/PT),cy=gLine(sz)/2,lx=m.x+1.2;
+    if(n>1)out.push(gR(K,{x:r1(lx-0.15),y:r1(y0+cy),w:0.3,h:r1((n-1)*p)}));
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);out.push(gR(K,{x:r1(lx-1),y:r1(y+cy-1),w:2,h:2}));out.push(...tocRowH(K,g,{x:r1(m.x+7),y,w:r1(m.w-7),sz,r}))});return out}},
+  boxnum:{name:'四角数字',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=20;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    const y0=m.y+gLine(hs)+12,p=tocFit(g.rows.length,m.y+m.h-y0,14,6.5),sz=Math.min(10,p*0.4/PT),bh=r1(gLine(sz)+1.6),bw=r1(Math.max(bh,gAdv('000',sz,F[0],700,false)+3));
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);
+      out.push(gR(K,{x:m.x,y,w:bw,h:bh,fill:null,stroke:GK(100),sw:0.3}));
+      out.push(gT(K,{x:m.x,y:r1(y+0.8),w:bw,h:gLine(sz),text:r.num,font:F[0],weight:700,size:sz,align:'center'}));
+      out.push(...tocRowH(K,g,{x:r1(m.x+bw+4),y:r1(y+0.8),w:r1(m.w-bw-4),sz,r:{...r,num:''},nw:0.1}))});return out}},
+  pagebig:{name:'ページ大',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=20;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    out.push(gR(K,{x:m.x,y:r1(m.y+gLine(hs)+2),w:m.w,h:0.6}));
+    const y0=m.y+gLine(hs)+8,p=tocFit(g.rows.length,m.y+m.h-y0,20,7),bs=Math.min(26,p*0.55/PT),sz=Math.min(11,bs*0.45),nw=r1(gAdv('000',bs,F[0],700,false)+2);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p),bh=gLine(bs),ty=r.by?r1(y+bh/2-gLine(sz)*0.9):r1(y+(bh-gLine(sz))/2);
+      out.push(gT(K,{x:r1(m.x+m.w-nw),y,w:nw,h:bh,text:r.num,font:F[0],weight:700,size:bs,align:'end'}));
+      out.push(gT(K,{x:m.x,y:ty,w:r1(m.w-nw-4),h:gLine(sz),text:r.title,font:F[0],weight:700,size:sz}));
+      if(r.by){const s2=Math.max(6,sz*0.75);out.push(gT(K,{x:m.x,y:r1(ty+gLine(sz)),w:r1(m.w-nw-4),h:gLine(s2),text:r.by,font:F[1],size:s2,color:GK(70)}))}
+      if(k<g.rows.length-1)out.push(gR(K,{x:m.x,y:r1(y+(p+bh)/2),w:m.w,h:0.1}))});return out}},
+  stack:{name:'ページ上',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=14;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs,track:300}));
+    const y0=m.y+gLine(hs)+12,p=tocFit(g.rows.length,m.y+m.h-y0,22,9),ns=Math.max(6,Math.min(8,p*0.2/PT)),ts=Math.min(16,p*0.4/PT);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);
+      out.push(gT(K,{x:m.x,y,w:m.w,h:gLine(ns),text:r.num+(r.by?'　'+r.by:''),font:F[1],weight:700,size:ns,color:GK(60)}));
+      out.push(gT(K,{x:m.x,y:r1(y+gLine(ns)),w:m.w,h:gLine(ts),text:r.title,font:F[0],weight:700,size:ts}))});return out}},
+  center:{name:'中央',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=16;
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs,align:'center',track:300}));
+    out.push(gR(K,{x:r1(m.x+m.w/2-5),y:r1(m.y+gLine(hs)+3),w:10,h:0.6}));
+    const y0=m.y+gLine(hs)+14,p=tocFit(g.rows.length,m.y+m.h-y0,18,8),sz=Math.min(11,p*0.36/PT),s2=Math.max(6,sz*0.72);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);
+      out.push(gT(K,{x:m.x,y,w:m.w,h:gLine(sz),text:r.title,font:F[0],weight:700,size:sz,align:'center'}));
+      out.push(gT(K,{x:m.x,y:r1(y+gLine(sz)),w:m.w,h:gLine(s2),text:(r.by?r.by+'　':'')+r.num,font:F[1],size:s2,align:'center',color:GK(60)}))});return out}},
+  bottom:{name:'見出し下',make(g){const{m}=g,F=g.font,K='toc',out=[];
+    const hs=Math.max(20,Math.min(48,m.w*0.9/Math.max(2,[...g.heading].length)/PT)),hy=r1(m.y+m.h-gLine(hs));
+    out.push(gR(K,{x:m.x,y:r1(hy-3),w:m.w,h:0.6}));
+    out.push(gT(K,{x:m.x,y:hy,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs,leading:110}));
+    const p=tocFit(g.rows.length,hy-10-m.y,12,5),sz=Math.min(10,p*0.42/PT);
+    g.rows.forEach((r,k)=>out.push(...tocRowH(K,g,{x:m.x,y:r1(m.y+k*p),w:m.w,sz,r})));return out}},
+  lower:{name:'下段',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=16,top=r1(m.y+m.h*0.48);
+    out.push(gT(K,{x:m.x,y:top,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    out.push(gR(K,{x:m.x,y:r1(top+gLine(hs)+2),w:m.w,h:0.6}));
+    const y0=top+gLine(hs)+8,p=tocFit(g.rows.length,m.y+m.h-y0,10,4.5),sz=Math.min(9,p*0.45/PT);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);out.push(...tocRowH(K,g,{x:m.x,y,w:m.w,sz,r}));out.push(gR(K,{x:m.x,y:r1(y+p*0.75),w:m.w,h:0.1}))});return out}},
+  outer:{name:'片側',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=18,w=r1(m.w*0.56),x=g.L?m.x:r1(m.x+m.w-w);
+    out.push(gT(K,{x,y:m.y,w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs}));
+    out.push(gR(K,{x,y:r1(m.y+gLine(hs)+2),w,h:0.6}));
+    const y0=m.y+gLine(hs)+10,p=tocFit(g.rows.length,m.y+m.h-y0,12,5),sz=Math.min(9,p*0.42/PT);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);out.push(...tocRowH(K,g,{x,y,w,sz,r}));out.push(gR(K,{x,y:r1(y+p*0.72),w,h:0.1}))});return out}},
+  frame:{name:'枠',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=16,hh=gLine(hs),pd=7;
+    const hw=r1(Math.min(m.w-10,gAdv(g.heading,hs,F[0],700,false)*1.3+hs*PT*2));
+    out.push(gR(K,{x:m.x,y:r1(m.y+hh/2),w:m.w,h:r1(m.h-hh/2),fill:null,stroke:GK(100),sw:0.4}));
+    out.push(gR(K,{x:r1(m.x+(m.w-hw)/2),y:m.y,w:hw,h:hh,fill:GK(0)}));
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:hh,text:g.heading,font:F[0],weight:700,size:hs,align:'center',track:300}));
+    const y0=m.y+hh+6,p=tocFit(g.rows.length,m.y+m.h-pd-y0,10,4.5),sz=Math.min(9,p*0.48/PT);
+    g.rows.forEach((r,k)=>out.push(...tocRowH(K,g,{x:r1(m.x+pd),y:r1(y0+k*p),w:r1(m.w-pd*2),sz,r,lead:true})));return out}},
+  inv:{name:'黒地',make(g){const{m,W,H,b}=g,F=g.font,K='toc',out=[],hs=20,wh=GK(0);
+    out.push(gR(K,{x:-b,y:-b,w:r1(W+2*b),h:r1(H+2*b)}));
+    out.push(gT(K,{x:m.x,y:m.y,w:m.w,h:gLine(hs),text:g.heading,font:F[0],weight:700,size:hs,color:wh}));
+    out.push(gR(K,{x:m.x,y:r1(m.y+gLine(hs)+2),w:m.w,h:0.6,fill:wh}));
+    const y0=m.y+gLine(hs)+10,p=tocFit(g.rows.length,m.y+m.h-y0,12,5),sz=Math.min(10,p*0.42/PT);
+    g.rows.forEach((r,k)=>{const y=r1(y0+k*p);out.push(...tocRowH(K,g,{x:m.x,y,w:m.w,sz,r,col:wh,ncol:wh,bcol:GK(30)}));out.push(gR(K,{x:m.x,y:r1(y+p*0.72),w:m.w,h:0.1,fill:GK(40)}))});return out}},
+  tate2:{name:'縦組み・罫',make(g){const{m}=g,F=g.font,K='toc',out=[],hs=16,hw=r1(hs*PT*1.3);
+    out.push(gT(K,{x:r1(m.x+m.w-hw),y:m.y,w:hw,h:r1(m.h*0.5),text:g.heading,font:F[0],weight:700,size:hs,dir:'v',track:300}));
+    const x1=m.x+m.w-hw-6,n=g.rows.length,p=tocFit(n,x1-m.x,13,6),sz=Math.min(10,p*0.42/PT),cw1=r1(sz*PT*1.25),ch=r1(m.h*0.62);
+    g.rows.forEach((r,k)=>{const xc=x1-k*p-p/2,x=r1(xc-cw1/2),t=r.title+(r.by?'　'+r.by:''),th=Math.min(ch-12,gAdv(t,sz,F[0],400,true)+0.5),nu=gNum(r.num,true);
+      out.push(gR(K,{x:r1(x1-k*p-0.05),y:m.y,w:0.1,h:ch}));
+      out.push(gT(K,{x,y:m.y,w:cw1,h:r1(th+0.5),text:t,font:F[0],size:sz,dir:'v'}));
+      out.push(gT(K,{x,y:r1(m.y+th+sz*PT),w:cw1,h:r1(ch-th-sz*PT),text:nu,font:F[0],weight:700,size:sz,dir:'v'}))});
+    if(n)out.push(gR(K,{x:r1(x1-n*p-0.05),y:m.y,w:0.1,h:ch}));return out}}
 };
 /* 奥付：rows=[{label,value}]。横組みは版面の下に寄せる */
 function colRows(g,o){const{x,y,w,sz}=o,F=g.font,K='colophon',out=[],lw=r1(Math.max(...g.rows.map(r=>gAdv(r.label,sz,F[1],700,false)),sz*PT*3)+4),lh=gLine(sz)+0.6;let yy=y;
@@ -2316,7 +2409,61 @@ const COL_DESIGNS={
     out.push(gT(K,{x:r1(xr-3-tw),y:r1(y+3),w:tw,h:r1(h-6),text:g.title,font:F[0],weight:700,size:ts,dir:'v'}));
     g.rows.forEach((r,k)=>{const x=r1(xr-3-tw-6-(k+1)*p+(p-cw1)/2);
       out.push(gT(K,{x,y:r1(y+3),w:cw1,h:r1(h-6),text:(r.label?r.label+'　':'')+r.value.replace(/[0-9]{3,}/g,s=>gNum(s,true)),font:F[1],size:sz,dir:'v'}))});
-    out.push(gR(K,{x:x0,y,w:0.15,h:r1(h)}));return out}}
+    out.push(gR(K,{x:x0,y,w:0.15,h:r1(h)}));return out}}  ,
+  top:{name:'上寄せ',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=13,sz=8;
+    out.push(gR(K,{x:m.x,y:m.y,w:m.w,h:1.2}));
+    out.push(gT(K,{x:m.x,y:r1(m.y+4),w:m.w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts}));
+    out.push(...colRows(g,{x:m.x,y:m.y+4+gLine(ts)+4,w:Math.min(m.w,100),sz}).items);return out}},
+  table:{name:'表',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=14,sz=8,w=m.w,lw=r1(Math.max(...g.rows.map(r=>gAdv(r.label,sz,F[1],700,false)),sz*PT*3)+6);
+    const hs=g.rows.map(r=>{const n=Math.max(1,Math.ceil((gAdv(r.value,sz,F[1],400,false)+0.5)/(w-lw)));return gLine(sz)+(n-1)*sz*PT*1.45+3.2}),th=gLine(ts)+2,y=m.y+m.h-th-hs.reduce((a,v)=>a+v,0);
+    out.push(gT(K,{x:m.x,y:r1(y),w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts}));
+    out.push(gR(K,{x:m.x,y:r1(y+th-0.5),w,h:0.5}));let yy=y+th;
+    g.rows.forEach((r,k)=>{const h=hs[k];
+      out.push(gT(K,{x:m.x,y:r1(yy+1.6),w:lw,h:gLine(sz),text:r.label,font:F[1],weight:700,size:sz}));
+      out.push(gT(K,{x:r1(m.x+lw),y:r1(yy+1.6),w:r1(w-lw),h:r1(h-3.2),text:r.value,font:F[1],size:sz,leading:145}));
+      yy+=h;out.push(gR(K,{x:m.x,y:r1(yy-0.1),w,h:0.1}))});return out}},
+  twocol:{name:'2段',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=13,sz=7.5,gap=8,cw=(m.w-gap)/2,half=Math.ceil(g.rows.length/2),A={...g,rows:g.rows.slice(0,half)},B={...g,rows:g.rows.slice(half)};
+    const rh=Math.max(colH(A,cw,sz),B.rows.length?colH(B,cw,sz):0),y=m.y+m.h-(gLine(ts)+5+rh);
+    out.push(gT(K,{x:m.x,y:r1(y),w:m.w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts}));
+    out.push(gR(K,{x:m.x,y:r1(y+gLine(ts)+1.5),w:m.w,h:0.5}));
+    out.push(...colRows(A,{x:m.x,y:y+gLine(ts)+5,w:cw,sz}).items);
+    if(B.rows.length)out.push(...colRows(B,{x:m.x+cw+gap,y:y+gLine(ts)+5,w:cw,sz}).items);return out}},
+  stack:{name:'項目上',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=16,ls=6.5,sz=8.5,w=Math.min(m.w,90),x=r1(g.L?m.x:m.x+m.w-w);
+    const hs=g.rows.map(r=>{const n=Math.max(1,Math.ceil((gAdv(r.value,sz,F[1],400,false)+0.5)/w));return(r.label?gLine(ls):0)+gLine(sz)+(n-1)*sz*PT*1.45+2.4}),y=m.y+m.h-(gLine(ts)+5+hs.reduce((a,v)=>a+v,0));
+    out.push(gT(K,{x,y:r1(y),w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts}));let yy=y+gLine(ts)+5;
+    g.rows.forEach((r,k)=>{if(r.label){out.push(gT(K,{x,y:r1(yy),w,h:gLine(ls),text:r.label,font:F[1],weight:700,size:ls,color:GK(60)}));yy+=gLine(ls)}
+      out.push(gT(K,{x,y:r1(yy),w,h:r1(hs[k]-2.4-(r.label?gLine(ls):0)),text:r.value,font:F[1],size:sz,leading:145}));yy+=hs[k]-(r.label?gLine(ls):0)});return out}},
+  vline:{name:'縦罫',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=13,sz=8,w=Math.min(m.w,96),rh=colH(g,w,sz),x=r1(g.L?m.x:m.x+m.w-w),lw=r1(Math.max(...g.rows.map(r=>gAdv(r.label,sz,F[1],700,false)),sz*PT*3)+4);
+    const y=m.y+m.h-(gLine(ts)+4+rh);
+    out.push(gT(K,{x,y:r1(y),w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts}));
+    const ry=y+gLine(ts)+4;out.push(gR(K,{x:r1(x+lw-2),y:r1(ry),w:0.3,h:r1(rh-0.6)}));
+    out.push(...colRows(g,{x,y:ry,w,sz}).items.map(it=>it.weight===400?Object.assign(it,{x:r1(it.x+1)}):it));return out}},
+  double:{name:'二重罫',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=12,sz=8,w=Math.min(m.w,92),x=r1(m.x+(m.w-w)/2),rh=colH(g,w,sz),H2=3.6+gLine(ts)+4+rh+3.6,y=m.y+m.h-H2;
+    out.push(gR(K,{x,y:r1(y),w,h:0.8}));out.push(gR(K,{x,y:r1(y+1.4),w,h:0.15}));
+    out.push(gT(K,{x,y:r1(y+3.6),w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts}));
+    out.push(...colRows(g,{x,y:y+3.6+gLine(ts)+4,w,sz}).items);
+    out.push(gR(K,{x,y:r1(y+H2-1.4),w,h:0.15}));out.push(gR(K,{x,y:r1(y+H2-0.8),w,h:0.8}));return out}},
+  ctrrule:{name:'中央・罫',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=12,sz=7.5,lead=175;
+    const lines=g.rows.map(r=>r.label?r.label+'　'+r.value:r.value),th=gLine(ts),bh=r1(sz*PT*(1+(lines.length-1)*lead/100)+1),H2=5+th+4+bh+5,y=m.y+m.h-H2;
+    out.push(gR(K,{x:m.x,y:r1(y),w:m.w,h:0.3}));
+    out.push(gT(K,{x:m.x,y:r1(y+5),w:m.w,h:th,text:g.title,font:F[0],weight:700,size:ts,align:'center',track:200}));
+    out.push(gT(K,{x:m.x,y:r1(y+5+th+4),w:m.w,h:bh,text:lines.join('\n'),font:F[1],size:sz,leading:lead,align:'center'}));
+    out.push(gR(K,{x:m.x,y:r1(y+H2-0.3),w:m.w,h:0.3}));return out}},
+  min:{name:'小さく',make(g){const{m}=g,F=g.font,K='colophon',out=[],sz=7,lead=165,al=g.L?'start':'end';
+    const lines=g.rows.map(r=>r.label?r.label+'　'+r.value:r.value),bh=r1(sz*PT*(1+(lines.length-1)*lead/100)+1),th=gLine(8.5),y=m.y+m.h-bh-th-1.5;
+    out.push(gT(K,{x:m.x,y:r1(y),w:m.w,h:th,text:g.title,font:F[0],weight:700,size:8.5,align:al}));
+    out.push(gT(K,{x:m.x,y:r1(y+th+1.5),w:m.w,h:bh,text:lines.join('\n'),font:F[1],size:sz,leading:lead,align:al,color:GK(80)}));return out}},
+  inv:{name:'黒帯',make(g){const{m,W,H,b}=g,F=g.font,K='colophon',out=[],ts=12,sz=8,pd=8,wh=GK(0),w=Math.min(m.w,96),x=r1(g.L?m.x:m.x+m.w-w),rh=colH(g,w,sz),y=m.y+m.h-(gLine(ts)+4+rh);
+    out.push(gR(K,{x:-b,y:r1(y-pd),w:r1(W+2*b),h:r1(H+b-y+pd)}));
+    out.push(gT(K,{x,y:r1(y),w,h:gLine(ts),text:g.title,font:F[0],weight:700,size:ts,color:wh}));
+    out.push(...colRows(g,{x,y:y+gLine(ts)+4,w,sz,lc:wh,vc:wh}).items);return out}},
+  tatebox:{name:'縦組み・枠',make(g){const{m}=g,F=g.font,K='colophon',out=[],ts=12,sz=8,tw=r1(ts*PT*1.3),cw1=r1(sz*PT*1.25),p=r1(sz*PT*1.9),h=Math.min(m.h,100),y=r1(m.y+m.h-h),pd=5;
+    const n=g.rows.length,W2=pd+tw+5+n*p+pd,x0=r1(g.L?m.x:m.x+m.w-W2),xr=x0+W2;
+    out.push(gR(K,{x:x0,y,w:r1(W2),h:r1(h),fill:null,stroke:GK(100),sw:0.4}));
+    out.push(gT(K,{x:r1(xr-pd-tw),y:r1(y+pd),w:tw,h:r1(h-pd*2),text:g.title,font:F[0],weight:700,size:ts,dir:'v'}));
+    out.push(gR(K,{x:r1(xr-pd-tw-2.5),y:r1(y+pd),w:0.15,h:r1(h-pd*2)}));
+    g.rows.forEach((r,k)=>{const x=r1(xr-pd-tw-5-(k+1)*p+(p-cw1)/2);
+      out.push(gT(K,{x,y:r1(y+pd),w:cw1,h:r1(h-pd*2),text:(r.label?r.label+'　':'')+r.value.replace(/[0-9]{3,}/g,s=>gNum(s,true)),font:F[1],size:sz,dir:'v'}))});return out}}
 };
 function tocAuto(){const d=S.doc,out=[],skip=new Set(PLAN_KINDS.map(k=>k[1]));let prev='';
   d.pages.forEach(p=>{const pl=p.plan||{},t=(pl.title||'').trim();if(t&&t!==prev&&t!==d.name&&!skip.has(t)&&!['toc','colophon','blank'].includes(pl.kind))out.push({title:t,by:'',pid:p.id});prev=t});
@@ -4999,7 +5146,7 @@ function createSlideDoc(th,flow,picks,board){
 /* ---------- 表紙デザイン ---------- */
 /* 表1・背・表4を1枚に並べた表紙書類（kind:'cover'）に、絵・タイトル・作者名・サークル名から配置を組む。
    d.cover={lay,f:{title,author,circle},font}。背幅・判型・綴じを変えると組み直す（cv付きの部品だけ作り直し、手で足した部品は残す） */
-const COVER_LAYS=[['full','全面の絵'],['band','キーカラーの帯'],['frame','余白'],['side','縦書き'],['type','キーカラーの地'],['wrap','表1〜表4通しの絵'],['none','白紙']];
+const COVER_LAYS=[['full','全面の絵'],['band','キーカラーの帯'],['frame','余白'],['side','縦書き'],['type','キーカラーの地'],['wrap','表1〜表4通しの絵'],['topband','上にキーカラーの帯'],['label','絵にラベル'],['split','左右に分割'],['corner','絵を角に'],['big','大きなタイトル'],['center','中央に小さな絵'],['pale','淡色の地'],['border','キーカラーの額'],['deep','濃色の地・縦書き'],['none','白紙']];
 const COVER_PH={title:'タイトル',author:'作者名',circle:'サークル名'};
 const COVER_FONTS=[['Noto Sans JP','ゴシック'],['Shippori Mincho','明朝']];
 function cvGeo(W,S,H,b,R){return{W,S,H,b,R,F:R?0:W+S,B:R?W+S:0,X:W,T:2*W+S,M:Math.max(8,Math.round(W*0.07))}}
@@ -5042,6 +5189,28 @@ function coverItems(spec,G,img){
     P.push(cvRect({x:F+M,y:M,w:W-2*M,h:hb,fillRole:'bg'}));const th=title(F+M+7,M+7,W-2*M-14,'ink');author(F+M+7,M+7+th+3.5,W-2*M-14,'sub');
     if(S>=3)P.push(cvRect({cv:'spine',x:X,y:Math.max(10,M)-4,w:S,h:H-2*Math.max(10,M)+8,fillRole:'bg'}));spine(null,'ink');
     P.push(cvRect({x:B+M,y:H-M-aM*1.5-5,w:W*0.5,h:aM*1.5+10,fillRole:'bg'}));circle('ink',{x:B+M+5,w:W*0.5-10})}
+  else if(lay==='topband'){const bh=H*0.36;P.push(cvRect({x:-b,y:-b,w:T+2*b,h:bh+b,fillRole:'accent'}));P.push(cvImg({...fb,y:bh,h:H-bh+b},img));
+    title(F+M,M,W-2*M,'on',{},bh-M-aM*2.5-4);author(F+M,bh-aM*1.5-M*0.6,W-2*M,'on');spine('accent','on');circle('sub')}
+  else if(lay==='label'){P.push(cvImg(fb,img));const lw=Math.min(W-2*M,W*0.66),pd=6,th=tH(lw-2*pd,H*0.3);
+    P.push(cvRect({x:F+M,y:M,w:lw,h:th+aM*1.5+pd*2+3,fillRole:'accent'}));title(F+M+pd,M+pd,lw-2*pd,'on',{},H*0.3);author(F+M+pd,M+pd+th+3,lw-2*pd,'on');spine('accent','on');circle('sub')}
+  else if(lay==='split'){const hw=W/2,tx0=R?F+hw:F,M2=M*0.8;P.push(cvImg({x:R?-b:F+hw,y:-b,w:hw+b,h:H+2*b},img));P.push(cvRect({x:tx0,y:-b,w:hw,h:H+2*b,fillRole:'accent'}));
+    const tw=hw-2*M2,z=Math.max(Math.round(tS*0.5),Math.min(tS,Math.floor(tS*tw/(gAdv(v('title'),tS,font,700,false)*1.03+0.5))));
+    title(tx0+M2,M,tw,'on',{size:z},H*0.55);author(tx0+M2,H-M-aM*1.5,tw,'on');spine('accent','on');circle('sub')}
+  else if(lay==='corner'){const iw=W*0.74,ih=H*0.6;P.push(cvImg({x:R?-b:F+W-iw,y:-b,w:iw+b,h:ih+b},img));P.push(cvRect({x:R?F+W-M-5:F+M,y:M,w:5,h:5}));
+    const ty=ih+M*0.9;title(F+M,ty,W-2*M,'ink',{},H-M-aM*2.5-ty);author(F+M,H-M-aM*1.5,W-2*M,'sub');spine('accent','on');circle('sub')}
+  else if(lay==='big'){const th=title(F+M,M,W-2*M,'ink',{size:Math.round(tS*1.35),leading:115},H*0.42);author(F+M,M+th+3,W-2*M,'sub');
+    const iy=M+th+aM*1.5+10;P.push(cvImg({x:F+M,y:iy,w:W-2*M,h:H-M-iy},img));spine('accent','on');circle('sub')}
+  else if(lay==='center'){const aw=Math.min(W*0.46,H*0.38),ay=H*0.2;P.push(cvImg({x:F+(W-aw)/2,y:ay,w:aw,h:aw},img));const ty=ay+aw+12;
+    const th=title(F+M,ty,W-2*M,'ink',{align:'center',size:Math.round(tS*0.62)},H-M-aM*3-ty);author(F+M,ty+th+3,W-2*M,'sub',{align:'center'});spine('accent','on');circle('sub',{align:'center'})}
+  else if(lay==='pale'){out.bgRole='keyPale';const th=title(F+M,M*1.2,W-2*M,'ink',{},H*0.28);author(F+M,M*1.2+th+3,W-2*M,'sub');const iy=Math.max(H*0.42,M*1.2+th+aM*1.5+10);
+    P.push(cvImg({...fb,y:iy,h:H-iy+b},img));spine('accent','on');circle('sub')}
+  else if(lay==='border'){out.bgRole='accent';const ih=H*0.7;P.push(cvImg({x:F+M,y:M,w:W-2*M,h:ih},img));const ty=M+ih+8;
+    title(F+M,ty,W-2*M,'on',{size:Math.round(tS*0.7)},H-M-aM*2-ty);author(F+M,H-M-aM*1.5,W-2*M,'on',{align:'end'});spine(null,'on');circle('on')}
+  else if(lay==='deep'){out.bgRole='keyDark';const iw=W*0.56,sw=W-iw,sx=R?F+iw:F;P.push(cvImg({x:R?-b:F+sw,y:-b,w:iw+b,h:H+2*b},img));
+    const ins=Math.max(5,(sw-tM*1.25-aM*1.6)/2),cx=sx+ins,cw=sw-2*ins,cut=H*0.7;
+    const it=tx({cv:'title',x:cx,y:M,w:cw,h:cut-M,text:v('title'),size:tS,leading:125,track:60,dir:'v',colorRole:'#ffffff'});it.size=cvFit(it,cw).size;P.push(it);
+    P.push(tx({cv:'author',x:cx,y:cut+6,w:cw,h:H-M-cut-6,text:v('author'),size:aS,weight:400,leading:100,track:60,dir:'v',align:'end',colorRole:'keyLight'}));
+    spine(null,'#ffffff');circle('keyLight')}
   for(const it of P)if(!it.cv)it.cv='deco';
   return out}
 /* 書類から絵と文字を拾い直して d.cover.f と画像の設定を更新する */
