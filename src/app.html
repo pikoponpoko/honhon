@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+Mono:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho:wght@400;700&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Sans+Mono:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&display=swap">
 <style>
 /* Layout: header / pages | spread stage | inspector — a production tool, flat and dense.
    Colors, type, radius and focus follow the Digital Agency Design System (DADS) primitives. */
@@ -259,6 +259,10 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .cpv button{padding:0;min-width:0;min-height:0;border:1px solid var(--line);background:none;display:block}
 .cpv button.on{border-color:var(--ink);outline:2px solid var(--ink);outline-offset:1px}
 .cpv canvas{width:100%;display:block}
+.cpv.nbd{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));max-height:340px;overflow:auto;margin-bottom:12px}
+.nbd button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 0 6px;font-size:12px;color:var(--ink)}.nbd button canvas{border-bottom:1px solid var(--line)}
+.lay.bl{min-width:0}.lay.bl span{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#layAddSet{width:100%;margin-bottom:8px}
 #c-ipv canvas{border:1px solid var(--line)}
 .cpv .cno{aspect-ratio:91/55;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--sub)}
 .cim{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -888,11 +892,11 @@ function layout(it){
   return layoutText(it,'',true);
 }
 /* 段落ごとに文字サイズ・太さが違う横組みテキスト（PPTXから読み込んだ本文など）。it.ps[k]={r:基準サイズに対する倍率,b:太字} */
-function paraStyle(it,k){const q=it.ps&&it.ps[k];if(!q)return it;return{...it,size:it.size*(q.r||1),weight:q.b==null?it.weight:q.b?700:400}}
+function paraStyle(it,k){const q=it.ps&&it.ps[k];if(!q)return it;return{...it,size:it.size*(q.r||1),weight:q.b==null?it.weight:q.b?Math.max(700,it.weight):Math.min(400,it.weight),...(q.col?{color:q.col,pcol:1}:{})}}
 function layoutRich(it,text,last){
   const lim=it.w,lines=[];
   String(text).split('\n').forEach((para,k)=>{const st=paraStyle(it,k),sz=st.size*PT,pc=[...para],us=units(pc,st,false);let cur=[],pos=0;
-    const push=()=>{cur.sz=sz;cur.w=st.weight;lines.push(cur);cur=[];pos=0};
+    const push=()=>{cur.sz=sz;cur.w=st.weight;cur.c=st.pcol?st.color:null;lines.push(cur);cur=[];pos=0};
     for(const u of us){
       if(pos+u.adv>lim+1e-6&&cur.length){
         if(HANG.has(u.s)&&!cur.hung){cur.push(u);cur.hung=true;push();continue}
@@ -908,7 +912,7 @@ function layoutRich(it,text,last){
     let len=0;for(const u of ln)len+=u.adv;if(ln.hung)len-=ln[ln.length-1].adv;
     let p=it.align==='center'?(lim-len)/2:it.align==='end'?lim-len:0;if(len>lim)p=0;
     const cy=top+ln.sz/2;
-    for(const u of ln){const g={s:u.s,x:p+u.adv/2,y:cy,rot:false,dx:0,dy:0,sx:1,fs:ln.sz,fw:ln.w};
+    for(const u of ln){const g={s:u.s,x:p+u.adv/2,y:cy,rot:false,dx:0,dy:0,sx:1,fs:ln.sz,fw:ln.w,...(ln.c?{fc:ln.c}:{})};
       if(u.s.trim()){bx0=Math.min(bx0,g.x-ln.sz/2);bx1=Math.max(bx1,g.x+ln.sz/2);by0=Math.min(by0,top);by1=Math.max(by1,top+ln.sz)}
       glyphs.push(g);p+=u.adv}
     used=top+ln.sz;top+=ln.sz*it.leading/100;n++}
@@ -993,6 +997,7 @@ function drawText(ctx,it,ch,preview){
   for(const g of L.glyphs){
     if(!g.s.trim())continue;
     if(g.fs){const f=`${g.fw} ${g.fs*K}px ${FF(it.font)}`;if(f!==cf){ctx.font=f;cf=f}}
+    if(it.ps)ctx.fillStyle=col(g.fc||it.color,ch);
     ctx.save();ctx.translate(it.x+g.x,it.y+g.y);ctx.scale(1/K,1/K);
     if(g.rot)ctx.rotate(Math.PI/2);
     if(g.sx!==1)ctx.scale(g.sx,1);
@@ -1001,21 +1006,39 @@ function drawText(ctx,it,ch,preview){
   ctx.restore();
   if(preview&&L.overflow){const q=2.2;ctx.fillStyle=TOK.danger;ctx.fillRect(it.x+it.w-q,it.y+it.h-q,q,q)}
 }
+/* 形（geo）：枠を 0〜1000 にしたパス（M L C Q Z）。回転（rot、度）は枠の中心で回す */
+const geoCache=new Map();
+function geoPath(it){const k=it.geo+'|'+it.w+'|'+it.h;let p=geoCache.get(k);if(p)return p;
+  const sx=it.w/1000,sy=it.h/1000,tk=it.geo.match(/[MLCQZ]|-?\d+(?:\.\d+)?/g)||[];p=new Path2D();let i=0,c='M';
+  const n=()=>+tk[i++];
+  while(i<tk.length){if(/[MLCQZ]/.test(tk[i])){c=tk[i++];if(c==='Z'){p.closePath();continue}}
+    if(c==='M'){p.moveTo(n()*sx,n()*sy);c='L'}else if(c==='L')p.lineTo(n()*sx,n()*sy);else if(c==='C')p.bezierCurveTo(n()*sx,n()*sy,n()*sx,n()*sy,n()*sx,n()*sy);else if(c==='Q')p.quadraticCurveTo(n()*sx,n()*sy,n()*sx,n()*sy);else i++}
+  if(geoCache.size>4000)geoCache.clear();geoCache.set(k,p);return p}
+const dashOf=it=>it.dash==='sysDot'||it.dash==='dot'?[it.cap?0.01:it.sw,it.sw*2]:it.dash?[it.sw*4,it.sw*3]:[];
 function drawItem(ctx,it,ch,preview){
+  if(it.rot){const cx=it.x+it.w/2,cy=it.y+it.h/2;ctx.save();ctx.translate(cx,cy);ctx.rotate(it.rot*Math.PI/180);ctx.translate(-cx,-cy);drawItem0(ctx,it,ch,preview);ctx.restore();return}
+  drawItem0(ctx,it,ch,preview)}
+function drawItem0(ctx,it,ch,preview){
   if(it.type==='video'){drawItem(ctx,{...it,type:'image',imageId:it.posterId},ch,preview);if(preview&&it.mediaId){const r=Math.min(it.w,it.h)*0.14,cx=it.x+it.w/2,cy=it.y+it.h/2;
     ctx.save();ctx.fillStyle=TOK.accent;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();ctx.fillStyle=TOK.paper;ctx.beginPath();ctx.moveTo(cx-r*0.35,cy-r*0.5);ctx.lineTo(cx+r*0.55,cy);ctx.lineTo(cx-r*0.35,cy+r*0.5);ctx.closePath();ctx.fill();ctx.restore()}return}
-  if(it.type==='rect'){
+  if(it.type==='rect'&&it.geo){const p=geoPath(it);ctx.save();ctx.translate(it.x,it.y);
+    if(it.fill){ctx.fillStyle=col(it.fill,ch);ctx.fill(p,'evenodd')}
+    if(it.stroke&&it.sw>0){ctx.strokeStyle=col(it.stroke,ch);ctx.lineWidth=it.sw;ctx.lineCap=it.cap?'round':'butt';ctx.lineJoin='round';ctx.setLineDash(dashOf(it));ctx.stroke(p)}
+    ctx.restore();
+  }else if(it.type==='rect'){
     if(it.fill){ctx.fillStyle=col(it.fill,ch);ctx.fillRect(it.x,it.y,it.w,it.h)}
-    if(it.stroke&&it.sw>0){ctx.strokeStyle=col(it.stroke,ch);ctx.lineWidth=it.sw;ctx.strokeRect(it.x,it.y,it.w,it.h)}
+    if(it.stroke&&it.sw>0){ctx.strokeStyle=col(it.stroke,ch);ctx.lineWidth=it.sw;if(it.dash){ctx.save();ctx.setLineDash(dashOf(it));ctx.strokeRect(it.x,it.y,it.w,it.h);ctx.restore()}else ctx.strokeRect(it.x,it.y,it.w,it.h)}
   }else if(it.type==='image'){
     const im=it.imageId&&S.images[it.imageId];if(im&&im.pending)return;
     if(im&&im.img){
       /* crop：PPTXの srcRect（左上右下の切り取り率）。切り取った範囲を1枚の画像として扱う */
       const cr=it.crop,sx=cr?im.w*cr.l:0,sy=cr?im.h*cr.t:0,sw=cr?Math.max(1,im.w*(1-cr.l-cr.r)):im.w,sh=cr?Math.max(1,im.h*(1-cr.t-cr.b)):im.h;
       const sc=imgScale(it,{w:sw,h:sh}),dw=it.fit==='stretch'?it.w:sw*sc,dh=it.fit==='stretch'?it.h:sh*sc;
-      ctx.save();ctx.beginPath();ctx.rect(it.x,it.y,it.w,it.h);ctx.clip();
+      ctx.save();if(it.geo){ctx.translate(it.x,it.y);ctx.clip(geoPath(it));ctx.translate(-it.x,-it.y)}else{ctx.beginPath();ctx.rect(it.x,it.y,it.w,it.h);ctx.clip()}
       ctx.imageSmoothingQuality='high';
       ctx.drawImage(ch?sepCanvas(it.imageId,ch):im.img,sx,sy,sw,sh,it.x+(it.w-dw)/2+(it.ox||0),it.y+(it.h-dh)/2+(it.oy||0),dw,dh);ctx.restore();
+    }else if(preview&&it.geo){
+      ctx.save();ctx.strokeStyle=TOK.sub;ctx.lineWidth=0.2;ctx.translate(it.x,it.y);ctx.stroke(geoPath(it));ctx.restore();
     }else if(preview){
       ctx.save();ctx.strokeStyle=TOK.sub;ctx.lineWidth=0.2;ctx.beginPath();ctx.rect(it.x,it.y,it.w,it.h);
       ctx.moveTo(it.x,it.y);ctx.lineTo(it.x+it.w,it.y+it.h);ctx.moveTo(it.x+it.w,it.y);ctx.lineTo(it.x,it.y+it.h);ctx.stroke();ctx.restore();
@@ -1810,7 +1833,7 @@ function newDocDlg(slide){
     <span class="n-book">${F('カラー','<select id="n-col"><option value="mono">モノクロ</option><option value="cmyk">カラー（CMYK）</option></select>')}</span>
     <span id="n-pw">${F('ページ数','<input type="number" id="n-pages" value="24" step="4" min="1">')}</span>
     <span id="n-sw" hidden>${F('背幅（mm）','<input type="number" id="n-spine" value="3" step="0.1" min="0">')}</span></div>
-    <div id="n-slide" class="sec" hidden>${keyPick(NK)}<div class="row">${F('構成のひな形',`<select id="n-flow">${Object.keys(FLOWS).map(k=>`<option>${k}</option>`).join('')}<option value="">白紙</option></select>`)}</div></div>
+    <div id="n-slide" class="sec" hidden>${keyPick(NK)}<h3>デザイン</h3><div class="cpv nbd" id="n-board"><button type="button" data-v="" class="on"><canvas></canvas>標準</button></div><div class="row" id="n-flowr">${F('構成のひな形',`<select id="n-flow">${Object.keys(FLOWS).map(k=>`<option>${k}</option>`).join('')}<option value="">白紙</option></select>`)}</div></div>
     <div id="n-cover" class="sec" hidden><div class="row">${F('本文ページ数','<input type="number" id="n-cvp" value="32" step="4" min="4">')}${F('本文用紙','<select id="n-cvpa"></select>',1)}</div>
       ${coverLayPick(CO.lay)}${coverFields(CO.f,CO.font)}<div class="cim"><button id="n-cvart">絵を選ぶ</button><span class="ok" id="n-cvart-n"></span></div><div id="n-cvkey">${cardKeyPick(CO)}</div></div>
     <div class="foot"><button id="n-cancel">キャンセル</button><button class="primary" id="n-ok">作成</button></div>`);
@@ -1830,9 +1853,17 @@ function newDocDlg(slide){
   $('#n-size').onchange=sync;$('#n-kind').onchange=()=>{$$('#n-kinds button').forEach(x=>x.classList.toggle('on',x.dataset.k===$('#n-kind').value));if($('#n-kind').value==='cover'){$('#n-col').value='cmyk';$('#n-cover').hidden=false;cvSpine();document.fonts.ready.then(()=>setTimeout(cvPv,60))}sync()};
   $('#n-kinds').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='web'){wbStep1();return}$('#n-kind').value=b.dataset.k;$('#n-kind').onchange()};$('#n-ori').onchange=sync;
   for(const x of['#n-w','#n-h'])$(x).addEventListener('input',()=>{$('#n-size').value='custom'});
-  const nkRe=()=>{$('#n-slide .kp').outerHTML=keyPick(NK);bindKeyPick($('#n-slide'),NK,nkRe)};bindKeyPick($('#n-slide'),NK,nkRe);
+  /* デザイン：標準（構成のひな形から作る）か、ボードのひな型（そのピンのスライド一式） */
+  let NB='';
+  const nbDraw=()=>{const T=mkTheme(NK.key,'light');for(const b of $$('#n-board button')){const c=b.querySelector('canvas'),v=b.dataset.v;
+    if(v)drawSlideThumb(c,makeBoardSlide(v,0,T),T,150,SW,SH);else drawSlideThumb(c,makeSlide('title',{},T),T,150,SW,SH)}};
+  const nbFill=()=>{if(!BOARDS||!$('#n-board'))return;$('#n-board').insertAdjacentHTML('beforeend',BOARDS.pins.map(p=>`<button type="button" data-v="${p.id}"><canvas></canvas>${esc(p.name)}</button>`).join(''));nbDraw();document.fonts.ready.then(()=>setTimeout(nbDraw,60))};
+  if(slide)loadBoards().then(nbFill).catch(()=>{});
+  $('#n-board').onclick=e=>{const b=e.target.closest('button');if(!b)return;NB=b.dataset.v;$$('#n-board button').forEach(x=>x.classList.toggle('on',x===b));$('#n-flowr').hidden=!!NB};
+  const nkRe=()=>{$('#n-slide .kp').outerHTML=keyPick(NK);bindKeyPick($('#n-slide'),NK,nkRe);nbDraw()};bindKeyPick($('#n-slide'),NK,nkRe);
   $('#n-cancel').onclick=closeModal;
-  $('#n-ok').onclick=()=>{if($('#n-kind').value==='slide'){createSlideDoc({...NK},$('#n-flow').value);closeModal();openOutline();return}
+  $('#n-ok').onclick=()=>{if($('#n-kind').value==='slide'&&NB&&boardPin(NB)){createBoardDoc({...NK},NB);closeModal();return}
+    if($('#n-kind').value==='slide'){createSlideDoc({...NK},$('#n-flow').value);closeModal();openOutline();return}
     const w=+$('#n-w').value,h=+$('#n-h').value;if(!(w>=20&&h>=20)){toast('サイズを20mm以上で入力してください');return}
     const kind=$('#n-kind').value;S.doc=newDoc({kind,name:'無題',printer:$('#n-pr').value,w,h,binding:$('#n-bind').value,color:$('#n-col').value,pages:+$('#n-pages').value,spine:+$('#n-spine').value});
     const im=kind==='cover'&&CO.img&&S.images[CO.img.imageId];
@@ -3630,7 +3661,7 @@ function mkTheme(key,ground,key2){const g=GROUNDS.some(([v])=>v===ground)?ground
   const sub=g==='shade'?t.keyLight:dk?'#cccccc':g==='tint'?mixH(key,'#1a1a1a',0.6):'#666666',line=g==='shade'?mixH(key,'#000000',0.3):dk?'#666666':g==='tint'?t.keyLight:'#cccccc';
   const div=g==='tint'?t.keyDark:g==='shade'?t.keyPale:dk?'#ffffff':'#1a1a1a',onDiv=dk?bg:'#ffffff';
   const fit=c=>[0,0.2,0.4,0.6].map(x=>mixH(c,dk?'#ffffff':'#000000',x)).find(x=>conH(x,bg)>=2.2)||ink,k=fit(key),k2=fit(key2||autoK2(key));
-  return{bg,ink,sub,line,accent:k,accent2:k2,...t,on:conH('#ffffff',k)>=conH('#1a1a1a',k)?'#ffffff':'#1a1a1a',div,onDiv,keyDiv:[key,t.keyDark,t.keyLight].find(c=>conH(c,div)>=3)||onDiv,head:'Noto Sans JP',body:'Noto Sans JP'}}
+  return{bg,ink,sub,line,accent:k,accent2:k2,key,key2:key2||autoK2(key),...t,on:conH('#ffffff',k)>=conH('#1a1a1a',k)?'#ffffff':'#1a1a1a',div,onDiv,keyDiv:[key,t.keyDark,t.keyLight].find(c=>conH(c,div)>=3)||onDiv,head:'Noto Sans JP',body:'Noto Sans JP'}}
 function hexC(h){const n=parseInt(String(h).replace('#',''),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,k=1-Math.max(r,g,b);
   if(k>=0.9999)return{c:0,m:0,y:0,k:100};const f=v=>Math.round((1-v-k)/(1-k)*1000)/10;return{c:f(r),m:f(g),y:f(b),k:Math.round(k*1000)/10}}
 function cHex(c){return cmykCss(c).match(/\d+/g).map(v=>(+v).toString(16).padStart(2,'0')).join('').toUpperCase()}
@@ -3678,10 +3709,16 @@ const SLOTS={pair:['image','image2','title','body'],grid:['title','image','image
 const baseOf=k=>(LAYOUTS[k]||LAYOUTS.content).base;
 function cardLines(s){return String(s||'').split('\n').map(x=>x.replace(/^\s*[・\-\*•]\s*/,'').trim()).filter(Boolean)}
 const PH={title:'タイトル',sub:'サブタイトル',body:'本文',body2:'本文',num:'01',c1:'本文',c2:'本文',c3:'本文',c4:'本文'};
-function theme(){const d=S.doc,f=d&&d.mfont;let t;if(d&&d.key)t=mkTheme(d.key,d.ground,d.key2);else{const o=THEMES[d&&d.theme]||THEMES.blue;t={line:o.sub,div:o.accent,onDiv:o.on,keyDiv:o.on,accent2:o.accent,...o}}return f?{...t,...f}:t}
+function theme(){const d=S.doc,f=d&&d.mfont;let t;if(d&&d.key)t=mkTheme(d.key,d.ground,d.key2);else{const o=THEMES[d&&d.theme]||THEMES.blue;t={line:o.sub,div:o.accent,onDiv:o.on,keyDiv:o.on,accent2:o.accent,key:o.accent,key2:o.accent,...o}}return f?{...t,...f}:t}
+/* 色の役割：テーマの名前（ink・accent など）のほか、ボードのひな型が使う 'k'／'k2'（キーカラー・対比色そのもの）、
+   'k@t@LL'（キーカラーを灰色LLに t の割合で混ぜた色）、'on@役割'（その色の面の上で読める白か黒）、'#rrggbb'（固定色） */
+function roleHex(T,r,d){if(!r)return d;if(r[0]==='#')return r;
+  if(r.startsWith('on@')){const c=roleHex(T,r.slice(3),T.bg);return conH('#ffffff',c)>=conH('#1a1a1a',c)?'#ffffff':'#1a1a1a'}
+  const m=/^(k2?)(?:@([\d.]+)@([0-9a-f]{2}))?$/.exec(r);if(m){const b=(m[1]==='k'?T.key:T.key2)||T.accent;return m[2]?mixH(b,'#'+m[3].repeat(3),+m[2]):b}
+  return T[r]||d}
 function themePage(pg,T=theme()){
-  if(pg.bgRole)pg.bg=hexC(T[pg.bgRole]||T.bg);
-  for(const it of pg.items){if(it.colorRole)it.color=hexC(T[it.colorRole]||T.ink);if(it.fillRole)it.fill=hexC(T[it.fillRole]||T.accent);if(it.strokeRole)it.stroke=hexC(T[it.strokeRole]||T.line);if(it.fontRole)it.font=T[it.fontRole]}
+  if(pg.bgRole)pg.bg=hexC(roleHex(T,pg.bgRole,T.bg));
+  for(const it of pg.items){if(it.colorRole)it.color=hexC(roleHex(T,it.colorRole,T.ink));if(it.fillRole)it.fill=hexC(roleHex(T,it.fillRole,T.accent));if(it.strokeRole)it.stroke=hexC(roleHex(T,it.strokeRole,T.line));if(it.fontRole)it.font=T[it.fontRole];if(it.bimg)boardImgSet(it,T);if(it.ps)for(const q of it.ps)if(q&&q.cr)q.col=hexC(roleHex(T,q.cr,T.ink))}
 }
 function makeSlide(key,t={},T){
   const L=LAYOUTS[key]||LAYOUTS.content;key=LAYOUTS[key]?key:'content';
@@ -3694,6 +3731,42 @@ function makeSlide(key,t={},T){
     pg.items.push(it)}
   themePage(pg,T);return pg;
 }
+/* ---------- ボードのひな型（Pinterestボードを再現したスライド集、boards.json） ----------
+   pins[{id,name,slides[{n,bg,note,it[]}]}]。it の t：x＝文字 r＝図形 i＝画像枠 g＝飾り画像（キーカラーで塗り直す）。b＝[x,y,w,h]mm、色は roleHex の役割 */
+let BOARDS=null,boardsP=null;const BIMG={},BIC=new Map();
+function loadBoards(){if(BOARDS)return Promise.resolve(BOARDS);if(boardsP)return boardsP;
+  boardsP=fetch('boards.json').then(r=>{if(!r.ok)throw new Error('ひな型を読み込めませんでした');return r.json()}).then(async d=>{
+    await Promise.all(Object.entries(d.img||{}).map(async([k,src])=>{try{BIMG[k]=await loadImg(src)}catch(e){}}));BOARDS=d;return d}).catch(e=>{boardsP=null;throw e});
+  return boardsP}
+const boardPin=id=>BOARDS&&BOARDS.pins.find(p=>p.id===id);
+/* 飾り画像の赤系＝キーカラー、青系＝対比色として、画素ごとに今の色へ置き換える */
+function boardImg(k,T){const key=k+'|'+T.key+'|'+T.key2;let e=BIC.get(key);if(e)return e;const src=BIMG[k];if(!src)return null;
+  const c=document.createElement('canvas');c.width=src.naturalWidth;c.height=src.naturalHeight;const x=c.getContext('2d');x.drawImage(src,0,0);
+  const D=x.getImageData(0,0,c.width,c.height),a=D.data,P=h=>{const n=parseInt(h.slice(1),16);return[n>>16&255,n>>8&255,n&255]},K1=P(T.key),K2=P(T.key2);
+  for(let i=0;i<a.length;i+=4){if(!a[i+3])continue;const r=a[i],g=a[i+1],b=a[i+2];let base=null,t,L;
+    if(Math.abs(g-b)<=6&&r>g+6){base=K1;t=1-(r-g)/255;L=t>0?Math.min(255,g/t):0}else if(Math.abs(r-g)<=6&&b>r+6){base=K2;t=1-(b-r)/255;L=t>0?Math.min(255,r/t):0}
+    if(base){a[i]=base[0]*(1-t)+L*t;a[i+1]=base[1]*(1-t)+L*t;a[i+2]=base[2]*(1-t)+L*t}}
+  x.putImageData(D,0,0);e={id:'b_'+uid(),im:{src:c.toDataURL('image/png'),w:c.width,h:c.height,img:c,name:'飾り.png'}};BIC.set(key,e);return e}
+function boardImgSet(it,T){const e=boardImg(it.bimg,T);if(!e)return;S.images[e.id]=e.im;it.imageId=e.id}
+function makeBoardSlide(pid,i,T=theme()){const P=boardPin(pid),sl=P&&P.slides[i];if(!sl)return makeSlide('content',{},T);
+  const pg={id:uid(),items:[],noNombre:true,board:pid+':'+i,bgRole:sl.bg};if(sl.note)pg.notes=sl.note;
+  for(const o of sl.it){const [x,y,w,h]=o.b,g={x,y,w:Math.max(w,0.01),h:Math.max(h,0.01),...(o.rot?{rot:o.rot}:{}),...(o.g?{geo:o.g}:{})};let it;
+    if(o.t==='x')it=textItem({...g,text:o.s,size:o.z,weight:o.wt||400,leading:o.ld||120,track:o.tr||0,dir:o.v?'v':'h',align:o.al==='c'?'center':o.al==='e'?'end':'start',...(o.an?{anchor:o.an}:{}),colorRole:o.c,...(o.f?{font:o.f}:{fontRole:'head'}),...(o.ps?{ps:o.ps}:{})});
+    else if(o.t==='r')it=rectItem({...g,fill:null,stroke:null,sw:o.sw||0,...(o.f?{fillRole:o.f}:{}),...(o.s?{strokeRole:o.s}:{}),...(o.dash?{dash:o.dash}:{}),...(o.cap?{cap:1}:{})});
+    else if(o.t==='i')it=imageItem({...g,imageId:null,fit:'cover'});
+    else if(o.t==='g')it=imageItem({...g,imageId:null,fit:'stretch',bimg:o.img});
+    if(it)pg.items.push(it)}
+  themePage(pg,T);return pg}
+const boardShort=n=>{const s=String(n||''),k=s.indexOf('：');return k>0&&k<=6?s.slice(0,k):s.split(/[＋、（：]/)[0]};
+function boardBtns(pid){const P=boardPin(pid);return P?P.slides.map((sl,i)=>`<button type="button" class="lay bl" data-bs="${pid}:${i}" title="${esc(sl.n)}"><canvas></canvas><span>${esc(boardShort(sl.n))}</span></button>`).join(''):''}
+function drawBoardThumbs(root,T=theme(),wpx=120){for(const b of root.querySelectorAll('[data-bs]')){const [p,i]=b.dataset.bs.split(':');const pg=makeBoardSlide(p,+i,T);drawSlideThumb(b.querySelector('canvas'),pg,T,wpx,SW,SH)}}
+function addBoardSlide(pid,i){const d=S.doc;if(d.pptx){toast('PowerPointファイルではスライドを追加できません');return}const at=Math.min(S.page+1,d.pages.length);d.pages.splice(at,0,makeBoardSlide(pid,i));rebuild();commit();setPage(at);renderProps();centerStage(at)}
+function createBoardDoc(th,pid){
+  const d=newDoc({kind:'slide',name:'無題',w:SW,h:SH,binding:'left',color:'cmyk',pages:1});
+  d.bleed=0;d.margins={top:SM,bottom:SM,inner:SM,outer:SM};d.nombre.mode='none';Object.assign(d,{key:th.key,ground:'light',board:pid});d.layVer=LAYVER;
+  S.doc=d;S.images={};S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;
+  const T=theme();d.pages=boardPin(pid).slides.map((_,i)=>makeBoardSlide(pid,i,T));
+  fitZoom();rebuild();renderAll();resetHistory()}
 function slideDefaults(it){const T=theme();
   if(it.type==='text')Object.assign(it,{size:18,leading:160,dir:'h',weight:400,colorRole:'ink',fontRole:'body',color:hexC(T.ink),font:T.body});
   else if(it.type==='rect')Object.assign(it,{fillRole:'accent',fill:hexC(T.accent)});
@@ -3942,11 +4015,14 @@ function proposeLayouts(pi){
   const order=Object.keys(LAYOUTS),figOk=k=>['image','content','two'].includes(baseOf(k))&&k!=='statement'&&k!=='statement_l';
   return Object.entries(sc).filter(([k])=>layoutOk(k)&&(nf?figOk(k):!(img&&!SLOTS[baseOf(k)].includes('image')&&sc[k]<9))).sort((a,b)=>b[1]-a[1]||order.indexOf(a[0])-order.indexOf(b[0])).slice(0,6).map(([k])=>k);
 }
-function drawSlideThumb(c,pg,T,wpx){
-  const W=S.doc.trimW,H=S.doc.trimH,dpr=window.devicePixelRatio||1;c.width=Math.round(wpx*dpr);c.height=Math.round(wpx*H/W*dpr);c.style.aspectRatio=W+'/'+H;const ctx=c.getContext('2d'),s=c.width/W;ctx.setTransform(s,0,0,s,0,0);
+/* 空の画像枠を面で描く（縮小表示用）。形（geo）と回転に合わせる */
+function phFill(ctx,it,c){ctx.save();if(it.rot){const cx=it.x+it.w/2,cy=it.y+it.h/2;ctx.translate(cx,cy);ctx.rotate(it.rot*Math.PI/180);ctx.translate(-cx,-cy)}
+  ctx.fillStyle=c;if(it.geo){ctx.translate(it.x,it.y);ctx.fill(geoPath(it))}else ctx.fillRect(it.x,it.y,it.w,it.h);ctx.restore()}
+function drawSlideThumb(c,pg,T,wpx,W=S.doc.trimW,H=S.doc.trimH){
+  const dpr=window.devicePixelRatio||1;c.width=Math.round(wpx*dpr);c.height=Math.round(wpx*H/W*dpr);c.style.aspectRatio=W+'/'+H;const ctx=c.getContext('2d'),s=c.width/W;ctx.setTransform(s,0,0,s,0,0);
   const B=mBg(pg);ctx.fillStyle=B.color?cmykCss(B.color):'#ffffff';ctx.fillRect(0,0,W,H);
   if(B.img)drawItem(ctx,bgItem(B.img,0,0,W,H),null,false);for(const it of mUnder(pg))drawItem(ctx,it,null,false);
-  for(const it of pg.items){if(it.type==='image'&&!(it.imageId&&S.images[it.imageId]&&S.images[it.imageId].img)){ctx.fillStyle=T.sub;ctx.fillRect(it.x,it.y,it.w,it.h)}else drawItem(ctx,it,null,false)}
+  for(const it of pg.items){if(it.type==='image'&&!(it.imageId&&S.images[it.imageId]&&S.images[it.imageId].img))phFill(ctx,it,T.sub);else drawItem(ctx,it,null,false)}
   for(const it of pg.items)lcache.delete(it.id);
 }
 function sugBtns(pi){const pg=S.doc.pages[pi];return proposeLayouts(pi).map(k=>`<button type="button" class="lay sug${k===pg.layout?' on':''}" data-lay="${k}"><canvas></canvas>${esc(LAYOUTS[k].name)}</button>`).join('')}
@@ -4059,19 +4135,24 @@ function snapToLayout(idx){const d=S.doc;let n=0;
     if(hit)dirty(pi)}
   if(n){S.lmap=null;commit();renderProps()}
   toast(n?`${n}個の枠をレイアウトの位置に戻しました`:'レイアウトと違う位置の枠はありません')}
+let addSet=null;
 function renderSlideProps(el){
-  const d=S.doc,pg=d.pages[S.page];
-  el.innerHTML=`<div class="sec"><h3>スライド ${S.page+1} のレイアウト案</h3><div class="lays sugs" id="laySug">${sugBtns(S.page)}</div></div>${imgLaySec(S.page)}
-    <div class="sec"><h3>すべてのレイアウト</h3><div class="lays" id="layCur">${layBtns(pg.layout)}</div></div>${slideBgSec(pg)}`+
+  const d=S.doc,pg=d.pages[S.page],bd=!!pg.board;
+  if(!d.pptx&&!BOARDS)loadBoards().then(()=>{if(S.doc===d&&S.doc.kind==='slide')renderProps()}).catch(()=>{});
+  const set=addSet!=null&&(addSet===''||boardPin(addSet))?addSet:(pg.board?pg.board.split(':')[0]:d.board||'');
+  const setSel=BOARDS?`<select id="layAddSet"><option value="">標準</option>${BOARDS.pins.map(p=>`<option value="${p.id}"${p.id===set?' selected':''}>${esc(p.name)}</option>`).join('')}</select>`:'';
+  el.innerHTML=(bd?'':`<div class="sec"><h3>スライド ${S.page+1} のレイアウト案</h3><div class="lays sugs" id="laySug">${sugBtns(S.page)}</div></div>${imgLaySec(S.page)}
+    <div class="sec"><h3>すべてのレイアウト</h3><div class="lays" id="layCur">${layBtns(pg.layout)}</div></div>`)+slideBgSec(pg)+
     `<div class="sec"><h3>余白に揃える</h3><div class="row"><button id="fitG">このスライド</button><button id="fitGAll">すべてのスライド</button></div></div>`+
-    (d.pptx?`<div class="sec"><h3>文字枠</h3><div class="row"><button id="phSnap">レイアウトの位置に戻す</button><button id="phSnapAll">すべてのスライド</button></div></div>`:`<div class="sec"><h3>後ろに追加</h3><div class="lays" id="layAdd">${layBtns()}</div></div>`);
-  drawLayThumbs(el,slideTheme(pg));drawSugThumbs(el,S.page);
-  wireImgLay(S.page);
+    (d.pptx?`<div class="sec"><h3>文字枠</h3><div class="row"><button id="phSnap">レイアウトの位置に戻す</button><button id="phSnapAll">すべてのスライド</button></div></div>`:`<div class="sec"><h3>後ろに追加</h3>${setSel}<div class="lays" id="layAdd">${set&&boardPin(set)?boardBtns(set):layBtns()}</div></div>`);
+  if(bd){const T=slideTheme(pg);drawLayThumbs(el,T);drawBoardThumbs(el,T)}else{drawLayThumbs(el,slideTheme(pg));drawSugThumbs(el,S.page);drawBoardThumbs(el,slideTheme(pg))}
+  const ss=$('#layAddSet');if(ss)ss.onchange=()=>{addSet=ss.value;renderProps()};
+  if(!bd)wireImgLay(S.page);
   $('#fitG').onclick=()=>fitToGuide([S.page]);$('#fitGAll').onclick=()=>fitToGuide(d.pages.map((_,i)=>i));
   if(d.pptx){$('#phSnap').onclick=()=>snapToLayout([S.page]);$('#phSnapAll').onclick=()=>snapToLayout(d.pages.map((_,i)=>i))}
-  $('#laySug').onclick=e=>{const b=e.target.closest('.lay');if(b&&b.dataset.lay!==pg.layout)setLayout(S.page,b.dataset.lay)};
-  $('#layCur').onclick=e=>{const b=e.target.closest('.lay');if(b&&b.dataset.lay!==pg.layout)setLayout(S.page,b.dataset.lay)};
-  if(!d.pptx)$('#layAdd').onclick=e=>{const b=e.target.closest('.lay');if(b)addSlide(b.dataset.lay)};
+  if(!bd){$('#laySug').onclick=e=>{const b=e.target.closest('.lay');if(b&&b.dataset.lay!==pg.layout)setLayout(S.page,b.dataset.lay)};
+  $('#layCur').onclick=e=>{const b=e.target.closest('.lay');if(b&&b.dataset.lay!==pg.layout)setLayout(S.page,b.dataset.lay)}}
+  if(!d.pptx)$('#layAdd').onclick=e=>{const b=e.target.closest('.lay');if(!b)return;if(b.dataset.bs){const [p,i]=b.dataset.bs.split(':');addBoardSlide(p,+i)}else addSlide(b.dataset.lay)};
   wireBg(pg);
 }
 function renderNotes(){
@@ -4262,9 +4343,33 @@ Vコン・テスト
 
 次回までにやること
 ・期限つきで`,
+/*FLOWS-DUR*/"自己紹介（5分）":"[表紙画像] 名前\n肩書き\n発表の場・日付\n\n[画像] プロフィール\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[一文左] 作品づくりの軸を一言で\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介（10分）":"[表紙画像] 名前\n肩書き\n発表の場・日付\n\n[画像] プロフィール\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[一文左] 作品づくりの軸を一言で\n\n[数字左] 受賞・上映歴\n00\n映画祭名（年）\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[全面画像] 代表作 2（制作年・尺）\n\n[全面画像] 制作スタイル\n\n現在の活動\n・項目\n\n今後の展望\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介（15分）":"[表紙画像] 名前\n肩書き\n発表の場・日付\n\n[画像] プロフィール\n\n[区切り番号] これまでの作品\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[一文左] 作品づくりの軸を一言で\n\n[全面画像] 代表作 2（制作年・尺）\n\n[全面画像] 作品名（制作年）\n\n[画像] 影響を受けたもの\n\n[数字左] 受賞・上映歴\n00\n映画祭名（年）\n\n[区切り番号] クライアントワーク\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[全面画像] 制作スタイル\n\n[画像6枚] 制作の様子\n\n現在の活動\n・項目\n\n今後の展望\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介（20分）":"[表紙画像] 名前\n肩書き\n発表の場・日付\n\n[画像] プロフィール\n\n[区切り番号] これまでの作品\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[一文左] 作品づくりの軸を一言で\n\n[全面画像] 代表作 2（制作年・尺）\n\n[全面画像] 作品名（制作年）\n\n[全面画像] 作品名（制作年）\n\n[画像大小] 制作の裏話\n\n[画像] 影響を受けたもの\n\n[数字左] 受賞・上映歴\n00\n映画祭名（年）\n\n[全面画像] 受賞・上映の様子\n\n[区切り番号] クライアントワーク\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[画像] 共同制作・スタッフワーク\n\n[全面画像] 制作スタイル\n\n[画像6枚] 制作の様子\n\n現在の活動\n・項目\n\n今後の展望\n・項目\n\n[一文左] 質疑応答\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"作品紹介（5分）":"[表紙画像] 作品タイトル\n短編アニメーション企画\n名前・日付\n\n[一文左] ログライン（作品を1文で）\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] テストアニメーション\n\n[一文左] 制作意図\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"作品紹介（10分）":"[表紙画像] 作品タイトル\n短編アニメーション企画\n名前・日付\n\n[一文左] ログライン（作品を1文で）\n\n企画概要\n・形式\n・尺\n・技法\n・制作状況\n・完成予定\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] あらすじ3\n\n[全面画像] あらすじ4\n\n[画像大小] テーマ・モチーフ\n\n[画像6枚] イメージボード\n\n[全面画像] テストアニメーション\n\n[一文左] 制作意図\n\n[カード] 制作状況\n・完了\n・進行中\n・これから\n\n求めていること\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"作品紹介（15分）":"[表紙画像] 作品タイトル\n短編アニメーション企画\n名前・日付\n\n[一文左] ログライン（作品を1文で）\n\n企画概要\n・形式\n・尺\n・技法\n・制作状況\n・完成予定\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[画像] 登場人物\n\n[画像6枚] サブキャラクター\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] あらすじ3\n\n[全面画像] あらすじ4\n\n[画像大小] テーマ・モチーフ\n\n[画像6枚] イメージボード\n\n[画像6枚] 美術・背景\n\n[全面画像] 制作手法\n\n[全面画像] テストアニメーション\n\n[全面画像] この作品を作る理由\n\n[一文左] 制作意図\n\n[カード] 制作状況\n・完了\n・進行中\n・これから\n\nスケジュール\n・時期／作業内容\n\n求めていること\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"作品紹介（20分）":"[表紙画像] 作品タイトル\n短編アニメーション企画\n名前・日付\n\n[一文左] ログライン（作品を1文で）\n\n企画概要\n・形式\n・尺\n・技法\n・制作状況\n・完成予定\n\n[区切り番号] 物語\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[画像] 登場人物\n\n[画像6枚] サブキャラクター\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] あらすじ3\n\n[全面画像] あらすじ4\n\n[全面画像] あらすじ5\n\n[区切り番号] ビジュアル\n\n[画像大小] テーマ・モチーフ\n\n[画像6枚] イメージボード\n\n[画像6枚] 美術・背景\n\n[画像6枚] 参考作品・トーン\n\n[全面画像] テストアニメーション\n\n[全面画像] この作品を作る理由\n\n[一文左] 制作意図\n\n[区切り番号] 制作\n\n[全面画像] 制作手法\n\n[カード] 制作状況\n・完了\n・進行中\n・これから\n\nスケジュール\n・時期／作業内容\n\nスタッフ・体制\n・監督\n\n予算と資金計画\n・合計\n\n上映・配信の展望\n・項目\n\n求めていること\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介＋作品紹介（5分）":"[表紙画像] 名前\n自己紹介と新作『作品タイトル』のご紹介\n発表の場・日付\n\n[画像] プロフィール\n\n[全面画像] 代表作（制作年・尺）\n\n[一文左] 作品づくりの軸を一言で\n\n[一文左] 新作『作品タイトル』\n\n[一文左] ログライン（作品を1文で）\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[全面画像] あらすじ1\n\n[全面画像] テストアニメーション\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介＋作品紹介（10分）":"[表紙画像] 名前\n自己紹介と新作『作品タイトル』のご紹介\n発表の場・日付\n\n[画像] プロフィール\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[一文左] 新作『作品タイトル』\n\n[一文左] ログライン（作品を1文で）\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] あらすじ3\n\n[全面画像] テストアニメーション\n\n[一文左] 制作意図\n\n[カード] 制作状況\n・完了\n・進行中\n・これから\n\n求めていること\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介＋作品紹介（15分）":"[表紙画像] 名前\n自己紹介と新作『作品タイトル』のご紹介\n発表の場・日付\n\n[画像] プロフィール\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[一文左] 作品づくりの軸を一言で\n\n[数字左] 受賞・上映歴\n00\n映画祭名（年）\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[一文左] 新作『作品タイトル』\n\n[一文左] ログライン（作品を1文で）\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] あらすじ3\n\n[全面画像] あらすじ4\n\n[画像大小] テーマ・モチーフ\n\n[画像6枚] イメージボード\n\n[全面画像] テストアニメーション\n\n[全面画像] この作品を作る理由\n\n[一文左] 制作意図\n\n[カード] 制作状況\n・完了\n・進行中\n・これから\n\nスケジュール\n・時期／作業内容\n\n求めていること\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",
+"自己紹介＋作品紹介（20分）":"[表紙画像] 名前\n自己紹介と新作『作品タイトル』のご紹介\n発表の場・日付\n\n[画像] プロフィール\n\n[全面画像] 代表作（制作年・尺）\n\n[画像6枚] 作風\n\n[一文左] 作品づくりの軸を一言で\n\n[全面画像] 代表作 2（制作年・尺）\n\n[数字左] 受賞・上映歴\n00\n映画祭名（年）\n\n[画像大小] クライアントワーク\n作品名・担当\n\n[全面画像] 制作スタイル\n\n[一文左] 新作『作品タイトル』\n\n[一文左] ログライン（作品を1文で）\n\n[画像大] 主人公の名前\n年齢・性格・抱えている問題\n\n[画像] 登場人物\n\n[画像] 登場人物\n\n[画像6枚] サブキャラクター\n\n[全面画像] あらすじ1\n\n[全面画像] あらすじ2\n\n[全面画像] あらすじ3\n\n[全面画像] あらすじ4\n\n[画像大小] テーマ・モチーフ\n\n[画像6枚] イメージボード\n\n[画像6枚] 参考作品・トーン\n\n[全面画像] テストアニメーション\n\n[全面画像] この作品を作る理由\n\n[一文左] 制作意図\n\n[カード] 制作状況\n・完了\n・進行中\n・これから\n\nスケジュール\n・時期／作業内容\n\nスタッフ・体制\n・監督\n\n求めていること\n・項目\n\n連絡先\n・名前\n・メールアドレス\n・ウェブサイト",/*FLOWS-DUR-END*/
 };
 /* ひな形ごとの発表者ノート（話す内容と目安の秒数）。ひな形のまま作ったスライドにだけ入れる */
 const FLOW_NOTES={
+/*FLOW_NOTES-DUR*/"自己紹介（5分）":["【全体 5分・7枚】\n【15秒｜0:00〜0:15】\n名前と肩書きだけ言って、すぐ次へ。", "【45秒｜0:15〜1:00】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【75秒｜1:00〜2:15】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【45秒｜2:15〜3:00】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【45秒｜3:00〜3:45】\n担当した作品と役割。聞き手が知っている作品を先に。", "【45秒｜3:45〜4:30】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【30秒｜4:30〜5:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"自己紹介（10分）":["【全体 10分・12枚】\n【15秒｜0:00〜0:15】\n名前と肩書きだけ言って、すぐ次へ。", "【60秒｜0:15〜1:15】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【90秒｜1:15〜2:45】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【45秒｜2:45〜3:30】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【45秒｜3:30〜4:15】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【45秒｜4:15〜5:00】\n数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。", "【60秒｜5:00〜6:00】\n担当した作品と役割。聞き手が知っている作品を先に。", "【90秒｜6:00〜7:30】\n1本目と違う面が伝わる作品を選ぶ。", "【60秒｜7:30〜8:30】\n使う道具・画材・制作の流れを写真1枚で。", "【45秒｜8:30〜9:15】\n今取り組んでいること。", "【30秒｜9:15〜9:45】\n次にやりたいこと・探している相手。", "【15秒｜9:45〜10:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"自己紹介（15分）":["【全体 15分・18枚】\n【15秒｜0:00〜0:15】\n名前と肩書きだけ言って、すぐ次へ。", "【60秒｜0:15〜1:15】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【10秒｜1:15〜1:25】\n区切り。間を取る。", "【90秒｜1:25〜2:55】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【45秒｜2:55〜3:40】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【45秒｜3:40〜4:25】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【90秒｜4:25〜5:55】\n1本目と違う面が伝わる作品を選ぶ。", "【60秒｜5:55〜6:55】\nスチル1枚で、あらすじを1〜2文。", "【60秒｜6:55〜7:55】\n作品・作家・体験など。聞き手が知っていそうなものを1つ入れる。", "【45秒｜7:55〜8:40】\n数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。", "【10秒｜8:40〜8:50】\n区切り。間を取る。", "【60秒｜8:50〜9:50】\n担当した作品と役割。聞き手が知っている作品を先に。", "【60秒｜9:50〜10:50】\n担当した作品と役割。", "【60秒｜10:50〜11:50】\n使う道具・画材・制作の流れを写真1枚で。", "【45秒｜11:50〜12:35】\n作業風景を4枚。説明は短く。", "【60秒｜12:35〜13:35】\n今取り組んでいること。", "【60秒｜13:35〜14:35】\n次にやりたいこと・探している相手。", "【25秒｜14:35〜15:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"自己紹介（20分）":["【全体 20分・23枚】\n【15秒｜0:00〜0:15】\n名前と肩書きだけ言って、すぐ次へ。", "【60秒｜0:15〜1:15】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【10秒｜1:15〜1:25】\n区切り。間を取る。", "【90秒｜1:25〜2:55】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【45秒｜2:55〜3:40】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【45秒｜3:40〜4:25】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【90秒｜4:25〜5:55】\n1本目と違う面が伝わる作品を選ぶ。", "【60秒｜5:55〜6:55】\nスチル1枚で、あらすじを1〜2文。", "【90秒｜6:55〜8:25】\nスチル1枚で、あらすじを1〜2文。", "【60秒｜8:25〜9:25】\n失敗談や工夫を1つ。大きい画像は完成カット、小さい画像は途中の素材。", "【60秒｜9:25〜10:25】\n作品・作家・体験など。聞き手が知っていそうなものを1つ入れる。", "【45秒｜10:25〜11:10】\n数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。", "【60秒｜11:10〜12:10】\n会場写真があれば。読み上げるより、写真を見せて一言。", "【10秒｜12:10〜12:20】\n区切り。間を取る。", "【60秒｜12:20〜13:20】\n担当した作品と役割。聞き手が知っている作品を先に。", "【60秒｜13:20〜14:20】\n担当した作品と役割。", "【60秒｜14:20〜15:20】\n誰と、どう分担したか。", "【60秒｜15:20〜16:20】\n使う道具・画材・制作の流れを写真1枚で。", "【45秒｜16:20〜17:05】\n作業風景を4枚。説明は短く。", "【60秒｜17:05〜18:05】\n今取り組んでいること。", "【60秒｜18:05〜19:05】\n次にやりたいこと・探している相手。", "【30秒｜19:05〜19:35】\n質問を受ける。", "【25秒｜19:35〜20:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"作品紹介（5分）":["【全体 5分・9枚】\n【15秒｜0:00〜0:15】\n作品名と形式（短編・尺・制作中など）を言って次へ。", "【30秒｜0:15〜0:45】\n誰が・何をして・どうなるかを1文で。", "【45秒｜0:45〜1:30】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【40秒｜1:30〜2:10】\n主人公との関係を中心に。", "【35秒｜2:10〜2:45】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【35秒｜2:45〜3:20】\nあらすじ②：きっかけになる出来事。", "【60秒｜3:20〜4:20】\nどの場面かを一言言ってから再生。", "【25秒｜4:20〜4:45】\nこの作品で伝えたいことを1文で。", "【15秒｜4:45〜5:00】\n探している相手（プロデューサー・スタジオなど）を一言。お礼。"],
+"作品紹介（10分）":["【全体 10分・16枚】\n【15秒｜0:00〜0:15】\n作品名と形式（短編・尺・制作中など）を言って次へ。", "【30秒｜0:15〜0:45】\n誰が・何をして・どうなるかを1文で。", "【30秒｜0:45〜1:15】\n形式・尺・技法・制作状況・完成予定を表で。読み上げずに要点だけ。", "【45秒｜1:15〜2:00】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【40秒｜2:00〜2:40】\n主人公との関係を中心に。", "【35秒｜2:40〜3:15】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【35秒｜3:15〜3:50】\nあらすじ②：きっかけになる出来事。", "【35秒｜3:50〜4:25】\nあらすじ③：葛藤が大きくなる。", "【30秒｜4:25〜4:55】\nあらすじ④：転機。結末は伏せてもよい。", "【45秒｜4:55〜5:40】\n作品の色・象徴・モチーフの意味。大きい画像は場面、小さい画像はモチーフの寄り。", "【40秒｜5:40〜6:20】\n雰囲気を見せる。説明は最小限。", "【75秒｜6:20〜7:35】\nどの場面かを一言言ってから再生。", "【45秒｜7:35〜8:20】\nこの作品で伝えたいことを1文で。", "【40秒｜8:20〜9:00】\n工程ごとの状況。", "【40秒｜9:00〜9:40】\nプロデューサー・スタジオ・資金など、探している相手を具体的に。", "【20秒｜9:40〜10:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"作品紹介（15分）":["【全体 15分・22枚】\n【15秒｜0:00〜0:15】\n作品名と形式（短編・尺・制作中など）を言って次へ。", "【30秒｜0:15〜0:45】\n誰が・何をして・どうなるかを1文で。", "【30秒｜0:45〜1:15】\n形式・尺・技法・制作状況・完成予定を表で。読み上げずに要点だけ。", "【45秒｜1:15〜2:00】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【40秒｜2:00〜2:40】\n主人公との関係を中心に。", "【40秒｜2:40〜3:20】\n主人公との関係を中心に。", "【45秒｜3:20〜4:05】\n名前と一言だけ。", "【35秒｜4:05〜4:40】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【35秒｜4:40〜5:15】\nあらすじ②：きっかけになる出来事。", "【35秒｜5:15〜5:50】\nあらすじ③：葛藤が大きくなる。", "【30秒｜5:50〜6:20】\nあらすじ④：転機。結末は伏せてもよい。", "【45秒｜6:20〜7:05】\n作品の色・象徴・モチーフの意味。大きい画像は場面、小さい画像はモチーフの寄り。", "【40秒｜7:05〜7:45】\n雰囲気を見せる。説明は最小限。", "【50秒｜7:45〜8:35】\n背景美術や色彩設計。", "【45秒｜8:35〜9:20】\n技法・画材・制作体制。", "【75秒｜9:20〜10:35】\nどの場面かを一言言ってから再生。", "【60秒｜10:35〜11:35】\n自分の経験とのつながり。", "【45秒｜11:35〜12:20】\nこの作品で伝えたいことを1文で。", "【40秒｜12:20〜13:00】\n工程ごとの状況。", "【60秒｜13:00〜14:00】\n完成までの予定。", "【40秒｜14:00〜14:40】\nプロデューサー・スタジオ・資金など、探している相手を具体的に。", "【20秒｜14:40〜15:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"作品紹介（20分）":["【全体 20分・30枚】\n【15秒｜0:00〜0:15】\n作品名と形式（短編・尺・制作中など）を言って次へ。", "【30秒｜0:15〜0:45】\n誰が・何をして・どうなるかを1文で。", "【30秒｜0:45〜1:15】\n形式・尺・技法・制作状況・完成予定を表で。読み上げずに要点だけ。", "【10秒｜1:15〜1:25】\n区切り。", "【45秒｜1:25〜2:10】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【40秒｜2:10〜2:50】\n主人公との関係を中心に。", "【40秒｜2:50〜3:30】\n主人公との関係を中心に。", "【45秒｜3:30〜4:15】\n名前と一言だけ。", "【35秒｜4:15〜4:50】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【35秒｜4:50〜5:25】\nあらすじ②：きっかけになる出来事。", "【35秒｜5:25〜6:00】\nあらすじ③：葛藤が大きくなる。", "【30秒｜6:00〜6:30】\nあらすじ④：転機。結末は伏せてもよい。", "【30秒｜6:30〜7:00】\nあらすじ⑤：画像だけ見せて、語りで進める。", "【10秒｜7:00〜7:10】\n区切り。", "【45秒｜7:10〜7:55】\n作品の色・象徴・モチーフの意味。大きい画像は場面、小さい画像はモチーフの寄り。", "【40秒｜7:55〜8:35】\n雰囲気を見せる。説明は最小限。", "【50秒｜8:35〜9:25】\n背景美術や色彩設計。", "【60秒｜9:25〜10:25】\n近い作品を挙げてトーンを共有する。", "【75秒｜10:25〜11:40】\nどの場面かを一言言ってから再生。", "【60秒｜11:40〜12:40】\n自分の経験とのつながり。", "【45秒｜12:40〜13:25】\nこの作品で伝えたいことを1文で。", "【10秒｜13:25〜13:35】\n区切り。", "【45秒｜13:35〜14:20】\n技法・画材・制作体制。", "【40秒｜14:20〜15:00】\n工程ごとの状況。", "【60秒｜15:00〜16:00】\n完成までの予定。", "【60秒｜16:00〜17:00】\n決まっている人と、探している役割。", "【60秒｜17:00〜18:00】\n総額と、確定済み・申請中・未定の内訳。", "【60秒｜18:00〜19:00】\n狙う映画祭・配信先・時期。", "【40秒｜19:00〜19:40】\nプロデューサー・スタジオ・資金など、探している相手を具体的に。", "【20秒｜19:40〜20:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"自己紹介＋作品紹介（5分）":["【全体 5分・10枚】\n【15秒｜0:00〜0:15】\n名前と、この発表で話すこと（自己紹介→新作）を一言で。", "【40秒｜0:15〜0:55】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【60秒｜0:55〜1:55】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【25秒｜1:55〜2:20】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【10秒｜2:20〜2:30】\nここから作品紹介。間を取る。", "【25秒｜2:30〜2:55】\n誰が・何をして・どうなるかを1文で。", "【35秒｜2:55〜3:30】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【25秒｜3:30〜3:55】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【45秒｜3:55〜4:40】\nどの場面かを一言言ってから再生。", "【20秒｜4:40〜5:00】\n探している相手（プロデューサー・スタジオなど）を一言。お礼。"],
+"自己紹介＋作品紹介（10分）":["【全体 10分・17枚】\n【15秒｜0:00〜0:15】\n名前と、この発表で話すこと（自己紹介→新作）を一言で。", "【45秒｜0:15〜1:00】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【75秒｜1:00〜2:15】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【40秒｜2:15〜2:55】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【40秒｜2:55〜3:35】\n担当した作品と役割。聞き手が知っている作品を先に。", "【10秒｜3:35〜3:45】\nここから作品紹介。間を取る。", "【25秒｜3:45〜4:10】\n誰が・何をして・どうなるかを1文で。", "【40秒｜4:10〜4:50】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【35秒｜4:50〜5:25】\n主人公との関係を中心に。", "【30秒｜5:25〜5:55】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【30秒｜5:55〜6:25】\nあらすじ②：きっかけになる出来事。", "【30秒｜6:25〜6:55】\nあらすじ③：葛藤が大きくなる。", "【60秒｜6:55〜7:55】\nどの場面かを一言言ってから再生。", "【40秒｜7:55〜8:35】\nこの作品で伝えたいことを1文で。", "【35秒｜8:35〜9:10】\n工程ごとの状況。", "【30秒｜9:10〜9:40】\nプロデューサー・スタジオ・資金など、探している相手を具体的に。", "【20秒｜9:40〜10:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"自己紹介＋作品紹介（15分）":["【全体 15分・24枚】\n【15秒｜0:00〜0:15】\n名前と、この発表で話すこと（自己紹介→新作）を一言で。", "【45秒｜0:15〜1:00】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【75秒｜1:00〜2:15】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【40秒｜2:15〜2:55】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【40秒｜2:55〜3:35】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【40秒｜3:35〜4:15】\n数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。", "【40秒｜4:15〜4:55】\n担当した作品と役割。聞き手が知っている作品を先に。", "【10秒｜4:55〜5:05】\nここから作品紹介。間を取る。", "【25秒｜5:05〜5:30】\n誰が・何をして・どうなるかを1文で。", "【40秒｜5:30〜6:10】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【35秒｜6:10〜6:45】\n主人公との関係を中心に。", "【30秒｜6:45〜7:15】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【30秒｜7:15〜7:45】\nあらすじ②：きっかけになる出来事。", "【30秒｜7:45〜8:15】\nあらすじ③：葛藤が大きくなる。", "【30秒｜8:15〜8:45】\nあらすじ④：転機。結末は伏せてもよい。", "【45秒｜8:45〜9:30】\n作品の色・象徴・モチーフの意味。大きい画像は場面、小さい画像はモチーフの寄り。", "【40秒｜9:30〜10:10】\n雰囲気を見せる。説明は最小限。", "【70秒｜10:10〜11:20】\nどの場面かを一言言ってから再生。", "【45秒｜11:20〜12:05】\n自分の経験とのつながり。", "【40秒｜12:05〜12:45】\nこの作品で伝えたいことを1文で。", "【35秒｜12:45〜13:20】\n工程ごとの状況。", "【50秒｜13:20〜14:10】\n完成までの予定。", "【30秒｜14:10〜14:40】\nプロデューサー・スタジオ・資金など、探している相手を具体的に。", "【20秒｜14:40〜15:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],
+"自己紹介＋作品紹介（20分）":["【全体 20分・30枚】\n【15秒｜0:00〜0:15】\n名前と、この発表で話すこと（自己紹介→新作）を一言で。", "【45秒｜0:15〜1:00】\n出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。", "【75秒｜1:00〜2:15】\n作品名と一言の紹介をしてから再生。全編が長い場合は抜粋を使う。", "【40秒｜2:15〜2:55】\n作品に共通するテーマや手法を、具体的なカットを見せながら。", "【40秒｜2:55〜3:35】\n一言を読んで、なぜそう考えるのかをエピソード1つで。笑いどころをここに置くと掴みやすい。", "【75秒｜3:35〜4:50】\n1本目と違う面が伝わる作品を選ぶ。", "【40秒｜4:50〜5:30】\n数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。", "【40秒｜5:30〜6:10】\n担当した作品と役割。聞き手が知っている作品を先に。", "【45秒｜6:10〜6:55】\n使う道具・画材・制作の流れを写真1枚で。", "【10秒｜6:55〜7:05】\nここから作品紹介。間を取る。", "【25秒｜7:05〜7:30】\n誰が・何をして・どうなるかを1文で。", "【40秒｜7:30〜8:10】\n名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。", "【35秒｜8:10〜8:45】\n主人公との関係を中心に。", "【35秒｜8:45〜9:20】\n主人公との関係を中心に。", "【40秒｜9:20〜10:00】\n名前と一言だけ。", "【30秒｜10:00〜10:30】\nあらすじ①：日常と主人公の状況。画像1枚に話す内容は1つ。", "【30秒｜10:30〜11:00】\nあらすじ②：きっかけになる出来事。", "【30秒｜11:00〜11:30】\nあらすじ③：葛藤が大きくなる。", "【30秒｜11:30〜12:00】\nあらすじ④：転機。結末は伏せてもよい。", "【45秒｜12:00〜12:45】\n作品の色・象徴・モチーフの意味。大きい画像は場面、小さい画像はモチーフの寄り。", "【40秒｜12:45〜13:25】\n雰囲気を見せる。説明は最小限。", "【50秒｜13:25〜14:15】\n近い作品を挙げてトーンを共有する。", "【60秒｜14:15〜15:15】\nどの場面かを一言言ってから再生。", "【45秒｜15:15〜16:00】\n自分の経験とのつながり。", "【40秒｜16:00〜16:40】\nこの作品で伝えたいことを1文で。", "【35秒｜16:40〜17:15】\n工程ごとの状況。", "【50秒｜17:15〜18:05】\n完成までの予定。", "【50秒｜18:05〜18:55】\n決まっている人と、探している役割。", "【45秒｜18:55〜19:40】\nプロデューサー・スタジオ・資金など、探している相手を具体的に。", "【20秒｜19:40〜20:00】\nお礼と、声をかけてほしい旨。QRはウェブサイトのもの。"],/*FLOW_NOTES-DUR-END*/
 '作家の自己紹介':['【15秒】名前と肩書きだけ言って次へ。画像は代表作のスチル。','【60秒】出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。','【5秒】区切り。間を取る。',
   '【90秒】作品名と一言の紹介をしてから映像かスチルを見せる。','【45秒】作品に共通するテーマや手法を、具体的なカットを見せながら。','【45秒】一言を読んで、なぜそう考えるのかをエピソード1つで。',
   '【45秒】数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。','【60秒】大きい画像は完成カット、小さい画像は途中の素材。','【45秒】今取り組んでいることと、次にやりたいこと。','【15秒】お礼と、声をかけてほしい旨。'],
@@ -5025,21 +5130,27 @@ const EMU=36000,E=v=>Math.round(v*EMU);
 const GRP='<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
 const relsXml=a=>XH+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${a.join('')}</Relationships>`;
 const rel=(id,type,target)=>`<Relationship Id="${id}" Type="${type.includes('/')?type:RT+type}" Target="${target}"/>`;
-const xfrm=(x,y,w,h)=>`<a:xfrm><a:off x="${E(x)}" y="${E(y)}"/><a:ext cx="${Math.max(1,E(w))}" cy="${Math.max(1,E(h))}"/></a:xfrm>`;
+const xfrm=(x,y,w,h,rot)=>`<a:xfrm${rot?` rot="${Math.round(rot*60000)}"`:''}><a:off x="${E(x)}" y="${E(y)}"/><a:ext cx="${Math.max(1,E(w))}" cy="${Math.max(1,E(h))}"/></a:xfrm>`;
 const solid=c=>`<a:solidFill><a:srgbClr val="${cHex(c)}"/></a:solidFill>`;
-function spRect(id,it){return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="図形 ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(it.x,it.y,it.w,it.h)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${it.fill?solid(it.fill):'<a:noFill/>'}${it.stroke&&it.sw>0?`<a:ln w="${E(it.sw)}">${solid(it.stroke)}</a:ln>`:'<a:ln><a:noFill/></a:ln>'}</p:spPr></p:sp>`}
+/* geo（0〜1000 のパス）を custGeom に */
+function geoXml(it){if(!it.geo)return'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>';const tk=it.geo.match(/[MLCQZ]|-?\d+(?:\.\d+)?/g)||[];let i=0,c='M',o='';const pt=()=>`<a:pt x="${Math.round(+tk[i++])}" y="${Math.round(+tk[i++])}"/>`;
+  while(i<tk.length){if(/[MLCQZ]/.test(tk[i])){c=tk[i++];if(c==='Z'){o+='<a:close/>';continue}}
+    if(c==='M'){o+=`<a:moveTo>${pt()}</a:moveTo>`;c='L'}else if(c==='L')o+=`<a:lnTo>${pt()}</a:lnTo>`;else if(c==='C')o+=`<a:cubicBezTo>${pt()}${pt()}${pt()}</a:cubicBezTo>`;else if(c==='Q')o+=`<a:quadBezTo>${pt()}${pt()}</a:quadBezTo>`;else i++}
+  return `<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/><a:pathLst><a:path w="1000" h="1000"${it.type==='rect'&&!it.fill?' fill="none"':''}>${o}</a:path></a:pathLst></a:custGeom>`}
+function lnXml(it){if(!(it.stroke&&it.sw>0))return'<a:ln><a:noFill/></a:ln>';const d=it.dash?`<a:prstDash val="${it.dash==='sysDot'?'sysDot':'dash'}"/>`:'';return `<a:ln w="${E(it.sw)}"${it.cap?' cap="rnd"':''}>${solid(it.stroke)}${d}${it.cap?'<a:round/>':''}</a:ln>`}
+function spRect(id,it){return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="図形 ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(it.x,it.y,it.w,it.h,it.rot)}${geoXml(it)}${it.fill?solid(it.fill):'<a:noFill/>'}${lnXml(it)}</p:spPr></p:sp>`}
 function runPr(it,tag){const sz=clamp(Math.round(it.size*100),100,400000),spc=Math.round(it.track*it.size/10);
   return `<${tag} lang="ja-JP" altLang="en-US" sz="${sz}" b="${it.weight>=700?1:0}"${spc?` spc="${spc}"`:''} dirty="0">${solid(it.color)}<a:latin typeface="${X(it.font)}"/><a:ea typeface="${X(it.font)}"/></${tag}>`}
 function spText(id,it){
   const al={start:'l',center:'ctr',end:'r'}[it.align]||'l',ls=clamp(Math.round(it.size*it.leading),0,158400);
-  const ps=String(it.text).split('\n').map(line=>`<a:p><a:pPr algn="${al}"><a:lnSpc><a:spcPts val="${ls}"/></a:lnSpc></a:pPr>${line?`<a:r>${runPr(it,'a:rPr')}<a:t>${X(line)}</a:t></a:r>`:''}${runPr(it,'a:endParaRPr')}</a:p>`).join('');
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="テキスト ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(it.x,it.y,it.w,it.h)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr vert="${it.dir==='v'?'eaVert':'horz'}" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" rtlCol="0" anchor="${it.anchor||'t'}"><a:noAutofit/></a:bodyPr><a:lstStyle/>${ps}</p:txBody></p:sp>`;
+  const ps=String(it.text).split('\n').map((line,k)=>{const st=it.ps?paraStyle(it,k):it;return `<a:p><a:pPr algn="${al}"><a:lnSpc><a:spcPts val="${ls}"/></a:lnSpc></a:pPr>${line?`<a:r>${runPr(st,'a:rPr')}<a:t>${X(line)}</a:t></a:r>`:''}${runPr(st,'a:endParaRPr')}</a:p>`}).join('');
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="テキスト ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr>${xfrm(it.x,it.y,it.w,it.h,it.rot)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr vert="${it.dir==='v'?'eaVert':'horz'}" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" rtlCol="0" anchor="${it.anchor||'t'}"><a:noAutofit/></a:bodyPr><a:lstStyle/>${ps}</p:txBody></p:sp>`;
 }
 function spPic(id,it,rid,im){
   let x=it.x,y=it.y,w=it.w,h=it.h,crop='';
   if(it.fit==='contain'){const sc=Math.min(w/im.w,h/im.h),dw=im.w*sc,dh=im.h*sc;x+=(w-dw)/2;y+=(h-dh)/2;w=dw;h=dh}
   else if(it.fit!=='stretch'){const sc=Math.max(w/im.w,h/im.h),cx=(1-w/(im.w*sc))/2,cy=(1-h/(im.h*sc))/2,p=v=>Math.round(v*100000);if(cx>1e-4||cy>1e-4)crop=`<a:srcRect l="${p(cx)}" t="${p(cy)}" r="${p(cx)}" b="${p(cy)}"/>`}
-  return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="画像 ${id}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/>${crop}<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm(x,y,w,h)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="画像 ${id}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/>${crop}<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm(x,y,w,h,it.rot)}${geoXml(it)}</p:spPr></p:pic>`;
 }
 function b64u8(s){const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
 function u8b64(u){let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
