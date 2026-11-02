@@ -27,19 +27,27 @@
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
+body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.5;letter-spacing:.02em;overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
-button{background:var(--bg);border:1px solid var(--field);border-radius:var(--r);padding:3px 10px;min-height:28px;cursor:pointer;line-height:1.4}
+button{background:var(--bg);border:1px solid var(--field);border-radius:var(--r);padding:4px 12px;min-height:32px;min-width:32px;cursor:pointer;line-height:21px;white-space:nowrap}
 button:hover{background:var(--hover)}
 button:active{background:var(--stage)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 button.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);text-decoration:underline;text-underline-offset:3px}
 button.primary:active{background:var(--accent-active);border-color:var(--accent-active)}
-button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+button.on{background:var(--accent-soft);border:2px solid var(--accent);padding:3px 11px;color:var(--accent);font-weight:700}
+button.on:hover{background:var(--accent-soft);text-decoration:underline;text-underline-offset:3px}
+button.on:active{background:var(--accent-soft)}
+button.danger{color:var(--danger);border-color:var(--danger)}
 button:disabled,button:disabled:hover{background:var(--panel);border-color:var(--line);color:var(--sub);text-decoration:none;cursor:default}
-input,select,textarea{background:var(--bg);border:1px solid var(--field);border-radius:var(--r);padding:3px 6px;min-width:0}
-input[type=number],select{min-height:28px}
+input,select,textarea{background:var(--bg);border:1px solid var(--field);border-radius:var(--r);padding:4px 8px;min-width:0}
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select{min-height:32px}
+input:hover:not(:disabled):not([readonly]),select:hover:not(:disabled),textarea:hover:not(:disabled):not([readonly]){border-color:var(--ink)}
+input:disabled,select:disabled,textarea:disabled{background:var(--panel);color:var(--sub);border-color:var(--line)}
+input[readonly],textarea[readonly]{background:var(--panel)}
+input[type=checkbox],input[type=radio]{accent-color:var(--accent);width:16px;height:16px;margin:0}
 input[type=number]{font-family:var(--num);font-variant-numeric:tabular-nums}
 #app{display:grid;grid-template-columns:172px minmax(0,1fr) 280px;grid-template-rows:44px minmax(0,1fr);height:100%}
 header{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding-block:0;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--bg);min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
@@ -82,18 +90,22 @@ aside{background:var(--panel);overflow:auto;min-height:0}
 .selbox .h{position:absolute;width:8px;height:8px;background:var(--bg);border:1px solid var(--accent);pointer-events:auto;margin:-5px 0 0 -5px}
 .tmpbox{position:absolute;border:1px dashed var(--accent)}
 .tabs{display:flex;border-bottom:1px solid var(--line)}
-.tabs button{flex:1 1 auto;white-space:nowrap;border:0;border-radius:0;background:transparent;padding:8px 6px;border-bottom:3px solid transparent}
-.tabs button.on{color:var(--accent);background:transparent;border-bottom-color:var(--accent);font-weight:700}
-.tab{padding:10px;display:flex;flex-direction:column;gap:12px;overflow:auto}
-.sec{display:flex;flex-direction:column;gap:6px}
+.tabs button{flex:1 1 auto;white-space:nowrap;border:0;border-radius:0;background:transparent;padding:0 8px;min-height:36px;border-bottom:2px solid transparent}
+.tabs button:hover{background:var(--hover)}.tabs button:active{background:var(--stage)}
+.tabs button:focus-visible{outline-offset:-2px}
+.tabs button.on{color:var(--accent);background:transparent;border-bottom:2px solid var(--accent);padding:0 8px;font-weight:700;text-decoration:none}
+.tab{padding:12px;display:flex;flex-direction:column;gap:16px;overflow:auto}
+.sec{display:flex;flex-direction:column;gap:8px}
 .sec>h3{margin:0;font-size:12px;color:var(--sub);font-weight:700;letter-spacing:.02em}
-.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.f.w{grid-column:1/-1}
+.pops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.pops>button:nth-child(-n+2){grid-column:1/-1}
 .row4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
-.f{display:flex;flex-direction:column;gap:2px;min-width:0}
-.f>span{font-size:12px;color:var(--sub)}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f>span{font-size:12px;line-height:18px;color:var(--sub)}
 .f>input,.f>select{width:100%}
-.chk{display:flex;align-items:center;gap:6px}
-textarea#tText{width:100%;min-height:140px;resize:vertical;line-height:1.6}
+.chk{display:flex;align-items:center;gap:8px}
+textarea#tText{width:100%;min-height:128px;resize:vertical;line-height:1.6}
 .btns{display:flex;flex-wrap:wrap;gap:4px}
 .pf{display:flex;flex-direction:column;gap:4px}
 .pfi{display:grid;grid-template-columns:8px 44px minmax(0,1fr);gap:8px;align-items:start;text-align:left;border:1px solid var(--line);padding:6px 8px;background:var(--bg)}
@@ -101,8 +113,8 @@ textarea#tText{width:100%;min-height:140px;resize:vertical;line-height:1.6}
 .pfi.err i{background:var(--danger)}
 .pfi.warn i{background:var(--warn)}
 .pfi b{font-family:var(--num);font-weight:400;color:var(--sub)}
-.badge{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:var(--paper);font-size:12px;line-height:16px;font-family:var(--num)}
-.badge.w{background:var(--warn)}
+.badge{display:inline-block;min-width:20px;height:20px;padding:0 4px;border-radius:4px;border:1px solid var(--danger);background:var(--bg);color:var(--danger);font-size:12px;line-height:18px;font-weight:700;font-family:var(--num);text-align:center}
+.badge.w{border-color:var(--warn);color:var(--warn)}
 .ok{color:var(--sub)}
 .num{font-family:var(--num);font-variant-numeric:tabular-nums;padding:3px 0}
 a{color:var(--accent);text-underline-offset:3px}
@@ -112,12 +124,12 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .hpt>span{color:var(--sub)}
 .pppv{display:block;margin:4px auto;border:1px solid var(--line)}
 #app.k-master #bProp{display:none}
-.hpd{display:flex;flex-direction:column;gap:3px;max-height:180px;overflow:auto;font-family:var(--num);font-size:12px}
+.hpd{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow:auto;font-family:var(--num);font-size:12px}
 .hps{display:grid;grid-template-columns:24px 1fr 1fr;gap:8px;align-items:center}
 .hps>b{font-weight:400;color:var(--sub);text-align:right}
 .hph>span{color:var(--sub);text-align:center}
-.hpf{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);background:var(--paper)}
-.hpf>i{font-style:normal;text-align:center;padding:2px 0;color:#1a1a1a}
+.hpf{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);background:var(--bg)}
+.hpf>i{font-style:normal;text-align:center;line-height:28px;color:var(--ink)}
 .hpf>i+i{border-left:1px dashed var(--line)}
 .hpf>i.b{color:var(--sub)}
 .dbx-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow:auto}
@@ -166,23 +178,23 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
   #nItems{max-height:40vh}
   #nEdit{padding-left:max(16px,env(safe-area-inset-left,0px))}
 }
-.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .th{display:flex;flex-direction:column;gap:4px;padding:5px;text-align:left;font-size:12px}
 .th.on{background:var(--accent-soft);color:var(--ink);border-color:var(--accent);outline:1px solid var(--accent)}
 .sw{display:block;position:relative;aspect-ratio:16/9;border:1px solid var(--line);overflow:hidden}
 .sw i{position:absolute;left:0;top:0;bottom:0;width:9%}
 .sw b{position:absolute;left:20%;top:50%;transform:translateY(-50%);font-size:15px;line-height:1}
-.lays{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.lays{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .lay{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;font-size:12px}
 .lay canvas{width:100%;aspect-ratio:16/9;border:1px solid var(--line);display:block}
-.lays.sugs{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.lays.sugs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .tcdlg{width:min(760px,100%)}
 .tcseg{display:flex}
 .tcseg button{border-radius:0;flex:1}
 .tcseg button:first-child{border-radius:var(--r) 0 0 var(--r)}
 .tcseg button:last-child{border-radius:0 var(--r) var(--r) 0;border-left:0}
 .tcseg button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
-.tcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+.tcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 .tcg .lay canvas{aspect-ratio:auto}
 .tcr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,9em) 64px 28px;gap:4px;margin-bottom:4px}
 .tcr.col{grid-template-columns:7em minmax(0,1fr) 28px}
@@ -192,23 +204,23 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .ilord{display:flex;flex-wrap:wrap;gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
 .ilord button{position:relative;padding:2px;line-height:0;cursor:grab}
 .ilord canvas{width:48px;height:48px;display:block;pointer-events:none}
-.ilord span{position:absolute;left:2px;top:2px;min-width:16px;padding:0 3px;font-size:11px;line-height:16px;text-align:center;background:var(--ink);color:var(--bg);pointer-events:none}
+.ilord span{position:absolute;left:2px;top:2px;min-width:16px;padding:0 4px;font-size:12px;line-height:16px;text-align:center;background:var(--ink);color:var(--bg);pointer-events:none}
 .ilord .on,.ilord .tgt{border-color:var(--accent);outline:2px solid var(--accent)}
 .ilord .drag{opacity:.5}
 .dlg.owide{width:min(640px,100%)}
 textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;font-family:var(--ui)}
 .hint{font-size:12px;color:var(--sub)}
 #pNotes{width:100%;min-height:90px;resize:vertical;line-height:1.6}
-.aiask{display:flex;gap:6px}
+.aiask{display:flex;gap:8px}
 .aiask input{flex:1}
 #modal{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:20;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 #modal[hidden]{display:none!important}
 .dlg{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-dlg);padding:16px;width:min(420px,100%);display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto}
 .dlg h2{margin:0;font-size:18px;line-height:1.5}
-.dlg .foot{display:flex;justify-content:flex-end;gap:6px}
+.dlg .foot{display:flex;justify-content:flex-end;gap:8px}
 .prog{height:6px;background:var(--hover);border-radius:3px;overflow:hidden}
 .prog>div{height:100%;width:0;background:var(--accent)}
-#toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:var(--r);z-index:30;max-width:calc(100% - 32px)}
+#toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--bg);color:var(--ink);border:1px solid var(--field);padding:12px;border-radius:var(--r);z-index:30;width:min(360px,calc(100vw - 32px))}
 @media (min-width:1280px){
   #app{grid-template-columns:264px minmax(0,1fr) 300px}
   #pages{flex-direction:row;flex-wrap:wrap;align-content:flex-start;justify-content:flex-start;gap:12px 8px}
@@ -428,7 +440,7 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
 #app.k-slide #stage{scroll-snap-type:x mandatory}#app.k-slide #spreads .slot{scroll-snap-align:center}
 #tab-notes #pNotes{min-height:min(50vh,420px)}
 @media (max-width:820px){#tab-notes #pNotes{min-height:26dvh}}
-.kinds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+.kinds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .wlist{display:flex;flex-direction:column;max-height:40vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-dlg)}
 .wlist .chk{padding:6px 8px;border-bottom:1px solid var(--line)}
 .wlist .chk:last-child{border-bottom:0}
@@ -1249,7 +1261,7 @@ function showTab(t){S.tab=t;$$('.tabs button').forEach(b=>b.classList.toggle('on
 function setSheet(on){const a=$('#app');if(a.classList.contains('sheet')===on)return;a.classList.toggle('sheet',on);$$('.tabs button').forEach(b=>b.setAttribute('aria-expanded',on&&b.dataset.tab===S.tab));
   if(on&&S.sel)requestAnimationFrame(()=>{const bx=S.pageEls[S.sel.page]&&S.pageEls[S.sel.page].ov.querySelector('.selbox');if(bx)bx.scrollIntoView({block:'nearest',inline:'nearest'})})}
 $$('.tabs button').forEach(b=>b.onclick=()=>{if(S.single&&S.tab===b.dataset.tab&&$('#app').classList.contains('sheet'))setSheet(false);else showTab(b.dataset.tab)});
-const F=(label,inner)=>`<label class="f"><span>${label}</span>${inner}</label>`;
+const F=(label,inner,w)=>`<label class="f${w?' w':''}"><span>${label}</span>${inner}</label>`;
 const N=(k,v,step=0.1,extra='')=>`<input type="number" id="i-${k.replace(/\./g,'-')}" data-k="${k}" value="${v}" step="${step}" ${extra}>`;
 const SEL=(k,v,opts)=>`<select id="i-${k.replace(/\./g,'-')}" data-k="${k}">${opts.map(([a,b])=>`<option value="${esc(a)}"${String(a)===String(v)?' selected':''}>${esc(b)}</option>`).join('')}</select>`;
 function colorFields(k,c){if(S.doc.color==='mono')return `<div class="row">${F('K（%）',N(k+'.k',c.k,1,'min="0" max="100"'))}</div>`;
@@ -1263,7 +1275,7 @@ function renderProps(){
     el.innerHTML=`<div class="sec"><h3>ページ ${esc(nombreText(S.page))}（${isLeft(S.page)?'左':'右'}ページ）</h3>
       ${F('台割',`<input type="text" id="pLabel" value="${esc(planOf(pg).title||'')}">`)}
       <label class="chk"><input type="checkbox" id="pNoNb" ${pg.noNombre?'checked':''}> ノンブルを表示しない</label>
-      <div class="btns"><button id="pAddB">後ろに2ページ追加</button><button id="pDup">複製</button><button id="pUp">前へ</button><button id="pDn">後ろへ</button></div></div>
+      <div class="pops"><button id="pAddB">後ろに2ページ追加</button><button id="pDup">複製</button><button id="pUp">前へ</button><button id="pDn">後ろへ</button></div></div>
       <div class="sec"><h3>発表者ノート</h3><textarea id="pNotes" spellcheck="false" lang="${d.pres&&d.pres.lang==='en'?'en':'ja'}">${esc(pg.notes||'')}</textarea><div class="btns"><button id="pTts">読み上げ</button></div></div>`+imgLaySec(S.page);
     wireImgLay(S.page);
     $('#pNotes').oninput=e=>{pg.notes=e.target.value;clearTimeout(commitT);commitT=setTimeout(commit,600)};
@@ -1351,17 +1363,17 @@ function renderDoc(){
     ${d.kind==='cover'?F('背幅（mm）',`<input type="number" id="d-sp" data-dk="spine" value="${d.spine}" step="0.1">`):''}
     ${F('塗り足し（mm）',`<input type="number" id="d-b" data-dk="bleed" value="${d.bleed}" step="0.5" min="0">`)}
     ${F('綴じ',`<select id="d-bind" data-dk="binding"><option value="right"${d.binding==='right'?' selected':''}>右綴じ</option><option value="left"${d.binding==='left'?' selected':''}>左綴じ</option></select>`)}
-    ${F('カラー',`<select id="d-col" data-dk="color"><option value="mono"${d.color==='mono'?' selected':''}>モノクロ（グレースケール）</option><option value="cmyk"${d.color==='cmyk'?' selected':''}>カラー（CMYK）</option></select>`)}</div></div>
+    ${F('カラー',`<select id="d-col" data-dk="color"><option value="mono"${d.color==='mono'?' selected':''}>モノクロ（グレースケール）</option><option value="cmyk"${d.color==='cmyk'?' selected':''}>カラー（CMYK）</option></select>`,1)}</div></div>
     <div class="sec"><h3>マージン（mm）</h3><div class="row">${F('天',`<input type="number" id="d-mt" data-dk="margins.top" value="${m.top}" step="0.5">`)}${F('地',`<input type="number" id="d-mb" data-dk="margins.bottom" value="${m.bottom}" step="0.5">`)}
     ${F('ノド',`<input type="number" id="d-mi" data-dk="margins.inner" value="${m.inner}" step="0.5">`)}${F('小口',`<input type="number" id="d-mo" data-dk="margins.outer" value="${m.outer}" step="0.5">`)}</div></div>`;
   if(d.kind==='cover'){const sc=d.spineCalc||{pages:32,paper:0,cover:1},sp=pr.spine||'chokotto',papers=sp==='orange'?PAPERS_OR:PAPERS_CH;
     h+=`<div class="sec"><h3>背幅計算</h3><div class="row">${F('本文ページ数',`<input type="number" id="sc-p" value="${sc.pages}" step="4" min="4">`)}
-      ${F('本文用紙',`<select id="sc-pa">${papers.map(([n],k)=>`<option value="${k}"${k==sc.paper?' selected':''}>${esc(n)}</option>`).join('')}</select>`)}
-      ${sp==='chokotto'?F('表紙用紙',`<select id="sc-co">${COVERS_CH.map(([n],k)=>`<option value="${k}"${k==sc.cover?' selected':''}>${esc(n)}</option>`).join('')}</select>`):''}
+      ${F('本文用紙',`<select id="sc-pa">${papers.map(([n],k)=>`<option value="${k}"${k==sc.paper?' selected':''}>${esc(n)}</option>`).join('')}</select>`,1)}
+      ${sp==='chokotto'?F('表紙用紙',`<select id="sc-co">${COVERS_CH.map(([n],k)=>`<option value="${k}"${k==sc.cover?' selected':''}>${esc(n)}</option>`).join('')}</select>`,1):''}
       <label class="f"><span>背幅</span><output id="sc-out" class="num"></output></label></div>
       <div class="btns"><button id="sc-apply">背幅に反映</button></div></div>`}
   if(d.kind!=='cover')h+=`<div class="sec"><h3>ノンブル</h3><div class="row">
-    ${F('位置',`<select id="d-nbm" data-dk="nombre.mode"><option value="outer"${nb.mode==='outer'?' selected':''}>小口側・下</option><option value="center"${nb.mode==='center'?' selected':''}>中央・下</option><option value="hidden"${nb.mode==='hidden'?' selected':''}>隠しノンブル（ノド側）</option><option value="none"${nb.mode==='none'?' selected':''}>なし</option></select>`)}
+    ${F('位置',`<select id="d-nbm" data-dk="nombre.mode"><option value="outer"${nb.mode==='outer'?' selected':''}>小口側・下</option><option value="center"${nb.mode==='center'?' selected':''}>中央・下</option><option value="hidden"${nb.mode==='hidden'?' selected':''}>隠しノンブル（ノド側）</option><option value="none"${nb.mode==='none'?' selected':''}>なし</option></select>`,1)}
     ${F('開始番号',`<input type="number" id="d-nbs" data-dk="nombre.start" value="${nb.start}" step="1" min="1">`)}
     ${F('サイズ（pt）',`<input type="number" id="d-nbz" data-dk="nombre.size" value="${nb.size}" step="0.5" min="4">`)}
     ${F('下端からの距離（mm）',`<input type="number" id="d-nbo" data-dk="nombre.offset" value="${nb.offset}" step="0.5">`)}</div>
@@ -4706,7 +4718,7 @@ window.__thinbook={S,exportPPTX,importPPTX,parseOutline,applyOutline,createSlide
 #xlEmpty{display:flex;align-items:center;justify-content:center;position:absolute;inset:0}
 .xt{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px}
 .xt td,.xt th{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0 4px;height:21px;white-space:nowrap;overflow:hidden;text-overflow:clip;vertical-align:bottom;max-width:0}
-.xt th{position:sticky;background:var(--panel);color:var(--sub);font-weight:400;font-family:var(--num);font-size:11px;text-align:center;vertical-align:middle;z-index:1}
+.xt th{position:sticky;background:var(--panel);color:var(--sub);font-weight:400;font-family:var(--num);font-size:12px;text-align:center;vertical-align:middle;z-index:1}
 .xt thead th{top:0}
 .xt tbody th{left:0;z-index:1}
 .xt thead th:first-child{left:0;z-index:3}
@@ -4714,7 +4726,7 @@ window.__thinbook={S,exportPPTX,importPPTX,parseOutline,applyOutline,createSlide
 .xt td.xn{text-align:right}
 .xt td.xf{color:var(--sub)}
 .xt td.sel{outline:2px solid var(--accent);outline-offset:-2px}
-.xt td.rg{background:var(--accentSoft,var(--panel))}
+.xt td.rg{background:var(--accent-soft)}
 .xt td.xw{white-space:pre-wrap;vertical-align:top}
 .xt th.hl{color:var(--ink);font-weight:700}
 #xlTabs{display:flex;gap:0;overflow-x:auto;border-top:1px solid var(--line);background:var(--panel);padding-left:max(0px,env(safe-area-inset-left,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
