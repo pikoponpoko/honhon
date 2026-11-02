@@ -1521,7 +1521,7 @@ let pfT=0,PF=[];
 function preflight(){
   const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH,out=[],pr=PR(),safe=pr.safe||3,nb=d.nombre;
   if(d.kind==='body'&&d.pages.length%4!==0)out.push({lv:pr.pages4?'err':'warn',page:null,msg:`ページ数が4の倍数ではありません（${d.pages.length}ページ）`});
-  if(b+1e-6<(pr.bleed||0))out.push({lv:'err',page:null,msg:`塗り足しが${pr.name}の指定（${pr.bleed}mm）より小さくなっています`});
+  if(d.kind!=='slide'&&b+1e-6<(pr.bleed||0))out.push({lv:'err',page:null,msg:`塗り足しが${pr.name}の指定（${pr.bleed}mm）より小さくなっています`});
   {const bw=d.trimW,bh=d.trimH;
     if(pr.maxW&&(Math.min(bw,bh)>pr.maxW+0.01||Math.max(bw,bh)>pr.maxH+0.01))out.push({lv:'err',page:null,msg:`${pr.name}の最大サイズ（${pr.maxW}×${pr.maxH}mm）を超えています`});
     if(pr.maxW&&bw>bh)out.push({lv:'warn',page:null,msg:'横長の本は特殊断裁（短辺綴じ）オプションが必要です'});
@@ -3448,8 +3448,20 @@ const LAYOUTS={
   number_l:{name:'数字左',base:'number',bg:'bg',items:()=>{const lw=SW*0.44,x=SM+lw+12,w=SW-x-SM;return[tx('num',SM,BY,lw,44,110,{b:1,c:'accent',lead:100}),
     ...head(x,w),tx('body',x,BY,w,BH,16,{c:'sub',f:'body',lead:170})]}},
   statement:{name:'一文',base:'content',bg:'bg',items:()=>[tx('title',SM+20,SM,CW-40,SH/2+8-SM,36,{b:1,lead:140,align:'center',an:'b'}),rc(SW/2-9,SH/2+14,18,1.6),tx('body',SM+20,SH/2+24,CW-40,SH/2-24-SM,16,{c:'sub',f:'body',lead:160,align:'center'})]},
+  /* 作家のポートフォリオ向け：絵を裁ち落としで大きく、数字と見出しを大きく、アクセントは小さな正方形1つ */
+  cover_img:{name:'表紙画像',base:'title',bg:'bg',items:()=>{const iw=SW*0.5,w=SW-iw-SM-14;return[{t:'image',slot:'image',x:SW-iw,y:0,w:iw,h:SH},
+    rc(SM,40,6,6),tx('title',SM,52,w,62,40,{b:1,lead:120,an:'b'}),tx('sub',SM,122,w,SH-SM-122,16,{c:'sub',f:'body',lead:150})]}},
+  section_big:{name:'区切り番号',base:'section',bg:'accent',items:()=>{const nw=118;return[tx('num',SM,SM,nw,SH-2*SM,160,{b:1,c:'on',lead:100,an:'b'}),
+    tx('title',SM+nw+12,SM,SW-2*SM-nw-12,SH-2*SM-12,36,{b:1,c:'on',lead:125,an:'b'})]}},
+  statement_l:{name:'一文左',base:'content',bg:'bg',items:()=>[rc(SM+8,SM+16,6,6),tx('title',SM+8,SM+30,CW-60,92,40,{b:1,lead:135}),tx('body',SM+8,SH-SM-36,CW-60,36,16,{c:'sub',f:'body',lead:160,an:'b'})]},
+  image_big:{name:'画像大',base:'image',bg:'bg',items:()=>{const rw=SW*0.34,x=SW-rw+12,w=SW-x-SM;return[{t:'image',slot:'image',x:0,y:0,w:SW-rw,h:SH},
+    rc(x,SM,6,6),tx('title',x,SM+14,w,40,28,{b:1,lead:130}),tx('body',x,SM+58,w,SH-2*SM-58,14,{f:'body',lead:165})]}},
+  image_pair:{name:'画像大小',base:'pair',bg:'bg',items:()=>{const bw=SW*0.6,x=bw+12,w=SW-x-SM,ih=w*0.75;return[{t:'image',slot:'image',x:0,y:0,w:bw,h:SH},{t:'image',slot:'image2',x,y:SM,w,h:ih},
+    tx('title',x,SM+ih+10,w,HH,24,{b:1,lead:130}),tx('body',x,SM+ih+10+HH+4,w,SH-SM-(SM+ih+10+HH+4),14,{f:'body',lead:165})]}},
+  grid6:{name:'画像6枚',base:'grid',bg:'bg',items:()=>{const G=6,cw=(CW-2*G)/3,ch=(BH-G)/2,a=[...head(SM,CW)];
+    for(let i=0;i<6;i++)a.push({t:'image',slot:i?'image'+(i+1):'image',x:SM+(i%3)*(cw+G),y:BY+Math.floor(i/3)*(ch+G),w:cw,h:ch});return a}},
 };
-const SLOTS={title:['title','sub'],section:['num','title'],content:['title','body'],two:['title','body','body2'],image:['image','title','body'],number:['num','title','body'],cards:['title','body']};
+const SLOTS={pair:['image','image2','title','body'],grid:['title','image','image2','image3','image4','image5','image6'],title:['title','sub'],section:['num','title'],content:['title','body'],two:['title','body','body2'],image:['image','title','body'],number:['num','title','body'],cards:['title','body']};
 const baseOf=k=>(LAYOUTS[k]||LAYOUTS.content).base;
 function cardLines(s){return String(s||'').split('\n').map(x=>x.replace(/^\s*[・\-\*•]\s*/,'').trim()).filter(Boolean)}
 const PH={title:'タイトル',sub:'サブタイトル',body:'本文',body2:'本文',num:'01',c1:'本文',c2:'本文',c3:'本文',c4:'本文'};
@@ -3464,8 +3476,8 @@ function makeSlide(key,t={},T){
   if(L.base==='cards'){const ls=cardLines(t.body),n=Math.max(2,Math.min(4,ls.length||3));t={...t};for(let i=0;i<n;i++)t['c'+(i+1)]=i<n-1?ls[i]:ls.slice(i).join('\n')}
   for(const sp of L.items(t)){const g={x:r1(sp.x),y:r1(sp.y),w:r1(sp.w),h:r1(sp.h),lay:1};let it;
     if(sp.t==='rect')it=rectItem({...g,fill:null,fillRole:sp.fr});
-    else if(sp.t==='image')it=imageItem({...g,slot:'image',imageId:t.image||null,fit:'cover'});
-    else{const v=sp.txt!=null?sp.txt:t[sp.slot];it=textItem({...g,...(sp.slot?{slot:sp.slot}:{}),text:v!=null&&String(v).trim()!==''?v:PH[sp.slot]||'',track:0,size:sp.size,weight:sp.b?700:400,leading:sp.lead||150,dir:'h',align:sp.align||'start',...(sp.an?{anchor:sp.an}:{}),colorRole:sp.c||'ink',fontRole:sp.f||'head'})}
+    else if(sp.t==='image'){const k=sp.slot||'image';it=imageItem({...g,slot:k,imageId:t[k]||null,fit:'cover'})}
+    else{const v=sp.txt!=null?sp.txt:t[sp.slot];it=textItem({...g,...(sp.slot?{slot:sp.slot}:{}),text:v!=null&&String(v).trim()!==''?v:PH[sp.slot]||'',track:0,size:sp.size,weight:sp.b?700:400,leading:sp.lead||150,dir:sp.dir||'h',align:sp.align||'start',...(sp.an?{anchor:sp.an}:{}),colorRole:sp.c||'ink',fontRole:sp.f||'head'})}
     pg.items.push(it)}
   themePage(pg,T);return pg;
 }
@@ -3658,17 +3670,17 @@ function proposeLayouts(pi){
   const all=[t.body,t.body2,t.sub,...M.extras.map(x=>x.text)].filter(Boolean).join('\n'),ls=cardLines(all),n=ls.length,maxLen=Math.max(0,...ls.map(x=>x.length)),tl=(t.title||'').length;
   const img=!!t.image||cb==='image'||nf>0,num=cb==='number'||ls.some(isNumLine)||NUMU.test(all)||NUMU.test(t.title||'');
   const sc={};const add=(k,v)=>{sc[k]=Math.max(sc[k]||0,v)};
-  if(pi===0||cb==='title'){add('title',10);add('title_c',9);add('title_b',8);if(img)add('image_full',9)}
-  if(cb==='section'||(!n&&pi>0)){add('section',9);add('section_l',9);add('statement',8);add('title_c',5)}
-  if(img){add('image',10);add('image_r',10);if(nf<=1)add('image_full',n<=2?9:6)}
+  if(pi===0||cb==='title'){add('title',10);add('title_c',9);add('title_b',8);if(img){add('image_full',9);add('cover_img',9.5)}}
+  if(cb==='section'||(!n&&pi>0)){add('section',9);add('section_l',9);add('section_big',9);add('statement',8);add('statement_l',8);add('title_c',5)}
+  if(img){add('image',10);add('image_r',10);if(nf<=1)add('image_full',n<=2?9:6);if(n<=3)add('image_big',8)}
   if(nf){add('content',8);if(!t.body2)add('two',8)}
   if(num){add('number',9);add('number_l',9)}
   if(n>=2&&n<=4&&maxLen<=40)add('cards',n>=3?10:8);
   if(t.body2||cb==='two')add('two',10);else if(n>=4)add('two',8);
-  if(n){add('content',7);add('content_side',tl<=12?7:5);if(n<=2&&all.length<=60)add('statement',8)}
+  if(n){add('content',7);add('content_side',tl<=12?7:5);if(n<=2&&all.length<=60){add('statement',8);add('statement_l',8)}}
   if(pi>0&&cb!=='title'&&!sc.content)add('content',4);
   if(LAYOUTS[pg.layout])add(pg.layout,9.5);
-  const order=Object.keys(LAYOUTS),figOk=k=>['image','content','two'].includes(baseOf(k))&&k!=='statement';
+  const order=Object.keys(LAYOUTS),figOk=k=>['image','content','two'].includes(baseOf(k))&&k!=='statement'&&k!=='statement_l';
   return Object.entries(sc).filter(([k])=>layoutOk(k)&&(nf?figOk(k):!(img&&!SLOTS[baseOf(k)].includes('image')&&sc[k]<9))).sort((a,b)=>b[1]-a[1]||order.indexOf(a[0])-order.indexOf(b[0])).slice(0,6).map(([k])=>k);
 }
 function drawSlideThumb(c,pg,T,wpx){
@@ -3883,7 +3895,128 @@ const FLOWS={
 連絡先
 ・メール
 ・SNS`,
+'作家の自己紹介':`[表紙画像] 名前
+肩書き
+発表の場・日付
+
+[画像] プロフィール
+・出身・拠点
+・主な受賞
+
+[区切り番号] これまでの作品
+
+[全面画像] 代表作
+制作年・尺
+
+[画像6枚] 作風
+
+[一文左] 作品づくりの軸
+理由やきっかけ
+
+[数字左] 受賞・上映歴
+12
+映画祭名（年）
+
+[画像大小] 制作の様子
+道具・画材・工程
+
+今後の活動
+・取り組んでいること
+・探している相手
+
+連絡先
+・メール
+・ウェブサイト`,
+'作家の作品紹介':`[表紙画像] 作品タイトル
+短編アニメーション・尺
+名前・日付
+
+[一文左] ログライン
+誰が・何をして・どうなるか
+
+[画像大] 主人公の名前
+年齢・性格・抱えている問題
+
+[画像] 登場人物
+・主人公との関係
+
+[区切り番号] 物語
+
+[全面画像] あらすじ1
+日常と主人公の状況
+
+[全面画像] あらすじ2
+きっかけになる出来事
+
+[全面画像] あらすじ3
+転機
+
+[区切り番号] ビジュアル
+
+[画像大小] テーマ・モチーフ
+色・象徴・モチーフの意味
+
+[画像6枚] イメージボード
+
+[区切り番号] 制作
+
+[カード] 制作状況
+・完了
+・進行中
+・これから
+
+求めていること
+・プロデューサー・スタジオ・資金など
+
+連絡先
+・メール
+・ウェブサイト`,
+'作家の進捗報告':`[表紙画像] 作品タイトル
+第○回面談　進捗報告
+名前・日付
+
+[カード] 前回からの進捗
+・完了
+・進行中
+・遅れ・未着手
+
+[2段] 前回の助言と対応
+いただいた助言
+・項目
+---
+対応と結果
+・項目
+
+[画像大小] 進捗：工程名
+やったこと・決めたこと
+
+[画像6枚] テスト・検証
+
+[全面画像] 現在の映像
+Vコン・テスト
+
+今後のスケジュール
+・時期：作業内容
+
+相談したいこと
+・決めたいこと
+
+次回までにやること
+・期限つきで`,
 };
+/* ひな形ごとの発表者ノート（話す内容と目安の秒数）。ひな形のまま作ったスライドにだけ入れる */
+const FLOW_NOTES={
+'作家の自己紹介':['【15秒】名前と肩書きだけ言って次へ。画像は代表作のスチル。','【60秒】出身・肩書き・いちばん伝えたい受賞歴を1つ。画像は本人写真か代表作のスチル。','【5秒】区切り。間を取る。',
+  '【90秒】作品名と一言の紹介をしてから映像かスチルを見せる。','【45秒】作品に共通するテーマや手法を、具体的なカットを見せながら。','【45秒】一言を読んで、なぜそう考えるのかをエピソード1つで。',
+  '【45秒】数字（上映された映画祭の数など）を先に言い、主なものだけ挙げる。年の新しい順。','【60秒】大きい画像は完成カット、小さい画像は途中の素材。','【45秒】今取り組んでいることと、次にやりたいこと。','【15秒】お礼と、声をかけてほしい旨。'],
+'作家の作品紹介':['【15秒】作品名と形式（短編・尺・制作中など）を言って次へ。','【30秒】誰が・何をして・どうなるかを1文で。','【45秒】名前・年齢・性格・抱えている問題。キャラクターの絵を大きく見せる。',
+  '【40秒】主人公との関係を中心に。','【5秒】区切り。','【35秒】日常と主人公の状況。画像1枚に話す内容は1つ。','【35秒】きっかけになる出来事。','【30秒】転機。結末は伏せてもよい。','【5秒】区切り。',
+  '【45秒】大きい画像は場面、小さい画像はモチーフの寄り。','【40秒】雰囲気を見せる。説明は最小限。','【5秒】区切り。','【40秒】工程ごとの状況。','【40秒】探している相手を具体的に。','【20秒】お礼。'],
+'作家の進捗報告':['【30秒】作品名と、今日確認したいことを先に一言。','【90秒】前回面談からの変化だけ。遅れは理由を一言添える。','【90秒】前回もらった助言ごとに、何をしたか・結果どうだったか。',
+  '【60秒】見せたい成果物を画像で。やったこと・決めたことを2〜3行。','【60秒】画材・撮影などのテスト結果。比較を並べる。','【90秒】見てほしい点を先に言ってから再生。','【60秒】発表会・報告書提出までの予定。',
+  '【120秒】面談の本題。1つずつ、決めたいことの形で聞く。','【45秒】期限つきで。'],
+};
+function flowNotes(pages,flow){const a=FLOW_NOTES[flow];if(a)pages.forEach((p,i)=>{if(a[i])p.notes=a[i]})}
 function parseOutline(src){
   const blocks=String(src).replace(/\r/g,'').split(/\n[ \t　]*\n/).map(b=>b.split('\n').map(x=>x.replace(/\s+$/,'')).filter(x=>x.trim())).filter(b=>b.length);
   let sec=0;
@@ -4059,7 +4192,8 @@ function openOutline(){
   $('#o-ok').onclick=()=>{clearTimeout(dT);if(view==='card')readHold();const t=getText();
     if(!parseOutline(t).length){toast('構成が空です');return}
     delete d.outlineDraft;if(hold.length)d.outlineHold=hold.map(c=>({k:c.k,text:c.text}));else delete d.outlineHold;
-    if(applyOutline(t))closeModal()};
+    const fl=$('#o-flow').value,norm=x=>outlineFromGroups(outlineGroups(x));
+    if(applyOutline(t)){if(fl&&FLOWS[fl]&&norm(t)===norm(FLOWS[fl])){flowNotes(S.doc.pages,fl);commit()}closeModal()}};
   let prev=null,busy=null;
   (async()=>{const sm=sampleCap&&await sampleCap;if(!sm||!$('#o-ai'))return;$('#o-ai').hidden=false;
     const st=$('#o-st'),btn=$('#o-ask');
@@ -4088,6 +4222,7 @@ function createSlideDoc(th,flow){
   d.bleed=0;d.margins={top:SM,bottom:SM,inner:SM,outer:SM};d.nombre.mode='none';d.theme=th;d.layVer=LAYVER;
   S.doc=d;S.images={};S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;
   d.pages=parseOutline(FLOWS[flow]||'タイトル').map(({key,t})=>makeSlide(key,t));
+  flowNotes(d.pages,flow);
   fitZoom();rebuild();renderAll();resetHistory();
 }
 
