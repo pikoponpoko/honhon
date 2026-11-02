@@ -232,7 +232,7 @@ a:hover{color:var(--accent-hover);text-decoration-thickness:2px}
 .tcseg button.on{color:var(--accent);background:transparent;border-bottom-color:var(--accent);outline:0;font-weight:700}
 .tcseg button.on:focus-visible{outline:2px solid var(--focus)}
 .tcg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-@media (max-width:820px){.tcg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){.tcg{grid-template-columns:repeat(2,minmax(0,1fr))}.dlg .row{grid-template-columns:minmax(0,1fr)}}
 .tcg .lay canvas{aspect-ratio:auto}
 .tcr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,9em) 64px 32px;gap:4px;margin-bottom:4px}
 .tcr.col{grid-template-columns:7em minmax(0,1fr) 32px}
@@ -327,7 +327,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
 }
 @media (max-width:1199px){
   .logo{width:44px;padding:0;justify-content:center}.logo .lt,.logo>.ic:not(.hm){display:none}.logo .hm{display:block}
-  .gfile #bNew,.gfile #bOpen,.gfile #bDbx{display:none}
+  .gfile #mNew,.gfile #bOpen,.gfile #bDbx{display:none}
   .mp .mq{display:flex}
   #right .shh{display:flex}
 }
@@ -499,7 +499,7 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
 #app.k-slide #stage{scroll-snap-type:x mandatory}#app.k-slide #spreads .slot{scroll-snap-align:center}
 #tab-notes #pNotes{min-height:min(50vh,420px)}
 @media (max-width:820px){#tab-notes #pNotes{min-height:26dvh}}
-.kinds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
+.kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}
 .wlist{display:flex;flex-direction:column;max-height:40vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-dlg)}
 .wlist .chk{padding:6px 8px;border-bottom:1px solid var(--line)}
 .wlist .chk:last-child{border-bottom:0}
@@ -519,8 +519,8 @@ textarea#pNotes{width:100%;min-height:100px;resize:vertical;line-height:1.6}
   <header>
     <div class="hr hr1">
       <div class="mnu" id="mApp"><button class="mb logo" aria-haspopup="true" aria-expanded="false" aria-label="Thinbook"><span class="lt">Thinbook</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><svg class="ic hm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-        <div class="mp" role="menu" hidden><div class="mq"><button id="bNew2">新規</button><button id="bOpen2">開く</button><button id="bDbx2" hidden>Dropbox</button></div><button id="bNeta">ネタ帳</button><button id="bSales">頒布</button><button id="bXl">Excel</button><div class="mqd"></div></div></div>
-      <div class="grp gfile"><button id="bNew">新規</button><button id="bOpen">開く</button><button id="bSave">保存</button><button id="bDbx" hidden>Dropbox</button></div>
+        <div class="mp" role="menu" hidden><div class="mq"><button id="bNew2">新規冊子</button><button id="bNewS2">新規スライド</button><button id="bOpen2">開く</button><button id="bDbx2" hidden>Dropbox</button></div><button id="bNeta">ネタ帳</button><button id="bSales">頒布</button><button id="bXl">Excel</button><div class="mqd"></div></div></div>
+      <div class="grp gfile"><div class="mnu" id="mNew"><button class="mb" aria-haspopup="true" aria-expanded="false">新規<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="mp" role="menu" hidden><button id="bNew">冊子</button><button id="bNewS">スライド</button></div></div><button id="bOpen">開く</button><button id="bSave">保存</button><button id="bDbx" hidden>Dropbox</button></div>
       <span id="docInfo"></span>
       <div class="grp" id="gOut"><button id="bPptx" class="sl-only"><span class="lf">PPTX書き出し</span><span class="ls">書き出し</span></button><button id="bExport" class="primary">入稿データ書き出し</button></div>
     </div>
@@ -1537,7 +1537,7 @@ document.addEventListener('pointerdown',e=>{$$('.mnu').forEach(m=>{if(!m.contain
 $('#mApp .mb').addEventListener('click',()=>{const q=$('#mApp .mqd');q.innerHTML='';if(!MQ.matches)return;const sl=$('#app').classList.contains('k-slide');
   for(const o of [...$$('#mDoc .mp button'),$('#bPres')]){if(o.hidden||(sl&&o.classList.contains('bk-only'))||(!sl&&o.classList.contains('sl-only')))continue;
     const p=document.createElement('button');p.textContent=o.textContent;p.className=o.classList.contains('on')?'on':'';p.onclick=()=>o.click();q.append(p)}},true);
-$('#bNew2').onclick=()=>$('#bNew').click();$('#bOpen2').onclick=()=>$('#bOpen').click();$('#bDbx2').onclick=()=>$('#bDbx').click();
+$('#bNew2').onclick=()=>$('#bNew').click();$('#bNewS2').onclick=()=>$('#bNewS').click();$('#bOpen2').onclick=()=>$('#bOpen').click();$('#bDbx2').onclick=()=>$('#bDbx').click();
 function runPreflight(){
   PF=preflight();const e=PF.filter(x=>x.lv==='err').length,w=PF.filter(x=>x.lv==='warn').length;
   const pr=$('#pfRow');pr.hidden=false;pr.classList.toggle('zero',!e&&!w);pr.setAttribute('aria-label',`プリフライト エラー${e} 警告${w}`);
@@ -1572,9 +1572,11 @@ function closeModal(){$('#modal').hidden=true;$('#modal').innerHTML='';const f=m
 $('#modal').addEventListener('keydown',e=>{if(e.key!=='Tab')return;const d=$('#modal .dlg');if(!d)return;const f=[...d.querySelectorAll('button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.offsetParent);if(!f.length)return;
   const a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){z.focus();e.preventDefault()}else if(!e.shiftKey&&document.activeElement===z){a.focus();e.preventDefault()}});
 $('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal'&&!exporting)closeModal()});
-$('#bNew').onclick=()=>{
-  const dlg=modal(`<h2>新規書類</h2>
-    <div class="kinds" id="n-kinds"><button data-k="body" class="on">本文</button><button data-k="cover">表紙</button><button data-k="slide">スライド 16:9</button><button data-k="web">Web記事から</button></div>
+$('#bNewS').onclick=()=>newDocDlg(true);
+$('#bNew').onclick=()=>newDocDlg(false);
+function newDocDlg(slide){
+  const dlg=modal(`<h2>${slide?'新規スライド':'新規冊子'}</h2>
+    <div class="kinds" id="n-kinds"${slide?' hidden':''}><button data-k="body" class="on">本文</button><button data-k="cover">表紙</button><button data-k="web">Web記事から</button></div>
     <span class="n-book">${F('印刷所',`<select id="n-pr">${Object.entries(PRINTERS).map(([k,v])=>`<option value="${k}"${k===(S.doc&&S.doc.printer)?' selected':''}>${esc(v.name)}</option>`).join('')}</select>`)}</span>
     <select id="n-kind" hidden><option value="body">本文</option><option value="cover">表紙（表1・背・表4）</option><option value="slide">スライド（16:9）</option></select>
     <div class="row">
@@ -1587,7 +1589,7 @@ $('#bNew').onclick=()=>{
     <span id="n-sw" hidden>${F('背幅（mm）','<input type="number" id="n-spine" value="3" step="0.1" min="0">')}</span></div>
     <div id="n-slide" class="sec" hidden><h3>テーマ</h3>${themeGrid('blue')}<div class="row">${F('構成のひな形',`<select id="n-flow">${Object.keys(FLOWS).map(k=>`<option>${k}</option>`).join('')}<option value="">白紙</option></select>`)}</div></div>
     <div class="foot"><button id="n-cancel">キャンセル</button><button class="primary" id="n-ok">作成</button></div>`);
-  const sync=()=>{const k=$('#n-size').value;if(k!=='custom'){let [w,h]=SIZES[k];if($('#n-ori').value==='l')[w,h]=[h,w];$('#n-w').value=w;$('#n-h').value=h}const kv=$('#n-kind').value,cv=kv==='cover',sl=kv==='slide';$('#n-pw').hidden=cv||sl;$('#n-sw').hidden=!cv;$$('.n-book').forEach(x=>x.hidden=sl);$('#n-slide').hidden=!sl;dlg.classList.toggle('owide',sl)};
+  const sync=()=>{const k=$('#n-size').value;if(k!=='custom'){let [w,h]=SIZES[k];if($('#n-ori').value==='l')[w,h]=[h,w];$('#n-w').value=w;$('#n-h').value=h}const kv=$('#n-kind').value,cv=kv==='cover',sl=kv==='slide';$('#n-pw').hidden=cv||sl;$('#n-sw').hidden=!cv;$$('.n-book').forEach(x=>x.hidden=sl);$('#n-w').closest('.row').hidden=sl;$('#n-slide').hidden=!sl;dlg.classList.toggle('owide',sl)};
   $('#n-size').onchange=sync;$('#n-kind').onchange=()=>{$$('#n-kinds button').forEach(x=>x.classList.toggle('on',x.dataset.k===$('#n-kind').value));sync()};
   $('#n-kinds').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='web'){wbStep1();return}$('#n-kind').value=b.dataset.k;$('#n-kind').onchange()};$('#n-ori').onchange=sync;
   for(const x of['#n-w','#n-h'])$(x).addEventListener('input',()=>{$('#n-size').value='custom'});
@@ -1597,7 +1599,8 @@ $('#bNew').onclick=()=>{
     const w=+$('#n-w').value,h=+$('#n-h').value;if(!(w>=20&&h>=20)){toast('サイズを20mm以上で入力してください');return}
     const kind=$('#n-kind').value;S.doc=newDoc({kind,name:'無題',printer:$('#n-pr').value,w,h,binding:$('#n-bind').value,color:$('#n-col').value,pages:+$('#n-pages').value,spine:+$('#n-spine').value});
     S.images={};S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;closeModal();fitZoom();rebuild();renderAll();resetHistory()};
-};
+  if(slide){$('#n-kind').value='slide';sync()}
+}
 $('#bOpen').onclick=()=>$('#fOpen').click();
 $('#fOpen').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(/\.xlsx$/i.test(f.name)){XL.openFile(f);return}try{if(/\.pptx$/i.test(f.name))await importPPTX(f);else await loadProject(JSON.parse(await f.text()));toast('開きました：'+f.name)}catch(err){toast(err.message||'開けませんでした')}});
 async function saveProject(){if(S.doc.pptx&&S.pptxSrc){try{toast('保存中…');await saveFile(S.doc.pptx.name,await exportPPTX())}catch(e){toast('保存できませんでした：'+(e.message||e))}return}
