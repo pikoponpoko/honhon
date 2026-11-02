@@ -121,7 +121,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   record('colophon_linebreaks',Array.from(out));
 }
 
-// Export must wait for images and reject a failed image instead of omitting it.
+// Export must wait for pending images; an image that cannot be decoded is reported and left as an empty frame.
 {
   let imageDraws=0;
   const drawing={setTransform(){},fillRect(){},save(){},restore(){},beginPath(){},rect(){},clip(){},
@@ -143,8 +143,11 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   const out=await run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})");
   assert(out.blob.size>0);assert(imageDraws>0);assert(!c.S.images.photo.pending);
   record('pending_image_pdf',{pdfBytes:out.blob.size,imageDraws,pending:c.S.images.photo.pending});
+  let notice='';c.toast=m=>{notice=m};
   c.loadPendingImages=async()=>{c.S.images.photo={failed:true}};
-  await assert.rejects(run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})"),/画像を読み込めません/);
+  await run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})");assert.match(notice,/読み込めない画像 1件/);
+  c.loadPendingImages=async()=>{};c.S.images.photo={pending:true,w:10,h:10};
+  await assert.rejects(run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})"),/読み込みが終わっていません/);
 }
 
 // Imported numeric values must never introduce markup in the inspector.
@@ -186,7 +189,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   record('recovery_snapshot',{independent:true,pptxPreserved:true});
 }
 
-// A failed image decode or view rebuild must preserve the original document.
+// A view rebuild failure preserves the original document; an undecodable image opens the document without that image.
 {
   for(const failure of ['image','view']){
     const original=doc(),originalImages={old:{src:'old'}};let builds=0;
@@ -196,10 +199,11 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
       migrateSlides(){},fitZoom(){},rebuild(){if(++builds===1)throw new Error('view failed')},
       renderAll(){},resetHistory(){},scheduleSave(){}});
     run(c,load);c.input={app:'honhon',doc:incoming,images:failure==='image'?{broken:{src:'bad'}}:{}};
+    if(failure==='image'){let notice='';c.toast=m=>{notice=m};builds=1;await run(c,'loadProject(input)');assert.equal(c.S.doc.name,'incoming');assert(!c.S.images.broken);assert.match(notice,/読み込めない画像が1件/);continue}
     await assert.rejects(run(c,'loadProject(input)'),/failed/);
     assert.equal(c.S.doc,original);assert.equal(c.S.images,originalImages);
   }
-  record('import_rollback',{imageFailurePreservesProject:true,viewFailurePreservesProject:true});
+  record('import_rollback',{imageFailureOpensWithoutImage:true,viewFailurePreservesProject:true});
 }
 
 // Snapshot writes are serialized: an older save cannot overwrite a newer save.

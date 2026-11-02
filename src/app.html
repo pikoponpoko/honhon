@@ -9,7 +9,7 @@
 :root{
   /* Same palette as Tehon / Soku Conte: green-gray paper, ink #1B2530, blue #3772FF, red #DF2935, yellow #FDCA40 */
   --bg:#E8EFEA; --panel:#E8EFEA; --stage:#DAE5DE; --btn:#FFFFFF; --ink:#1B2530; --sub:#526470; --line:#BCCCC3; --field:#84998E; --hover:#F6F9F7;
-  --accent:#2F5FD9; --accent-hover:#2A52B8; --accent-active:#23469E; --accent-soft:#D2DED6; --accent-ink:#FFFFFF; --accent-text:#1B2530;
+  --accent:#3772FF; --accent-hover:#2F5FD9; --accent-active:#2A52B8; --accent-soft:#D2DED6; --accent-ink:#FFFFFF; --accent-text:#1B2530;
   --danger:#C0392B; --warn:#DF2935; --guide:#A065E0; --paper:#FFFFFF; --focus:#1B2530; --scrim:rgba(16,24,23,0.5);
   --ui:"Noto Sans JP","BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --num:"Noto Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -76,6 +76,7 @@ button.i{width:32px;padding:0;display:inline-flex;align-items:center;justify-con
 .mp .mqd{display:none;flex-direction:column;border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
 .mp .mq{display:none;flex-direction:column;border-bottom:1px solid var(--line);margin-bottom:4px;padding-bottom:4px}
 .gfile button{min-width:52px}
+#saveStatus{font-size:12px;color:var(--sub);white-space:nowrap;flex:none;margin-right:8px}#saveStatus.err{color:var(--warn)}
 #bExport{min-width:216px}#bPptx{min-width:160px}
 #bGuide{min-width:72px}#bPres{min-width:128px}
 .grp{display:flex;gap:4px;align-items:center}
@@ -447,6 +448,7 @@ textarea.outline{width:100%;min-height:260px;resize:vertical;line-height:1.6;fon
   input:not([type=checkbox]):not([type=radio]):not([type=range]),select{min-height:32px;font-size:16px;line-height:24px;padding-block:2px}
   .kcur{width:44px;height:44px}
   textarea{font-size:16px}
+  #saveStatus:not(.err){display:none}
   #bSave{min-width:56px}#bExport,#bPptx{min-width:88px}
   #bExport .lf,#bPptx .lf{display:none}#bExport .ls,#bPptx .ls{display:inline}
   #zoomLbl{width:56px}#bGuide{min-width:80px}
@@ -1216,8 +1218,8 @@ function setPage(i){if(S.page===i)return;const o=S.page;S.page=i;if(S.thumbEls[o
 
 /* ---------- history & persistence ---------- */
 let saveT=0,saveQueue=Promise.resolve(),saveRevision=0;
-function saveStatus(msg){let e=$('#saveStatus');if(!e){e=document.createElement('span');e.id='saveStatus';e.setAttribute('role','status');e.style.cssText='font-size:12px;color:var(--sub);flex:0 1 12em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';$('#bSave').after(e)}e.textContent=msg;e.title=msg}
-function scheduleSave(){saveRevision++;saveStatus('未保存の変更あり');clearTimeout(saveT);saveT=setTimeout(autosave,800)}
+function saveStatus(msg,err){let e=$('#saveStatus');if(!e){e=document.createElement('span');e.id='saveStatus';e.setAttribute('role','status');$('#bSave').after(e)}e.textContent=msg;e.classList.toggle('err',!!err)}
+function scheduleSave(){saveRevision++;saveStatus('保存中…');clearTimeout(saveT);saveT=setTimeout(autosave,800)}
 function commit(){S.lmap=null;const j=JSON.stringify(S.doc);if(j===S.last)return;S.undo.push(S.last);if(S.undo.length>100)S.undo.shift();S.redo=[];S.last=j;afterChange()}
 function afterChange(){scheduleSave();clearTimeout(pfT);pfT=setTimeout(runPreflight,400);$('#bUndo').disabled=!S.undo.length;$('#bRedo').disabled=!S.redo.length}
 function restore(j){S.last=j;S.doc=JSON.parse(j);if(S.mv){ensureMasters();swapIn()}S.lmap=null;if(S.sel&&!findItem(S.sel))S.sel=null;if(S.sel)S.more=(S.more||[]).filter(id=>findItem({page:S.sel.page,id}));else S.more=[];S.page=Math.min(S.page,S.doc.pages.length-1);rebuild();renderAll();afterChange()}
@@ -1238,7 +1240,7 @@ function projectData(file){const used=new Set(),mu=new Set();[...SL(),...MS()].f
   o.media={};for(const id of mu){const m=S.media[id];if(!m)continue;o.media[id]=fromPptx&&m.part?{part:m.part,name:m.name,type:m.type}:{blob:m.blob,name:m.name,type:m.type}}return o}
 function autosave(){clearTimeout(saveT);if(!S.doc)return Promise.resolve(false);const rev=++saveRevision,data=structuredClone(projectData());saveStatus('保存中…');
   const job=saveQueue.then(()=>kvWrite('project',data));saveQueue=job.catch(()=>{});
-  return job.then(()=>{if(rev===saveRevision)saveStatus('この端末に保存済み');return true},()=>{if(rev===saveRevision)saveStatus('保存失敗：ファイルを保存してください');toast('自動保存に失敗しました。「保存」から編集用ファイルを保存してください');return false})}
+  return job.then(()=>{if(rev===saveRevision)saveStatus('保存済み');return true},()=>{if(rev===saveRevision)saveStatus('保存できません',1);toast('自動保存に失敗しました。「保存」から編集用ファイルを保存してください');return false})}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S.doc)autosave()});
 function validateProject(p){
   if(!p||!['honhon','thinbook','kumi'].includes(p.app)||!p.doc)throw new Error('HonHonのプロジェクトファイルではありません');
@@ -1256,16 +1258,17 @@ function validateProject(p){
 async function loadProject(p){
   validateProject(p);const next={doc:structuredClone(p.doc),images:Object.create(null),media:Object.create(null),pptxSrc:p.pptxSrc?(p.pptxSrc instanceof Blob?p.pptxSrc:typeof p.pptxSrc==='string'?b64u8(p.pptxSrc):new Uint8Array(p.pptxSrc)):null,pptxZip:null};
   if(!next.pptxSrc&&p.doc.pptx){const r=await kvGet('pptxsrc');if(r&&r.blob&&r.key===p.doc.pptx.key)next.pptxSrc=r.blob}
-  if(next.pptxSrc&&p.doc.pptx)next.pptxZip=new Map((await PZ.open(next.pptxSrc)).map(e=>[e.name,e]));
+  if(next.pptxSrc&&p.doc.pptx)try{next.pptxZip=new Map((await PZ.open(next.pptxSrc)).map(e=>[e.name,e]))}catch(e){}
   for(const [id,m] of Object.entries(p.media||{})){const blob=m.blob||(m.data?new Blob([b64u8(m.data)],{type:m.type}):null);if(blob)next.media[id]={blob,name:m.name,type:m.type};else if(m.part&&next.pptxZip?.has(m.part))next.media[id]={blob:null,size:next.pptxZip.get(m.part).usize,name:m.name,type:m.type,part:m.part}}
-  const urls=[];try{await Promise.all(Object.entries(p.images||{}).map(async([id,m])=>{
-    if(m.part){if(!next.pptxZip?.has(m.part))throw new Error('画像が見つかりません：'+(m.name||id));next.images[id]={part:m.part,name:m.name,w:m.w||1,h:m.h||1,pending:true};return}
-    const src=m.blob?URL.createObjectURL(m.blob):m.src;if(m.blob)urls.push(src);const img=await loadImg(src);next.images[id]={...m,src,img}}));
+  const urls=[];let lost=0;try{await Promise.all(Object.entries(p.images||{}).map(async([id,m])=>{
+    if(m.part){next.images[id]=next.pptxZip?.has(m.part)?{part:m.part,name:m.name,w:m.w||1,h:m.h||1,pending:true}:{part:m.part,name:m.name,w:m.w||1,h:m.h||1,failed:true};return}
+    const src=m.blob?URL.createObjectURL(m.blob):m.src;if(m.blob)urls.push(src);try{next.images[id]={...m,src,img:await loadImg(src)}}catch(e){lost++}}));
   }catch(e){urls.forEach(u=>URL.revokeObjectURL(u));throw e}
   const previous={...S};clearTimeout(saveT);clearTimeout(commitT);clearTimeout(docT);
   try{Object.assign(S,next,{mv:null,lmap:null,sel:null,more:[],page:0});migrateSlides();fitZoom();rebuild();renderAll();resetHistory()}
   catch(e){Object.assign(S,previous);urls.forEach(u=>URL.revokeObjectURL(u));if(S.doc){rebuild();renderAll();scheduleSave()}throw e}
-  if(S.pptxZip)setTimeout(loadPendingImages,0);
+  if(S.pptxZip){setTimeout(loadPendingImages,0);if(p.pptxSrc)kvSet('pptxsrc',{key:S.doc.pptx.key,blob:S.pptxSrc})}
+  lost+=Object.values(S.images).filter(m=>m.failed).length;if(lost)toast(`読み込めない画像が${lost}件あります`);
 }
 let dlCap=null;
 try{if(window.claude&&window.claude.use)dlCap=window.claude.use('downloads')}catch(e){}
@@ -1919,7 +1922,7 @@ function newDocDlg(slide){
   if(slide){$('#n-kind').value='slide';sync()}
 }
 $('#bOpen').onclick=()=>$('#fOpen').click();
-$('#fOpen').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(/\.xlsx$/i.test(f.name)){XL.openFile(f);return}try{if(/\.pptx$/i.test(f.name))await importPPTX(f);else await loadProject(JSON.parse(await f.text()));toast('開きました：'+f.name)}catch(err){toast(err.message||'開けませんでした')}});
+$('#fOpen').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(/\.xlsx$/i.test(f.name)){XL.openFile(f);return}try{if(/\.pptx$/i.test(f.name))await importPPTX(f);else{let j;try{j=JSON.parse(await f.text())}catch(_){throw new Error('HonHonのプロジェクトファイルではありません')}await loadProject(j)}toast('開きました：'+f.name)}catch(err){toast(err.message||'開けませんでした')}});
 async function saveProject(){if(S.doc.pptx&&S.pptxSrc){try{toast('保存中…');await saveFile(S.doc.pptx.name,await exportPPTX())}catch(e){toast('保存できませんでした：'+(e.message||e))}return}
   const pd=projectData(true);for(const m of Object.values(pd.media)){m.data=u8b64(new Uint8Array(await m.blob.arrayBuffer()));delete m.blob}
   for(const m of Object.values(pd.images))if(m.blob){m.src=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(m.blob)});delete m.blob}const j=JSON.stringify(pd);saveFile((S.doc.name||'無題')+'.honhon.json',new Blob([j],{type:'application/json'}))}
@@ -2086,7 +2089,8 @@ async function ensureFonts(){
   await Promise.all(ps.map(p=>p.catch(()=>{})));await document.fonts.ready;wcache.clear();lcache.clear();
 }
 async function ensureImages(){const d=S.doc;await loadPendingImages();if(S.doc!==d)throw new Error('書類が変更されました。もう一度書き出してください');
-  for(const pg of [...SL(),...MS()]){const B=mBg(pg);for(const it of [...(B.img?[B.img]:[]),...mUnder(pg),...pg.items])for(const id of [it.imageId,it.posterId])if(id){const im=S.images[id];if(!im||im.pending||im.failed||!im.img)throw new Error('画像を読み込めません：'+(im?.name||id))}}}
+  let lost=0;for(const pg of d.pages){const B=mBg(pg);for(const it of [...(B.img?[B.img]:[]),...mUnder(pg),...pg.items])for(const id of [it.imageId,it.posterId])if(id){const im=S.images[id];if(im&&im.pending)throw new Error('画像の読み込みが終わっていません。もう一度書き出してください');if(!im||!im.img)lost++}}
+  if(lost)toast(`読み込めない画像 ${lost}件は空の枠で書き出します`)}
 /* mode: gray(1ch, 255=白) / cmyk(4ch, インキ量) / rgb(3ch) */
 async function rasterPage(i,opt,mode,tick){
   const d=S.doc,b=d.bleed,W=pw(d),H=d.trimH,ext=opt.marks?b+12:opt.bleed?b:0,mw=W+2*ext,mh=H+2*ext,s=opt.dpi/25.4;
@@ -6163,7 +6167,7 @@ if(document.fonts)document.fonts.addEventListener('loadingdone',()=>{wcache.clea
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>dirtyAll());
 (async()=>{
   const saved=await kvGet('project');const hs=await kvGet('handles');if(hs)Object.assign(handles,hs);
-  try{if(saved&&saved.doc){await loadProject(saved);return}}catch(e){}
+  try{if(saved&&saved.doc){await loadProject(saved);return}}catch(e){try{await kvWrite('previousProject',saved)}catch(_){}toast('前回の作品を開けませんでした：'+e.message)}
   S.doc=blankDoc();fitZoom();rebuild();renderAll();resetHistory();
 })();
 window.__thinbook={S,exportPPTX,importPPTX,parseOutline,applyOutline,createSlideDoc,setTheme,setLayout,exportPDF,exportJob,preflight,layout,autoFlow,autoDaiwari,select,parsePSD,spineOf,newDoc,rebuild,commit,headOf,chainOf,linkTo,editText,alignSel};
