@@ -4534,17 +4534,18 @@ function dmCanAddress(size,ori){return ori==='p'&&(size==='hagaki'||size==='a6')
 function dmDims(size,ori){const z=DM_SIZES.find(x=>x[0]===size)||DM_SIZES[0];return ori==='l'?[z[3],z[2]]:[z[2],z[3]]}
 function dmDocBase(W,H,o){const d=cardDocBase(W,H,o);d.kind='dm';d.name='DM';d.margins={top:5,bottom:5,inner:5,outer:5};d.faces=o&&o.back==='address'?['デザイン面','宛名面']:['表','裏'];return d}
 function dmPages(o){const [W,H]=dmDims(o.size,o.ori),b=3,T=mkTheme(o.key,o.ground),back=o.back==='address'&&!dmCanAddress(o.size,o.ori)?'info':o.back,ps=[dmFront(o.front,W,H,b,o.f,back==='none'||back==='key'||back==='image')];
-  if(back!=='none')ps.push(dmBack(back,W,H,b,o.f));ps.forEach(p=>themePage(p,T));return{W,H,b,T,ps,back}}
+  if(back!=='none')ps.push(dmBack(back,W,H,b,o.f));ps.forEach(p=>{themePage(p,T);if(o.art)for(const it of p.items)if(it.type==='image'&&!it.imageId)it.imageId=o.art});return{W,H,b,T,ps,back}}
 function dmAddBack(){const d=S.doc,can=d.faces&&d.faces[1]==='宛名面'||d.trimW<=107&&d.trimH<=154&&d.trimH>d.trimW,pg=dmBack(can?'address':'info',d.trimW,d.trimH,d.bleed,{});
   if(can)d.faces=['デザイン面','宛名面'];if(d.key)themePage(pg);else{delete pg.bgRole;for(const it of pg.items){if(it.colorRole)it.color={c:0,m:0,y:0,k:100};if(it.fillRole)it.fill={c:0,m:0,y:0,k:40};if(it.strokeRole)it.stroke={c:0,m:0,y:0,k:40}}}
   d.pages.push(pg);rebuild();commit();setPage(1);renderDoc();toast(faceName(d,1)+'を追加しました')}
 $('#bNewD').onclick=()=>newDmDlg();
 function newDmDlg(){
-  const o={mode:'design',size:'hagaki',ori:'p',front:'photo',back:'address',key:KEYS[0][0],ground:'light',f:{title:'',name:'',date:'',place:'',detail:'',from:''},imp:null};
+  const o={mode:'design',size:'hagaki',ori:'p',front:'photo',back:'address',art:null,key:KEYS[0][0],ground:'light',f:{title:'',name:'',date:'',place:'',detail:'',from:''},imp:null};
   const ar=()=>{const [W,H]=dmDims(o.size,o.ori);return W+'/'+H};
   const dlg=modal(`<h2>新規DM</h2>
     <div class="kinds" id="dm-mode"><button data-m="design" class="on">デザイン</button><button data-m="import">データを読み込む</button></div>
     <div id="dm-design"><div class="row">${F('サイズ',`<select id="dm-size">${DM_SIZES.map(([k,n])=>`<option value="${k}">${n}</option>`).join('')}</select>`)}${F('向き','<select id="dm-ori"><option value="p">縦</option><option value="l">横</option></select>')}</div>
+    <div class="cim"><button id="dm-art">作品画像を選ぶ</button><span class="ok" id="dm-artn"></span></div>
     <div class="sec"><h3>表</h3><div class="cpv dmv" id="dm-front">${DM_FRONT.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===o.front?' class="on"':''}><canvas></canvas></button>`).join('')}</div></div>
     <div class="sec"><h3>裏</h3><div class="cpv dmv" id="dm-back">${DM_BACK.map(([k,n])=>`<button type="button" data-v="${k}" title="${n}" aria-label="${n}"${k===o.back?' class="on"':''}>${k==='none'?`<span class="cno">${n}</span>`:'<canvas></canvas>'}</button>`).join('')}</div></div>
     <div class="sec" id="dm-key">${cardKeyPick(o)}</div>
@@ -4552,7 +4553,7 @@ function newDmDlg(){
     <div class="row">${F('詳細','<textarea data-f="detail" rows="3"></textarea>')}${F('差出人','<textarea data-f="from" rows="3"></textarea>')}</div></div></div>
     <div id="dm-import" hidden><div class="cim"><button id="dm-file">ファイルを選ぶ</button><span class="ok" id="dm-st">PDF・AI（PDF互換）・PNG・JPEG・PSD</span></div>
     <div class="cpv dmv" id="dm-ipv"></div></div>
-    <input type="file" id="dm-in" accept=".pdf,.ai,.png,.jpg,.jpeg,.psd,image/png,image/jpeg,application/pdf" multiple hidden>
+    <input type="file" id="dm-artin" accept="image/png,image/jpeg,.psd" hidden><input type="file" id="dm-in" accept=".pdf,.ai,.png,.jpg,.jpeg,.psd,image/png,image/jpeg,application/pdf" multiple hidden>
     <div class="foot"><button id="dm-cancel">キャンセル</button><button class="primary" id="dm-ok">作成</button></div>`);
   dlg.classList.add('owide');
   const draw=()=>{const g={...o},can=dmCanAddress(o.size,o.ori);$$('#dm-back .cno').forEach(x=>x.style.aspectRatio=ar());
@@ -4565,6 +4566,8 @@ function newDmDlg(){
   $('#dm-size').onchange=()=>{o.size=$('#dm-size').value;redraw()};$('#dm-ori').onchange=()=>{o.ori=$('#dm-ori').value;redraw()};
   let ft=0;$('#dm-design').addEventListener('input',e=>{const k=e.target.dataset.f;if(!k)return;o.f[k]=e.target.value;clearTimeout(ft);ft=setTimeout(redraw,200)});
   $('#dm-mode').onclick=e=>{const b=e.target.closest('button');if(!b)return;o.mode=b.dataset.m;$$('#dm-mode button').forEach(x=>x.classList.toggle('on',x===b));$('#dm-design').hidden=o.mode!=='design';$('#dm-import').hidden=o.mode!=='import'};
+  $('#dm-art').onclick=()=>$('#dm-artin').click();
+  $('#dm-artin').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const im=await readImage(f),id=uid();S.images[id]=im;o.art=id;$('#dm-artn').textContent=f.name;redraw()}catch(err){toast(err.message)}};
   $('#dm-file').onclick=()=>$('#dm-in').click();
   $('#dm-in').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;$('#dm-st').textContent='読み込み中…';$('#dm-file').disabled=true;
     try{o.imp=await cardImport(fs,DM_SIZES);Object.assign(S.images,o.imp.images);$('#dm-st').textContent=cardImpLabel(o.imp,'DM');$('#dm-ipv').innerHTML=o.imp.faces.map(()=>`<div><canvas></canvas></div>`).join('');
@@ -4573,7 +4576,7 @@ function newDmDlg(){
   $('#dm-cancel').onclick=closeModal;
   $('#dm-ok').onclick=()=>{let d;
     if(o.mode==='import'){if(!o.imp){toast('DMのファイルを選んでください');return}d=cardImpDoc(o.imp,dmDocBase);S.images=o.imp.images}
-    else{const r=dmPages(o);d=dmDocBase(r.W,r.H,{...o,back:r.back});d.pages=r.ps;S.images={}}
+    else{const r=dmPages(o);d=dmDocBase(r.W,r.H,{...o,back:r.back});d.pages=r.ps;S.images=o.art?{[o.art]:S.images[o.art]}:{}}
     S.doc=d;S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;closeModal();fitZoom();rebuild();renderAll();resetHistory()};
   redraw()}
 function createSlideDoc(th,flow){
