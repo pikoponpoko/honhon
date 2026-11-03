@@ -1933,7 +1933,7 @@ function newDocDlg(slide){
     <span class="n-book">${F('カラー','<select id="n-col"><option value="mono">モノクロ</option><option value="cmyk">カラー（CMYK）</option></select>')}</span>
     <span id="n-pw">${F('ページ数','<input type="number" id="n-pages" value="24" step="4" min="1">')}</span>
     <span id="n-sw" hidden>${F('背幅（mm）','<input type="number" id="n-spine" value="3" step="0.1" min="0">')}</span></div>
-    <div id="n-slide" class="sec" hidden><div class="tcseg nsc" id="n-scene" role="tablist">${SCENES.map(([n],i)=>`<button type="button" role="tab" data-i="${i}">${n}</button>`).join('')}<button type="button" role="tab" data-i="-1">白紙</button></div><div class="tcseg nsv" id="n-var" role="tablist"></div><div id="n-sd"><h3>デザイン</h3><div class="cpv nbd" id="n-board"><button type="button" data-v=""><canvas></canvas>標準</button></div></div>${keyPick(NK)}<div id="n-sbody"><h3>構成</h3><div class="nfl" id="n-flow"></div></div></div>
+    <div id="n-slide" class="sec" hidden><div class="tcseg nsc" id="n-scene" role="tablist">${SCENES.map(([n],i)=>`<button type="button" role="tab" data-i="${i}">${n}</button>`).join('')}<button type="button" role="tab" data-i="-1">白紙</button></div><div class="tcseg nsv" id="n-var" role="tablist"></div><div id="n-sd"><h3>テンプレート</h3><div class="cpv nbd" id="n-board"><button type="button" data-v=""><canvas></canvas>標準</button></div></div>${keyPick(NK)}<div id="n-sbody"><h3>構成</h3><div class="nfl" id="n-flow"></div></div></div>
     <div id="n-cover" class="sec" hidden><div class="row">${F('本文ページ数','<input type="number" id="n-cvp" value="32" step="4" min="4">')}${F('本文用紙','<select id="n-cvpa"></select>',1)}</div>
       ${coverLayPick(CO.lay)}${coverFields(CO.f,CO.font)}<div class="cim"><button id="n-cvart">絵を選ぶ</button><span class="ok" id="n-cvart-n"></span></div><div id="n-cvkey">${cardKeyPick(CO)}</div></div>
     <div class="foot"><button id="n-cancel">キャンセル</button><button class="primary" id="n-ok">作成</button></div>`);
@@ -1954,33 +1954,34 @@ function newDocDlg(slide){
   $('#n-kinds').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k==='web'){wbStep1();return}$('#n-kind').value=b.dataset.k;$('#n-kind').onchange()};$('#n-ori').onchange=sync;
   for(const x of['#n-w','#n-h'])$(x).addEventListener('input',()=>{$('#n-size').value='custom'});
   /* 場面 → 構成のひな形。デザイン（優先するピン）を選ぶと構成の各位置にそのピンの合うスライドを当て、位置ごとにほかの案から選べる */
-  let SI=0,VI=0,NB='',SL=[],PK=[],gen=0;
+  let SI=0,VI=0,NB='',NBu=false,SL=[],PK=[],gen=0;
   const flowName=()=>SI<0?'':SCENES[SI][1][VI][1],T0=()=>mkTheme(NK.key,'light');
   const nbDraw=()=>{const T=T0();for(const b of $$('#n-board button')){const c=b.querySelector('canvas'),v=b.dataset.v;
-    if(v)drawSlideThumb(c,makeBoardSlide(v,0,T),T,150,SW,SH);else drawSlideThumb(c,makeSlide('cover_img',{},T),T,150,SW,SH)}};
+    const tp=v&&tplById(v);if(tp&&tp.pins.length)drawSlideThumb(c,makeBoardSlide(tp.pins[0],0,T),T,150,SW,SH);else drawSlideThumb(c,makeSlide('cover_img',{},T),T,150,SW,SH)}};
   const nbOn=()=>$$('#n-board button').forEach(x=>x.classList.toggle('on',x.dataset.v===NB));
   const flDraw=()=>{const g=++gen,T=T0(),cs=$$('#n-flow canvas');let k=0;
     const step=()=>{if(g!==gen||!$('#n-flow'))return;const t0=performance.now();
       while(k<cs.length&&performance.now()-t0<24){const c=cs[k++],b=c.parentNode;drawSlideThumb(c,sceneSlide(b.dataset.v,SL[+b.closest('.nfr').dataset.i],T),T,112,SW,SH)}
       if(k<cs.length)setTimeout(step)};step()};
-  const flFill=()=>{SL=SI<0?[]:sceneSlots(flowName());PK=scenePicks(SL,NB);
-    $('#n-flow').innerHTML=SL.map((sl,i)=>{const vs=['std',...boardCands(sl.role,sl.topic,NB,i)];if(!vs.includes(PK[i]))vs.splice(1,0,PK[i]);
+  const scPin=()=>SI<0?'':SCENE_PIN[SCENES[SI][0]]||'own_talk';
+  const flFill=()=>{SL=sceneSlots(flowName());PK=scenePicks(SL,NB,scPin());if(SI<0){$('#n-flow').innerHTML='';return}
+    $('#n-flow').innerHTML=SL.map((sl,i)=>{const vs=NB===''?['std',...tplCands(sl.role,sl.topic,'',i,5)]:tplCands(sl.role,sl.topic,NB,i,6,null,scPin());if(!vs.includes(PK[i]))vs.unshift(PK[i]);
       return`<div class="nfr" data-i="${i}"><div class="nfh"><b>${String(i+1).padStart(2,'0')}</b>${esc(sl.t.title)}</div><div class="nfc">${vs.map(v=>`<button type="button" data-v="${v}"${v===PK[i]?' class="on"':''}><canvas></canvas></button>`).join('')}</div></div>`}).join('');
     flDraw()};
   const scSet=()=>{$$('#n-scene button').forEach(b=>b.setAttribute('aria-selected',b.classList.toggle('on',+b.dataset.i===SI)));
     const vs=SI<0?[]:SCENES[SI][1],nv=$('#n-var');nv.hidden=vs.length<2;nv.style.gridTemplateColumns=`repeat(${vs.length||1},minmax(0,1fr))`;
     nv.innerHTML=vs.map(([n],i)=>`<button type="button" role="tab" data-i="${i}" aria-selected="${i===VI}"${i===VI?' class="on"':''}>${n}</button>`).join('');
-    $('#n-sbody').hidden=$('#n-sd').hidden=SI<0;nbOn();if(SI>=0)flFill()};
-  $('#n-scene').onclick=e=>{const b=e.target.closest('button');if(!b)return;SI=+b.dataset.i;VI=SI>=0&&SCENES[SI][1].length>2?1:0;NB=sceneDefault(SI);scSet()};
+    $('#n-sbody').hidden=SI<0;nbOn();flFill()};
+  $('#n-scene').onclick=e=>{const b=e.target.closest('button');if(!b)return;SI=+b.dataset.i;VI=SI>=0&&SCENES[SI][1].length>2?1:0;if(!NBu)NB=sceneDefault(SI);scSet()};
   $('#n-var').onclick=e=>{const b=e.target.closest('button');if(!b)return;VI=+b.dataset.i;scSet()};
   $('#n-flow').onclick=e=>{const b=e.target.closest('.nfc button');if(!b)return;PK[+b.closest('.nfr').dataset.i]=b.dataset.v;b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))};
-  const nbFill=()=>{if(!BOARDS||!$('#n-board'))return;$('#n-board').insertAdjacentHTML('beforeend',BOARDS.pins.map(p=>`<button type="button" data-v="${p.id}"><canvas></canvas>${esc(p.name)}</button>`).join(''));
+  const nbFill=()=>{if(!BOARDS||!$('#n-board'))return;$('#n-board').insertAdjacentHTML('beforeend',templates().filter(t=>t.id).map(t=>`<button type="button" data-v="${t.id}"><canvas></canvas>${esc(t.name)}</button>`).join(''));
     NB=sceneDefault(SI);scSet();nbDraw();document.fonts.ready.then(()=>setTimeout(()=>{nbDraw();flDraw()},60))};
   if(slide){scSet();loadBoards().then(nbFill).catch(()=>{})}
-  $('#n-board').onclick=e=>{const b=e.target.closest('button');if(!b)return;NB=b.dataset.v;nbOn();flFill()};
+  $('#n-board').onclick=e=>{const b=e.target.closest('button');if(!b)return;NB=b.dataset.v;NBu=true;nbOn();flFill()};
   const nkRe=()=>{$('#n-slide .kp').outerHTML=keyPick(NK);bindKeyPick($('#n-slide'),NK,nkRe);nbDraw();flDraw()};bindKeyPick($('#n-slide'),NK,nkRe);
   $('#n-cancel').onclick=closeModal;
-  $('#n-ok').onclick=()=>{if($('#n-kind').value==='slide'){const fl=flowName(),std=PK.every(v=>v==='std');createSlideDoc({...NK},fl,SI<0?null:PK,NB);closeModal();if(SI<0||std)openOutline();return}
+  $('#n-ok').onclick=()=>{if($('#n-kind').value==='slide'){const fl=flowName(),std=PK.every(v=>v==='std');createSlideDoc({...NK},fl,PK,NB);closeModal();if(std)openOutline();return}
     const w=+$('#n-w').value,h=+$('#n-h').value;if(!(w>=20&&h>=20)){toast('サイズを20mm以上で入力してください');return}
     const kind=$('#n-kind').value;S.doc=newDoc({kind,name:'無題',printer:$('#n-pr').value,w,h,binding:$('#n-bind').value,color:$('#n-col').value,pages:+$('#n-pages').value,spine:+$('#n-spine').value});
     const im=kind==='cover'&&CO.img&&S.images[CO.img.imageId];
@@ -4416,12 +4417,12 @@ let addSet=null;
 function renderSlideProps(el){
   const d=S.doc,pg=d.pages[S.page],bd=!!pg.board;
   if(!d.pptx&&!BOARDS)loadBoards().then(()=>{if(S.doc===d&&S.doc.kind==='slide')renderProps()}).catch(()=>{});
-  const set=addSet!=null&&(addSet===''||boardPin(addSet))?addSet:(pg.board?pg.board.split(':')[0]:d.board||'');
-  const setSel=BOARDS?`<select id="layAddSet"><option value="">標準</option>${BOARDS.pins.map(p=>`<option value="${p.id}"${p.id===set?' selected':''}>${esc(p.name)}</option>`).join('')}</select>`:'';
-  el.innerHTML=(bd?(d.pptx?'':`<div class="sec"><h3>スライド ${S.page+1} のレイアウト案</h3><div class="lays sugs" id="laySug"><button type="button" class="lay sug" data-sw="std:${ROLE_STD[pageRole(pg,S.page)]||'content'}"><canvas></canvas>標準</button>${swapBtns(S.page)}</div></div>`):`<div class="sec"><h3>スライド ${S.page+1} のレイアウト案</h3><div class="lays sugs" id="laySug">${sugBtns(S.page)}${d.pptx?'':swapBtns(S.page)}</div></div>${imgLaySec(S.page)}
+  const tid=docTpl(pg),set=addSet!=null&&tplById(addSet)?addSet:tid;
+  const setSel=BOARDS?`<select id="layAddSet">${templates().map(t=>`<option value="${t.id}"${t.id===set?' selected':''}>${esc(t.name)}</option>`).join('')}</select>`:'';
+  el.innerHTML=(bd?(d.pptx?'':`<div class="sec"><h3>スライド ${S.page+1} のレイアウト案</h3><div class="lays sugs" id="laySug">${tid?'':`<button type="button" class="lay sug" data-sw="std:${ROLE_STD[pageRole(pg,S.page)]||'content'}"><canvas></canvas>標準</button>`}${swapBtns(S.page)}</div></div>`):`<div class="sec"><h3>スライド ${S.page+1} のレイアウト案</h3><div class="lays sugs" id="laySug">${sugBtns(S.page)}${d.pptx?'':swapBtns(S.page)}</div></div>${imgLaySec(S.page)}
     <div class="sec"><h3>すべてのレイアウト</h3><div class="lays" id="layCur">${layBtns(pg.layout)}</div></div>`)+slideBgSec(pg)+
     `<div class="sec"><h3>余白に揃える</h3><div class="row"><button id="fitG">このスライド</button><button id="fitGAll">すべてのスライド</button></div></div>`+
-    (d.pptx?`<div class="sec"><h3>文字枠</h3><div class="row"><button id="phSnap">レイアウトの位置に戻す</button><button id="phSnapAll">すべてのスライド</button></div></div>`:`<div class="sec"><h3>後ろに追加</h3>${setSel}<div class="lays" id="layAdd">${set&&boardPin(set)?boardBtns(set):layBtns()}</div></div>`);
+    (d.pptx?`<div class="sec"><h3>文字枠</h3><div class="row"><button id="phSnap">レイアウトの位置に戻す</button><button id="phSnapAll">すべてのスライド</button></div></div>`:`<div class="sec"><h3>後ろに追加</h3>${setSel}<div class="lays" id="layAdd">${set?'':layBtns()}${tplById(set)?tplById(set).pins.map(boardBtns).join(''):''}</div></div>`);
   if(bd){const T=slideTheme(pg);drawLayThumbs(el,T);drawBoardThumbs(el,T)}else{drawLayThumbs(el,slideTheme(pg));drawSugThumbs(el,S.page);drawBoardThumbs(el,slideTheme(pg))}
   if(!d.pptx)drawSwapThumbs(el,S.page);
   const ss=$('#layAddSet');if(ss)ss.onchange=()=>{addSet=ss.value;renderProps()};
@@ -4443,8 +4444,11 @@ function renderNotes(){
 }
 function renderSlideDoc(){
   const d=S.doc;
+  if(!d.pptx&&!BOARDS)loadBoards().then(()=>{if(S.doc===d&&S.tab==='doc')renderSlideDoc()}).catch(()=>{});
   $('#tab-doc').innerHTML=`<div class="sec"><h3>書類</h3>${F('名前',`<input type="text" id="d-name" data-dk="name" value="${esc(d.name)}">`)}</div>`+
+    (!d.pptx&&BOARDS?`<div class="sec"><h3>テンプレート</h3><select id="d-tpl">${templates().map(t=>`<option value="${t.id}"${t.id===docTpl(d.pages[S.page])?' selected':''}>${esc(t.name)}</option>`).join('')}</select></div>`:'')+
     (d.pptx?'':`<div class="sec" id="d-key"><h3>テーマ</h3>${keyPick({key:d.key||theme().accent,ground:d.key?d.ground||'light':(theme().bg.toLowerCase()==='#ffffff'?'light':'dark'),key2:d.key2||''},1)}</div>`);
+  if($('#d-tpl'))$('#d-tpl').onchange=e=>applyTemplate(e.target.value);
   if(!d.pptx){const o={key:d.key||theme().accent.toLowerCase(),ground:d.ground||(theme().bg.toLowerCase()==='#ffffff'?'light':'dark'),key2:d.key2||''};bindKeyPick($('#d-key'),o,()=>setTheme(o))}
 }
 
@@ -4754,7 +4758,7 @@ const ROLE_PRE=[['cover',/^(表紙|トップ)/],['toc',/^目次/],['sec',/^区�
   ['table',/^(概要|仕様|書体見本)/],['imgs',/^(イメージボード|写真)/],['video',/^(テスト映像|映像)/],['img',/^あらすじ/],['text',/^(制作意図|相談|文章|本文|紹介|\d項目)/]];
 /* 役割どうしの近さ。同じ役割のスライドが足りないときに挙げる */
 const ROLE_NEAR={img:['imgs','person','video'],imgs:['img'],person:['img','imgs'],video:['img'],profile:['person','img'],list:['table','text'],table:['list','text'],
-  quote:['sec','text'],text:['list','quote'],end:['cover'],cover:['end'],sec:['quote'],num:['text'],toc:['list']};
+  quote:['sec','text'],text:['list','quote'],end:['cover'],cover:['end','sec'],sec:['quote'],num:['text'],toc:['list']};
 const ROLE_STD={cover:'cover_img',sec:'section_big',quote:'statement_l',num:'number_l',img:'image_big',imgs:'grid6',person:'image_big',video:'image_full',profile:'image',list:'content',table:'two',text:'content',end:'content',toc:'content'};
 const bPre=sl=>{const n=String(sl.n||''),k=n.indexOf('：');return k>0&&k<=10?n.slice(0,k):''};
 const boardTopic=sl=>sl.tp!=null?sl.tp:topicOf(bPre(sl));
@@ -4767,34 +4771,56 @@ function boardRole(sl){if(sl.r)return sl.r;const n=String(sl.n||''),pre=bPre(sl)
 function slotRole(key,title,i){const r=TOPIC_ROLE[topicOf(title)];if(r)return r;const B=baseOf(key);
   if(i===0||B==='title')return'cover';if(B==='section')return'sec';if(B==='number')return'num';if(key==='statement'||key==='statement_l')return'quote';
   if(B==='image')return key==='image_full'&&/映像|動画/.test(title||'')?'video':'img';if(B==='pair'||B==='grid')return'imgs';if(B==='two')return'table';return'text'}
-const sceneDefault=si=>{const s=SCENES[si];if(!s)return'';if(s[2]&&boardPin(s[2]))return s[2];const p=BOARDS&&BOARDS.pins.find(p=>p.scene===s[0]);return p?p.id:''};
-/* 役割（と話題）に合うボードのスライドを挙げる。同じピンからは1枚まで（優先するピンは3枚まで）。同点は位置ごとに順番を変えて偏らせない */
-function boardCands(role,topic,pref,seed=0,n=5,skip){if(!BOARDS)return[];const out=[],h=s=>{let x=seed*2654435761>>>0;for(const c of s)x=Math.imul(x^c.charCodeAt(0),16777619)>>>0;return x};
-  BOARDS.pins.forEach(p=>p.slides.forEach((sl,i)=>{const id=p.id+':'+i;if(id===skip)return;const r=boardRole(sl);let s=0;
-    if(r===role)s=50;else if((ROLE_NEAR[role]||[]).includes(r))s=15;else return;
-    if(topic&&boardTopic(sl)===topic)s+=100;if(p.id===pref)s+=30;out.push({id,p:p.id,s,h:h(id)})}));
-  out.sort((a,b)=>b.s-a.s||a.h-b.h);const res=[],per={};
-  for(const c of out){const m=c.p===pref?2:1;if((per[c.p]||0)>=m)continue;per[c.p]=(per[c.p]||0)+1;res.push(c.id);if(res.length>=n)break}return res}
+/* テンプレート：同じ参考元・同じデザイン体系のスライド一式。統一感を保つため、構成の当てはめ・レイアウト案は書類のテンプレートの中からだけ選ぶ。
+   ''＝標準（標準のレイアウト＋画像・映像／タイトル／連絡先）。自分の企画書・面談資料・発表資料は同じデザインなので1つにまとめ、場面に合うものを優先する */
+const TPL_STD=['media','titles','contact'],TPL_JOIN={own:{name:'自分の資料',pins:['own','own_meet','own_talk']}},SCENE_PIN={'企画書':'own','面談':'own_meet'};
+let TPLS=null;
+function templates(){if(TPLS&&TPLS.b===BOARDS)return TPLS.l;const l=[{id:'',name:'標準',pins:[]}];
+  if(BOARDS)for(const p of BOARDS.pins){if(TPL_STD.includes(p.id)){l[0].pins.push(p.id);continue}
+    const g=Object.entries(TPL_JOIN).find(([,v])=>v.pins.includes(p.id));
+    if(g){if(!l.some(t=>t.id===g[0]))l.push({id:g[0],name:g[1].name,pins:g[1].pins.filter(boardPin)});continue}
+    l.push({id:p.id,name:p.name,pins:[p.id]})}
+  TPLS={b:BOARDS,l};return l}
+const tplById=id=>templates().find(t=>t.id===id);
+const tplOf=pid=>{if(!pid)return'';const t=templates().find(t=>t.pins.includes(pid));return t?t.id:null};
+/* 書類のテンプレート。古い書類（d.board がピンのid、またはない）はスライドのピンから決める */
+function docTpl(pg){const d=S.doc,a=d.board!=null?tplOf(d.board):null;if(a!=null)return a;const b=pg&&pg.board?tplOf(pg.board.split(':')[0]):null;return b!=null?b:''}
+const sceneDefault=si=>{const s=SCENES[si];if(!s||!s[2])return'';const t=tplOf(s[2]);return t||''};
+/* 役割（と話題）に合うスライドをテンプレートの中から挙げる。役割が合わなくても、標準以外は一式の中から選ぶ（ほかのテンプレートは混ぜない）。
+   pref は優先するピン（まとめたテンプレートで場面・元のスライドに合うもの）。同点は位置ごとに順番を変えて偏らせない */
+function tplCands(role,topic,tid,seed=0,n=6,skip,pref,raw){const tp=BOARDS&&tplById(tid);if(!tp)return[];const out=[],h=s=>{let x=seed*2654435761>>>0;for(const c of s)x=Math.imul(x^c.charCodeAt(0),16777619)>>>0;x^=x>>>15;x=Math.imul(x,2246822507);x^=x>>>13;x=Math.imul(x,3266489909);return(x^x>>>16)>>>0};
+  for(const pid of tp.pins)boardPin(pid).slides.forEach((sl,i)=>{const id=pid+':'+i;if(id===skip)return;const r=boardRole(sl);
+    let s=r===role?50:(ROLE_NEAR[role]||[]).includes(r)?15:tid?1:0;if(!s)return;
+    if(topic&&boardTopic(sl)===topic)s+=100;if(pid===pref)s+=40;out.push({id,s,h:h(id)})});
+  out.sort((a,b)=>b.s-a.s||a.h-b.h);return out.slice(0,n).map(c=>raw?c:c.id)}
 /* ボードのスライドの見出し（数字や Part.01 ではない、いちばん大きな短い文字）を構成の見出しに替える */
 function boardFill(pg,title){const s=String(title||'').trim();if(!s)return pg;
   const c=pg.items.filter(it=>it.type==='text'&&String(it.text).length<=30&&!/^\s*(part|no)\b/i.test(it.text)&&!/^[\s\d０-９.,:：#№%％+＋\-]+$/.test(it.text)).sort((a,b)=>b.size-a.size)[0];
   if(c)c.text=s;return pg}
 function sceneSlide(v,sl,T){if(v==='std')return makeSlide(sl.key,sl.t,T);const [p,i]=v.split(':'),pg=makeBoardSlide(p,+i,T);boardFill(pg,sl.t.title);return pg}
 function sceneSlots(flow){return parseOutline(FLOWS[flow]||'タイトル').map(({key,t},i)=>({key,t,role:slotRole(key,t.title,i),topic:topicOf(t.title)}))}
-function scenePicks(slots,pref){return slots.map((sl,i)=>{if(!pref)return'std';const c=boardCands(sl.role,sl.topic,pref,i,1)[0];return c&&c.startsWith(pref+':')?c:'std'})}
+function scenePicks(slots,tid,pref){return slots.map((sl,i)=>tid&&tplCands(sl.role,sl.topic,tid,i,1,null,pref)[0]||'std')}
 /* 作ったスライドの差し替え：同じ役割のほかのデザイン。見出し・画像・発表者ノートを引き継ぐ */
 function pageRole(pg,pi){if(pg.role)return pg.role;if(pg.board){const [p,i]=pg.board.split(':'),P=boardPin(p),sl=P&&P.slides[+i];return sl?boardRole(sl):'text'}
   return slotRole(pg.layout||'content',slideTexts(pg).title,pi)}
 function pageTitle(pg){if(pg.slotT!=null)return pg.slotT;const t=slideTexts(pg).title;return t&&t!==PH.title?t:''}
-function swapSlide(pi,v){const d=S.doc,old=d.pages[pi],T=slideTheme(old),title=pageTitle(old),role=pageRole(old,pi);
+function swapPage(pi,v){const d=S.doc,old=d.pages[pi],T=slideTheme(old),title=pageTitle(old),role=pageRole(old,pi);
   const np=v.startsWith('std:')?makeSlide(v.slice(4),{title},T):boardFill(makeBoardSlide(...v.split(':').map((x,k)=>k?+x:x),T),title);
   const ims=old.items.filter(it=>it.type==='image'&&it.imageId&&!it.bimg).map(it=>it.imageId);
   for(const it of np.items)if(it.type==='image'&&!it.bimg&&ims.length)it.imageId=ims.shift();
   if(old.notes)np.notes=old.notes;np.role=role;if(title&&!v.startsWith('std:'))np.slotT=title;
-  d.pages[pi]=np;S.sel=null;S.lmap=null;dirty(pi);commit();renderProps()}
-function swapBtns(pi){const pg=S.doc.pages[pi],role=pageRole(pg,pi),pref=pg.board?pg.board.split(':')[0]:S.doc.board||'';
-  return boardCands(role,topicOf(pageTitle(pg)),pref,pi,pg.board?5:3,pg.board).map(id=>{const P=boardPin(id.split(':')[0]),sl=P.slides[+id.split(':')[1]];
-    return`<button type="button" class="lay sug" data-sw="${id}" title="${esc(sl.n)}"><canvas></canvas>${esc(P.name)}</button>`}).join('')}
+  d.pages[pi]=np;dirty(pi)}
+function swapSlide(pi,v){swapPage(pi,v);S.sel=null;S.lmap=null;commit();renderProps()}
+/* 書類のテンプレートを替える：各スライドを同じ役割の新しいテンプレートのスライドに差し替える（見出し・画像・発表者ノートは引き継ぐ） */
+function applyTemplate(tid){const d=S.doc,tp=tplById(tid);if(!tp||d.pptx)return;d.board=tid;let n=0,pref='',best=-1;
+  /* まとめたテンプレートは、書類の構成にいちばん合う元の資料を優先して、地や配置が混ざらないようにする */
+  if(tp.pins.length>1)for(const pp of tp.pins){let sc=0;d.pages.forEach((pg,pi)=>{const c=tplCands(pageRole(pg,pi),topicOf(pageTitle(pg)),tid,pi,1,null,pp,1)[0];if(c)sc+=c.s});if(sc>best){best=sc;pref=pp}}
+  d.pages.forEach((pg,pi)=>{const pin=pg.board?pg.board.split(':')[0]:'';if(pg.board?tplOf(pin)===tid:tid==='')return;
+    const v=tid?tplCands(pageRole(pg,pi),topicOf(pageTitle(pg)),tid,pi,1,null,pref)[0]:'std:'+(ROLE_STD[pageRole(pg,pi)]||'content');if(!v)return;swapPage(pi,v);n++});
+  S.sel=null;S.lmap=null;commit();renderAll();toast(n?`${n}枚を「${tp.name}」に替えました`:`テンプレートを「${tp.name}」にしました`)}
+function swapBtns(pi){const pg=S.doc.pages[pi],role=pageRole(pg,pi),pin=pg.board?pg.board.split(':')[0]:'',tid=docTpl(pg);
+  return tplCands(role,topicOf(pageTitle(pg)),tid,pi,tid?6:3,pg.board,pin).map(id=>{const P=boardPin(id.split(':')[0]),sl=P.slides[+id.split(':')[1]];
+    return`<button type="button" class="lay sug" data-sw="${id}" title="${esc(sl.n)}"><canvas></canvas>${esc(boardShort(sl.n))}</button>`}).join('')}
 function drawSwapThumbs(root,pi){const pg=S.doc.pages[pi],T=slideTheme(pg),title=pageTitle(pg);
   for(const b of root.querySelectorAll('[data-sw]')){const v=b.dataset.sw,c=b.querySelector('canvas');
     const p=v.startsWith('std:')?makeSlide(v.slice(4),{title},T):boardFill(makeBoardSlide(...v.split(':').map((x,k)=>k?+x:x),T),title);drawSlideThumb(c,p,T,150,SW,SH)}}
@@ -5246,7 +5272,7 @@ function createSlideDoc(th,flow,picks,board){
   S.doc=d;S.images={};S.media={};S.pptxSrc=null;S.pptxZip=null;S.sel=null;S.page=0;
   d.pages=parseOutline(FLOWS[flow]||'タイトル').map(({key,t})=>makeSlide(key,t));
   flowNotes(d.pages,flow);
-  if(picks){const T=theme(),sl=sceneSlots(flow);if(board&&boardPin(board))d.board=board;
+  if(picks){const T=theme(),sl=sceneSlots(flow);if(board!=null&&tplById(board))d.board=board;
     d.pages=d.pages.map((pg,i)=>{const s=sl[i];if(!s)return pg;if(!picks[i]||picks[i]==='std'){pg.role=s.role;return pg}
       const np=sceneSlide(picks[i],s,T);if(pg.notes)np.notes=pg.notes;np.role=s.role;if(s.t.title)np.slotT=s.t.title;return np})}
   fitZoom();rebuild();renderAll();resetHistory();
