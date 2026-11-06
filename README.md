@@ -49,6 +49,7 @@
 - `src/app.html` — アプリ本体（単一ファイル、ライブラリ不使用）。claude.ai Artifact としてそのまま公開できる形式
 - `scripts/build.sh` — 単体で開ける `dist/index.html` を生成
 - `scripts/test-reliability.mjs` — 保存・読み込み・画像書き出し・読み込み値の検証（Node.js 20以降）
+- `tests/smoke.js` — 実ブラウザ（Playwright）で新規作成・自動保存・開き直し・PDF書き出し・スマホ幅を確かめる
 
 ```sh
 ./scripts/build.sh
@@ -57,7 +58,7 @@ open dist/index.html
 
 紙面上の本文も入力中にブラウザ内へ自動保存し、ヘッダーに保存状態を表示する。書類の新規作成・ファイル読み込み前には、現在の作品の復元用コピーをこの端末に1件保存する。HonHonメニューの「前の作品を復元」から戻せる。ブラウザ内の保存は端末間で同期されないため、大切な作品は「保存」から編集用ファイルも保存する。
 
-回帰テストは `node scripts/test-reliability.mjs` で実行する。本体の関数を抽出し、DOM・ストレージ・キャンバスを代替して保存順序や読み込み失敗時の状態を検証する。実ブラウザでの操作テスト、印刷品質やOffice互換性の検証は別途行う。
+回帰テストは `node scripts/test-reliability.mjs` で実行する。本体の関数を抽出し、DOM・ストレージ・キャンバスを代替して保存順序や読み込み失敗時の状態を検証する。実ブラウザでの操作は `tests/smoke.js` で確かめる（`dist/` を `http://localhost:8765/` で配信してから `node tests/smoke.js`）。どちらもPRとmainへのpushでGitHub Actionsが実行する。印刷品質やOffice互換性の検証は別途行う。
 
 ## ロードマップ
 

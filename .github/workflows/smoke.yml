@@ -1,0 +1,31 @@
+name: スモークテスト（ブラウザ版）
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Playwright を入れる
+        run: |
+          npm init -y >/dev/null
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: 保存・読み込みの回帰テスト
+        run: node scripts/test-reliability.mjs > /dev/null
+      - name: ビルド
+        run: sh scripts/build.sh
+      - name: テスト
+        run: |
+          (cd dist && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 1
+          node tests/smoke.js
