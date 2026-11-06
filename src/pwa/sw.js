@@ -1,6 +1,8 @@
 // HonHon service worker: 本体は常にネットワーク優先（公開の更新をすぐ反映）、オフライン時はキャッシュを使う
 const CACHE = 'honhon-__BUILD__';
-const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
+// フォントは公開のたびに取り直さないよう、本体とは別の消さないキャッシュに入れる
+const FONTS = 'honhon-fonts';
+const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/boards.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
@@ -8,7 +10,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(ks => Promise.all(ks.filter(k => k.startsWith('honhon-') && k !== CACHE).map(k => caches.delete(k))))
+    .then(ks => Promise.all(ks.filter(k => k.startsWith('honhon-') && k !== CACHE && k !== FONTS).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
@@ -21,7 +23,7 @@ self.addEventListener('fetch', e => {
   if (font) {
     // フォントはキャッシュ優先
     e.respondWith(caches.match(r).then(hit => hit || fetch(r).then(res => {
-      if (res.ok || res.type === 'opaque') { const cp = res.clone(); caches.open(CACHE).then(c => c.put(r, cp)); }
+      if (res.ok || res.type === 'opaque') { const cp = res.clone(); caches.open(FONTS).then(c => c.put(r, cp)); }
       return res;
     })));
     return;

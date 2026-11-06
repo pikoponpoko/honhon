@@ -94,7 +94,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   let release; let saved;
   const c=ctx({S:{doc:original,images:{old:{src:'old',w:10,h:10}},media:{}},
     SL:()=>c.S.doc.pages,MS:()=>[],loadImg:()=>new Promise(r=>release=r),
-    kvWrite:async(k,v)=>{saved=structuredClone(v)},kvGet:async()=>null,saveQueue:Promise.resolve(),saveT:0,saveRevision:0,saveStatus(){},toast(){},commitT:0,docT:0,
+    kvWrite:async(k,v)=>{saved=structuredClone(v)},kvGet:async()=>null,saveQueue:Promise.resolve(),saveT:0,saveRevision:0,saving:0,checkQuota(){},saveStatus(){},toast(){},commitT:0,docT:0,
     migrateSlides(){},fitZoom(){},rebuild(){},renderAll(){},resetHistory(){} });
   run(c,cut('function projectData(file)', '\nfunction validateProject')+load);
   c.input={app:'honhon',doc:incoming,images:{new:{src:'new',w:10,h:10}}};
@@ -154,7 +154,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
 {
   const d=doc();d.nombre.size='8\"><span data-review-probe="injected"></span><input value="';
   const fields=new Map();const $=s=>{if(!fields.has(s))fields.set(s,{});return fields.get(s)};
-  const c=ctx({S:{doc:d,tab:'doc'},$,PR:()=>({}),PRINTERS:{generic:{name:'None'}},
+  const c=ctx({S:{doc:d,tab:'doc'},$,PR:()=>({}),termOf:()=>'',PRINTERS:{generic:{name:'None'}},
     isFlat:()=>false,FSEL:()=>'<select></select>'});
   run(c,line('const esc=')+'\n'+line('const F=')+'\n'+cut('function renderDoc()', '\nfunction spineOf'));
   run(c,'renderDoc()');
@@ -209,7 +209,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
 // Snapshot writes are serialized: an older save cannot overwrite a newer save.
 {
   let release;const writes=[];let generation=1;
-  const c=ctx({S:{doc:doc()},saveT:0,saveRevision:0,saveQueue:Promise.resolve(),saveStatus(){},toast(){},
+  const c=ctx({S:{doc:doc()},saveT:0,saveRevision:0,saving:0,checkQuota(){},saveQueue:Promise.resolve(),saveStatus(){},toast(){},
     projectData:()=>({generation}),kvWrite:async(k,v)=>{writes.push(v.generation);if(v.generation===1)await new Promise(r=>release=r)}});
   run(c,cut('function autosave()', '\nfunction validateProject'));
   const first=run(c,'autosave()');await Promise.resolve();generation=2;const second=run(c,'autosave()');
