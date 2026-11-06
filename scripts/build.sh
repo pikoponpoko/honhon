@@ -15,6 +15,7 @@ mkdir -p dist
   printf '\n</body></html>\n'
 } > dist/index.html
 cp src/pwa/*.png src/pwa/manifest.webmanifest src/boards.json dist/
+mkdir -p dist/tehon-auth && cp src/tehon-auth/index.html dist/tehon-auth/
 BUILD=$(git rev-parse --short HEAD 2>/dev/null || date +%s)
 sed "s/__BUILD__/$BUILD/" src/pwa/sw.js > dist/sw.js
 printf '/sw.js\n  Cache-Control: no-cache\n' > dist/_headers

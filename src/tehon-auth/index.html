@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HonHon</title>
+<style>html,body{margin:0;background:#E8EFEA}</style></head>
+<body><script>
+// Dropbox comes back here after signing in to Tehon: hand the answer to the HonHon window and close
+try { if (window.opener) window.opener.postMessage({ tehonAuth: location.search }, location.origin); } catch (e) {}
+window.close();
+</script></body></html>

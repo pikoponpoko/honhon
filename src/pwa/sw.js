@@ -20,6 +20,8 @@ self.addEventListener('fetch', e => {
   const u = new URL(r.url);
   const font = u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com';
   if (u.origin !== self.location.origin && !font) return;
+  // Dropbox のサインインから戻るページはキャッシュしない（本体の代わりに保存されないように）
+  if (u.pathname.startsWith('/tehon-auth')) return;
   if (font) {
     // フォントはキャッシュ優先
     e.respondWith(caches.match(r).then(hit => hit || fetch(r).then(res => {
