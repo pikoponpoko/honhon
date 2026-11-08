@@ -12,7 +12,7 @@
   --accent:#3772FF; --accent-hover:#3772FF; --accent-active:#1B2530; --accent-soft:#DAE5DE; --accent-ink:#FFFFFF; --accent-text:#1B2530;
   --danger:#C0392B; --warn:#DF2935; --guide:#A065E0; --paper:#FFFFFF; --focus:#1B2530; --scrim:rgba(16,24,23,0.5);
   --ui:"Noto Sans JP","BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
-  --num:"Noto Sans Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --num:"Noto Sans JP","BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
   --r:8px; --r-dlg:10px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -27,10 +27,11 @@
 [hidden]{display:none!important}
 html,body{height:100%}
 html{overscroll-behavior:none;scrollbar-color:var(--field) transparent}
+.mp,aside,#pages,.dlg,.dlg.d3>.dlgb,.lf-list,.dbx-list,.dw-grid,.dw-side,.tcg,.obrd,.pnotes,.wlist,#sv .svb{overscroll-behavior:contain}
 ::selection{background:var(--accent);color:var(--accent-ink)}
 button,a,input,select,label{touch-action:manipulation}
 body{margin:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.5;letter-spacing:.02em;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.5;letter-spacing:.02em;font-variant-numeric:tabular-nums;overflow:hidden}
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 input,textarea,select,[contenteditable],[contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
@@ -96,6 +97,7 @@ button.i{width:32px;padding:0;display:inline-flex;align-items:center;justify-con
 #app.k-slide header .bk-only,#app:not(.k-slide) header .sl-only{display:none}
 #app.k-master .ph .grp,#app.k-master .tabs [data-tab=notes]{display:none}
 .tslot.mlay{padding-left:16px}
+#docInfo .dn{color:var(--ink)}
 #docInfo{color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
 aside{background:var(--panel);overflow:auto;min-height:0}
 #left{border-right:1px solid var(--line);display:flex;flex-direction:column}
@@ -3440,7 +3442,7 @@ function openDaiwari(){
   const dlg=modal(`<div class="dw-bar"><h2>台割</h2><button id="dw-load">ラフを読み込む</button><button id="dw-sheet">記入用紙</button><span class="sp"></span>
       <button id="dw-ins">行を挿入</button><button id="dw-del">行を削除</button><button id="dw-up" class="i" title="上へ移動" aria-label="上へ移動">${IC.up}</button><button id="dw-dn" class="i" title="下へ移動" aria-label="下へ移動">${IC.down}</button>
       <label class="grp">ページ数<input type="number" id="dw-n" min="1" max="1000" step="1"></label><span id="dw-cnt" class="dw-cnt"></span></div>
-    <div class="dw-key" id="dw-key" hidden><span>画像の解析にはAnthropic APIキーが必要です</span><input type="password" id="dw-keyv" placeholder="sk-ant-..." autocomplete="off"><button id="dw-keyok">保存して解析</button></div>
+    <div class="dw-key" id="dw-key" hidden><span>画像の解析にはAnthropic APIキーが必要です</span><input type="password" id="dw-keyv" placeholder="sk-ant-…" autocomplete="off"><button id="dw-keyok">保存して解析</button></div>
     <div class="dw-msg" id="dw-msg" hidden></div>
     <div class="dw-body" id="dw-body"><div class="dw-grid"><table><colgroup><col style="width:56px"><col style="width:112px"><col style="min-width:200px"><col style="min-width:200px"></colgroup>
       <thead><tr><th>ページ</th><th>種類</th><th>タイトル</th><th>メモ</th></tr></thead><tbody id="dw-tb"></tbody></table></div>
@@ -5911,7 +5913,7 @@ async function proxyImage(blob,name){
   const src=URL.createObjectURL(out),img=await loadImg(src);
   return{src,blob:out,w,h,img,name};
 }
-function pptxProgress(msg,k,t){let m=$('#imp-msg');if(!m){modal(`<h2>読み込み中</h2><div class="prog"><div></div></div><div class="ok" id="imp-msg"></div>`);m=$('#imp-msg')}
+function pptxProgress(msg,k,t){let m=$('#imp-msg');if(!m){modal(`<h2>読み込み中…</h2><div class="prog"><div></div></div><div class="ok" id="imp-msg"></div>`);m=$('#imp-msg')}
   m.textContent=msg;const b=$('#modal .prog>div');if(b)b.style.width=(t?k/t*100:0)+'%'}
 async function importPPTX(file){
   pptxProgress('ファイルを読み込んでいます',0,1);
