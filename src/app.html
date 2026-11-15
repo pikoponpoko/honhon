@@ -803,8 +803,19 @@ let TOK={};
 function readTokens(){const cs=getComputedStyle(document.documentElement);for(const k of['guide','danger','sub','line','accent','paper'])TOK[k]=cs.getPropertyValue('--'+k).trim()}
 
 /* ---------- text layout ---------- */
-const NO_START=new Set([...'、。，．,.)）」』】〕〉》］｝ー々ゝゞぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ！？!?・：；…‥〜～']);
-const NO_END=new Set([...'(（「『【〔〈《［｛']);
+/* 禁則（JLREQ「日本語組版処理の要件」の行頭禁則・行末禁則・分離禁止、厳格な処理） */
+const NO_START=new Set([...'、。，．,.:;!?)]}）」』】〕〉》］｝〙〗〟’”»｠ー々〻ゝゞヽヾぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ！？‼⁇⁈⁉・：；‐゠–〜～％‰℃°′″']);
+const NO_END=new Set([...'(（「『【〔〈《［｛〘〖〝‘“«｟[{￥＄＃£€']);
+const INSEP=new Set([...'—―…‥〳〴〵']);
+const ASC=/[\x21-\x7e]/;
+/* 行 cur の次の字 u から改行するとき、禁則を守るため次の行へ送る字。英数字の語の途中でも切らない（語が1行より長いときは切る） */
+function kinCarry(cur,u){const carry=[],e=x=>x.s.slice(-1),
+  bad=(a,b,w)=>NO_START.has(b.s[0])||NO_END.has(e(a))||(INSEP.has(b.s[0])&&e(a)===b.s[0])||(w&&ASC.test(e(a))&&ASC.test(b.s[0])),
+  run=w=>{while(cur.length>1&&bad(cur[cur.length-1],carry[0]||u,w))carry.unshift(cur.pop())};
+  run(true);if(cur.length<=1&&carry.length&&bad(cur[0],carry[0],true)){cur.push(...carry.splice(0));run(false)}
+  return carry}
+/* ぶら下げ：句読点（と行末の空白）は版面の外に出してよい。ただし次が行頭禁則の字なら追い出す */
+const canHang=(u,nx)=>(HANG.has(u.s)||u.s===' ')&&!(nx&&NO_START.has(nx.s[0])&&!HANG.has(nx.s));
 const HANG=new Set([...'、。，．,.']);
 const SMALL=new Set([...'ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ']);
 const ROT=new Set([...'ー－—―…‥～〜（）「」『』【】〔〕［］｛｝〈〉《》＜＞→←＝｜：；']);
@@ -902,10 +913,23 @@ document.addEventListener('focusin',e=>{const s=e.target;if(s instanceof HTMLSel
   e.stopImmediatePropagation();if(ev!=='change')return;const d0=[...s.options].find(o=>o.defaultSelected),prev=s.dataset.v??(d0?d0.value:'');s.value=prev;
   pickLocalFont(prev,n=>{if(!s.isConnected)return;if(![...s.options].some(o=>o.value===n)){const o=document.createElement('option');o.value=n;o.textContent=n;s.insertBefore(o,s.querySelector('option[value="__lf"]'))}
     s.value=n;s.dataset.v=n;s.dispatchEvent(new Event('input',{bubbles:true}));s.dispatchEvent(new Event('change',{bubbles:true}))})},true));
-function units(str,it,V){
-  const out=[],sz=it.size*PT,tr=it.track/1000*sz,ch=Array.isArray(str)?str:[...str];
+/* ルビ：｜親文字《るび》、または 漢字《かな》（青空文庫と同じ書き方）。親文字とルビはひとまとまりで改行しない */
+const RB_HAN=/[\p{Script=Han}々〆〇ヶ]/u,RB_KANA=/^[\p{Script=Hiragana}\p{Script=Katakana}ー・ 　]+$/u;
+function rubyAt(ch,i){const c=ch[i];let b0,b1;
+  if(c==='｜'||c==='|'){b0=i+1;b1=b0;while(b1<ch.length&&b1-b0<=20&&ch[b1]!=='《')b1++}
+  else if(RB_HAN.test(c)&&(i===0||!RB_HAN.test(ch[i-1]))){b0=i;b1=i;while(b1<ch.length&&RB_HAN.test(ch[b1]))b1++}
+  else return null;
+  if(ch[b1]!=='《'||b1===b0)return null;let k=b1+1;while(k<ch.length&&k-b1<=40&&ch[k]!=='》')k++;
+  if(ch[k]!=='》'||k===b1+1)return null;const rb=ch.slice(b1+1,k).join('');
+  if(c!=='｜'&&c!=='|'&&!RB_KANA.test(rb))return null;
+  return{base:ch.slice(b0,b1),rb:[...rb],end:k+1}}
+function units(str,it,V,noRuby){
+  const out=[],sz=it.size*PT,tr=it.track/1000*sz,ch=Array.isArray(str)?str:[...str],rs=sz/2;
   for(let i=0;i<ch.length;){
-    const c=ch[i];
+    const c=ch[i],R=!noRuby&&rubyAt(ch,i);
+    if(R){const bw=R.base.map(x=>(V?sz:cw(x,it.font,it.weight)*sz)+tr),rw=R.rb.map(x=>V?rs:cw(x,it.font,it.weight)*rs);
+      const sb=bw.reduce((a,b)=>a+b,0),sr=rw.reduce((a,b)=>a+b,0);
+      out.push({s:R.base.join(''),k:'ruby',base:R.base,bw,rb:R.rb,rw,adv:Math.max(sb,sr),i});i=R.end;continue}
     if(V&&/[\x21-\x7e]/.test(c)){
       let j=i;while(j<ch.length&&/[\x20-\x7e]/.test(ch[j]))j++;
       while(j>i+1&&ch[j-1]===' ')j--;
@@ -943,15 +967,12 @@ function paraStyle(it,k){const q=it.ps&&it.ps[k];if(!q)return it;return{...it,si
 function layoutRich(it,text,last){
   const lim=it.w,lines=[];
   const PH=usePhr(it);
-  String(text).split('\n').forEach((para,k)=>{const st=paraStyle(it,k),sz=st.size*PT,pc=[...para],us=units(pc,st,false),stops=PH?phrStops(pc):null,pw=stops&&phrWidths(us,stops);let cur=[],pos=0;
+  String(text).split('\n').forEach((para,k)=>{const st=paraStyle(it,k),sz=st.size*PT,pc=[...para],us=units(pc,st,false,true),stops=PH?phrStops(pc):null,pw=stops&&phrWidths(us,stops);let cur=[],pos=0;
     const push=()=>{cur.sz=sz;cur.w=st.weight;cur.c=st.pcol?st.color:null;lines.push(cur);cur=[];pos=0};
-    for(const u of us){
+    for(let q=0;q<us.length;q++){const u=us[q];
       if(pos+u.adv>lim+1e-6&&cur.length){
-        if(HANG.has(u.s)&&!cur.hung){cur.push(u);cur.hung=true;push();continue}
-        const carry=[],pk=phrCut(cur,stops,u,pw,lim);
-        if(pk)carry.push(...cur.splice(pk));
-        else{if(NO_START.has(u.s[0])&&cur.length>1)carry.unshift(cur.pop());
-          while(cur.length>1&&NO_END.has(cur[cur.length-1].s))carry.unshift(cur.pop())}
+        if(canHang(u,us[q+1])&&!cur.hung){cur.push(u);cur.hung=true;push();continue}
+        const pk=phrCut(cur,stops,u,pw,lim),carry=pk?cur.splice(pk):kinCarry(cur,u);
         push();for(const c of carry){cur.push(c);pos+=c.adv}
       }
       cur.push(u);pos+=u.adv}
@@ -975,19 +996,17 @@ function layoutText(it,text,last){
   if(it.ps&&it.ps.length&&it.dir!=='v'&&cols===1){const L=layoutRich(it,text,last);L.key=key;lcache.set(it.id,L);return L}
   const V=it.dir==='v',sz=it.size*PT,pitch=Math.max(0.1,sz*it.leading/100);
   const bw=V?it.w:(it.w-gap*(cols-1))/cols,bh=V?(it.h-gap*(cols-1))/cols:it.h;
-  const lim=V?bh:bw,across=V?bw:bh;
+  /* ルビがあれば1行目のルビの分だけ内側に組む */
+  const rp=/[《]/.test(text)&&/[》]/.test(text)?sz/2:0,lim=V?bh:bw,across=(V?bw:bh)-rp;
   const maxLines=across+1e-6<sz||lim<=0?0:Math.floor((across-sz)/pitch+1e-6)+1,cap=maxLines*cols;
   const full=[...String(text)],lines=[];let off=0;
   outer:for(const para of String(text).split('\n')){
     const pc=[...para],us=units(pc,it,V),stops=PH?phrStops(pc):null,pw=stops&&phrWidths(us,stops);let cur=[],pos=0;cur.st=off;
     const add=u=>{if(cur.st==null)cur.st=off+u.i;cur.push(u);pos+=u.adv};
-    for(const u of us){
+    for(let q=0;q<us.length;q++){const u=us[q];
       if(pos+u.adv>lim+1e-6&&cur.length){
-        if(HANG.has(u.s)&&!cur.hung){cur.push(u);cur.hung=true;lines.push(cur);cur=[];cur.st=null;pos=0;if(lines.length>cap)break outer;continue}
-        const carry=[],pk=phrCut(cur,stops,u,pw,lim);
-        if(pk)carry.push(...cur.splice(pk));
-        else{if(NO_START.has(u.s[0])&&cur.length>1)carry.unshift(cur.pop());
-          while(cur.length>1&&NO_END.has(cur[cur.length-1].s))carry.unshift(cur.pop())}
+        if(canHang(u,us[q+1])&&!cur.hung){cur.push(u);cur.hung=true;lines.push(cur);cur=[];cur.st=null;pos=0;if(lines.length>cap)break outer;continue}
+        const pk=phrCut(cur,stops,u,pw,lim),carry=pk?cur.splice(pk):kinCarry(cur,u);
         lines.push(cur);if(lines.length>cap)break outer;
         cur=[];cur.st=null;pos=0;for(const c of carry)add(c);
       }
@@ -1001,19 +1020,26 @@ function layoutText(it,text,last){
   for(let j=0;j<n;j++){
     const ln=lines[j],bi=Math.floor(j/maxLines),jj=j%maxLines,ox=V?0:bi*(bw+gap),oy=V?bi*(bh+gap):0;let len=0;for(const u of ln)len+=u.adv;if(ln.hung)len-=ln[ln.length-1].adv;
     let p=it.align==='center'?(lim-len)/2:it.align==='end'?lim-len:0;if(len>lim)p=0;
-    const cross=V?bw-sz/2-jj*pitch:sz/2+jj*pitch;
+    const cross=V?bw-rp-sz/2-jj*pitch:rp+sz/2+jj*pitch;
+    const orient=(g,k,s)=>{if(!V)return;
+        const vg=k==='cjk'&&vgOf(it.font,it.weight,s);
+        if(vg)g.vg=vg;
+        else if(k==='lat')g.rot=true;
+        else if(k==='tcy'){let w=0;for(const x of s)w+=cw(x,it.font,it.weight);if(w>1)g.sx=1/w}
+        else if(ROT.has(s))g.rot=true;
+        else if(PUNCT.has(s)){g.dx=.55;g.dy=-.55}
+        else if(SMALL.has(s)){g.dx=.1;g.dy=-.1}};
+    /* 親文字・ルビを幅いっぱいに均等に置く（両端は字間の半分） */
+    const spread=(ws,len,at,fn)=>{const tot=ws.reduce((a,b)=>a+b,0),e=(len-tot)/ws.length;let q=at+e/2;ws.forEach((w,k)=>{fn(k,q+w/2);q+=w+e})};
     for(const u of ln){
+      if(u.k==='ruby'){const rc=V?cross+sz*0.75:cross-sz*0.75,K=V?'cjk':'h';
+        spread(u.bw,u.adv,p,(k,c)=>{const g={s:u.base[k],x:V?ox+cross:ox+c,y:V?oy+c:oy+cross,rot:false,dx:0,dy:0,sx:1};orient(g,K,g.s);glyphs.push(g)});
+        spread(u.rw,u.adv,p,(k,c)=>{const g={s:u.rb[k],x:V?ox+rc:ox+c,y:V?oy+c:oy+rc,rot:false,dx:0,dy:0,sx:1,fs:sz/2,fw:it.weight};orient(g,K,g.s);glyphs.push(g)});
+        const a=p,b=p+u.adv;if(V){bx0=Math.min(bx0,ox+cross-sz/2);bx1=Math.max(bx1,ox+rc+sz/4);by0=Math.min(by0,oy+a);by1=Math.max(by1,oy+b)}else{bx0=Math.min(bx0,ox+a);bx1=Math.max(bx1,ox+b);by0=Math.min(by0,oy+rc-sz/4);by1=Math.max(by1,oy+cross+sz/2)}
+        p+=u.adv;continue}
       const c=p+u.adv/2;
       const g={s:u.s,x:V?ox+cross:ox+c,y:V?oy+c:oy+cross,rot:false,dx:0,dy:0,sx:1};
-      if(V){
-        const vg=u.k==='cjk'&&vgOf(it.font,it.weight,u.s);
-        if(vg)g.vg=vg;
-        else if(u.k==='lat')g.rot=true;
-        else if(u.k==='tcy'){let w=0;for(const x of u.s)w+=cw(x,it.font,it.weight);if(w>1)g.sx=1/w}
-        else if(ROT.has(u.s))g.rot=true;
-        else if(PUNCT.has(u.s)){g.dx=.55;g.dy=-.55}
-        else if(SMALL.has(u.s)){g.dx=.1;g.dy=-.1}
-      }
+      orient(g,u.k,u.s);
       if(u.s.trim()){bx0=Math.min(bx0,g.x-sz/2);bx1=Math.max(bx1,g.x+sz/2);by0=Math.min(by0,g.y-sz/2);by1=Math.max(by1,g.y+sz/2)}
       glyphs.push(g);p+=u.adv;
     }
@@ -1050,7 +1076,7 @@ function drawText(ctx,it,ch,preview){
   const F0=`${it.weight} ${sz*K}px ${FF(it.font)}`;ctx.font=F0;let cf=F0;
   for(const g of L.glyphs){
     if(!g.s.trim())continue;
-    if(g.fs){const f=`${g.fw} ${g.fs*K}px ${FF(it.font)}`;if(f!==cf){ctx.font=f;cf=f}}
+    {const f=g.fs?`${g.fw} ${g.fs*K}px ${FF(it.font)}`:F0;if(f!==cf){ctx.font=f;cf=f}}
     if(it.ps)ctx.fillStyle=col(g.fc||it.color,ch);
     if(g.vg){const q=(g.fs||sz)/1000;ctx.save();ctx.translate(it.x+g.x,it.y+g.y);ctx.scale(q,q);
       if(typeof g.vg==='string')ctx.fill(vgPath(g.vg));
@@ -1699,7 +1725,7 @@ function renderProps(){
   if(it.type==='text'){
     const ch=chainOf(it),ci=ch.indexOf(it),st=styled(it);
     h+=`<div class="sec"><h3>テキスト${ch.length>1?`（連結 ${ci+1} / ${ch.length}）`:''}</h3><textarea id="tText" data-k="text" spellcheck="false">${esc(storyText(it))}</textarea>
-      <div class="btns"><button id="tLink"${S.linkFrom?' class="on"':''}>${it.next?'連結先を変更':'次のフレームに連結'}</button>${it.next?'<button id="tUnlink">連結を解除</button>':''}<button id="tFlow">自動流し込み</button><button id="tLoad">テキストを読み込む</button></div></div>
+      <div class="btns"><button id="tLink"${S.linkFrom?' class="on"':''}>${it.next?'連結先を変更':'次のフレームに連結'}</button>${it.next?'<button id="tUnlink">連結を解除</button>':''}<button id="tRuby" title="選んだ文字にルビを付ける（｜親文字《るび》）">ルビ</button><button id="tFlow">自動流し込み</button><button id="tLoad">テキストを読み込む</button></div></div>
     <div class="sec"><h3>文字</h3>${F('フォント',FSEL('id="i-font" data-k="font"',st.font))}
       <div class="row">${F('太さ',SEL('weight',st.weight,[[400,'標準'],[700,'太字']]))}${F('サイズ（pt）',N('size',st.size,0.5,'min="1"'))}
       ${F('行送り（%）',N('leading',st.leading,5,'min="80"'))}${F('字送り（1/1000em）',N('track',st.track,10))}
@@ -1733,6 +1759,8 @@ function renderProps(){
     $('#tLink').onclick=()=>{S.linkFrom=S.linkFrom?null:{page:S.sel.page,id:it.id};renderProps();if(S.linkFrom)toast('連結先のテキストフレームをクリック')};
     if($('#tUnlink'))$('#tUnlink').onclick=()=>{it.next=null;S.lmap=null;dirtyAll();commit();renderProps()};
     $('#tFlow').onclick=()=>autoFlow(it);
+    $('#tRuby').onclick=()=>{const ta=$('#tText'),a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;if(a===b){toast('ルビを付ける文字を選んでください');ta.focus();return}
+      ta.value=v.slice(0,a)+'｜'+v.slice(a,b)+'《》'+v.slice(b);ta.focus();ta.setSelectionRange(b+2,b+2);ta.dispatchEvent(new Event('input',{bubbles:true}))};
     $('#tLoad').onclick=()=>{txtTarget=it;$('#fTxt').click()};
   }
   wireAlign();
