@@ -2,7 +2,7 @@
 const CACHE = 'honhon-__BUILD__';
 // フォントは公開のたびに取り直さないよう、本体とは別の消さないキャッシュに入れる
 const FONTS = 'honhon-fonts';
-const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/boards.json'];
+const CORE = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));

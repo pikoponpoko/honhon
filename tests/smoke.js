@@ -44,30 +44,59 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     await page.waitForFunction(() => window.__thinbook.S.doc && window.__thinbook.S.doc.name === 'サンプル冊子', null, { timeout: 10000 });
   });
 
-  await step('入稿データ（PDF）を書き出せる', async () => {
+  // 入稿PDFの中身を確かめる：PDF/X-1a の OutputIntent、仕上がり（TrimBox）と塗り足し（BleedBox）の寸法、色空間、ページ数、フォント非埋め込み（ラスタ化）
+  const pdfCheck = (buf, d, cs) => {
+    const s = buf.toString('latin1'), MM = 72 / 25.4, near = (a, b) => Math.abs(a - b) < 0.6;
+    expect(buf.subarray(0, 5).toString() === '%PDF-', 'PDFではない');
+    expect(/\/GTS_PDFX/.test(s) && /\/OutputIntents/.test(s), 'PDF/X の OutputIntent がない');
+    expect(/\/GTS_PDFXVersion\s*\(PDF\/X-1/.test(s) || /PDF\/X-1a/.test(s), 'PDF/X-1a の表記がない');
+    expect(!/\/FontFile/.test(s), 'フォントが埋め込まれている（ラスタ化されていない）');
+    expect(new RegExp('/' + cs).test(s), cs + ' の画像がない');
+    const box = k => { const m = s.match(new RegExp('/' + k + '\\s*\\[\\s*([-\\d.]+)\\s+([-\\d.]+)\\s+([-\\d.]+)\\s+([-\\d.]+)')); return m && m.slice(1).map(Number); };
+    const t = box('TrimBox'), b = box('BleedBox');
+    expect(t && b, 'TrimBox／BleedBox がない');
+    expect(near(t[2] - t[0], d.w * MM) && near(t[3] - t[1], d.h * MM), `仕上がりが ${d.w}×${d.h}mm でない: ${((t[2] - t[0]) / MM).toFixed(1)}×${((t[3] - t[1]) / MM).toFixed(1)}`);
+    expect(near(t[0] - b[0], d.bleed * MM) && near(b[2] - t[2], d.bleed * MM), `塗り足しが ${d.bleed}mm でない`);
+    const pages = (s.match(/\/Type\s*\/Page[^s]/g) || []).length;
+    expect(pages === d.pages, `ページ数 ${pages}（期待 ${d.pages}）`);
+  };
+  const exportPdf = async () => {
     await page.getByRole('button', { name: '入稿データ書き出し' }).click();
-    await page.locator('#x-dpi').selectOption('350');
-    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.locator('#x-go').click()]);
-    const path = await dl.path();
-    const head = require('fs').readFileSync(path).subarray(0, 5).toString();
-    expect(head === '%PDF-', 'PDFではない: ' + head);
+    if (await page.locator('#x-dpi').isVisible()) await page.locator('#x-dpi').selectOption('350');
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 180000 }), page.locator('#x-go').click()]);
+    const buf = require('fs').readFileSync(await dl.path());
     if (await page.locator('#x-cancel').isVisible()) await page.locator('#x-cancel').click();
+    return buf;
+  };
+  const docSpec = () => page.evaluate(() => { const d = window.__thinbook.S.doc; return { w: d.kind === 'cover' ? null : d.trimW, h: d.trimH, bleed: d.bleed, pages: d.pages.length, kind: d.kind, spine: d.spine }; });
+
+  await step('入稿PDF（モノクロ本文）が PDF/X-1a・仕上がり・塗り足し・ページ数どおり', async () => {
+    const d = await docSpec();
+    pdfCheck(await exportPdf(), d, 'DeviceGray');
   });
 
-  await step('新規スライドを作るとフォントの代替表示の通知が出ない', async () => {
+  await step('新規作成にスライドがない', async () => {
     await page.locator('#mNew .mb').click();
-    await page.locator('#bNewS').click();
-    await page.getByRole('button', { name: '作成' }).click();
-    await page.waitForFunction(() => window.__thinbook.S.doc.kind === 'slide');
-    await page.waitForTimeout(800);
-    const t = await page.locator('#toast').textContent();
-    const shown = await page.locator('#toast').isVisible();
-    expect(!(shown && /代替表示/.test(t)), t);
+    const names = await page.locator('#mNew .mp button').allTextContents();
+    await page.keyboard.press('Escape');
+    expect(!names.some(n => /スライド/.test(n)), names.join(','));
+    expect(!(await page.locator('#bPptx, #bPres, #bOutline, #bMaster, [data-tab=notes]').count()), 'スライド用のボタンが残っている');
   });
 
-  await step('スライドが画面に収まる', async () => {
-    const r = await page.evaluate(() => { const c = document.querySelector('#spreads canvas').getBoundingClientRect(), s = document.querySelector('#stage').getBoundingClientRect(); return { cr: c.right, sr: s.right }; });
-    expect(r.cr <= r.sr, 'スライドの右端がはみ出している');
+  await step('スライドの書類を開くと PowerPoint を案内して、今の書類は残る', async () => {
+    const before = await page.evaluate(() => window.__thinbook.S.doc.name);
+    const j = JSON.stringify({ app: 'honhon', version: 1, doc: { kind: 'slide', name: '古いスライド', trimW: 254, trimH: 142.875, bleed: 0, binding: 'left', color: 'cmyk', margins: { top: 10, bottom: 10, inner: 10, outer: 10 }, nombre: { mode: 'none', start: 1, size: 8, font: 'Noto Sans JP', offset: 8 }, pages: [{ id: 'p1', items: [] }] }, images: {} });
+    await page.locator('#fOpen').setInputFiles({ name: '古いスライド.honhon.json', mimeType: 'application/json', buffer: Buffer.from(j) });
+    await page.waitForFunction(() => /PowerPoint/.test(document.querySelector('#toast').textContent), null, { timeout: 5000 });
+    const after = await page.evaluate(() => window.__thinbook.S.doc.name);
+    expect(after === before, '書類が切り替わった: ' + after);
+  });
+
+  await step('入稿PDF（カラー表紙）が CMYK・背幅込みの仕上がりどおり', async () => {
+    await page.evaluate(() => { const T = window.__thinbook; T.S.doc = T.newDoc({ kind: 'cover', name: '表紙テスト', printer: 'generic', w: 148, h: 210, binding: 'right', color: 'cmyk', pages: 1, spine: 5 }); T.S.images = {}; T.S.sel = null; T.S.page = 0; T.rebuild(); });
+    const d = await docSpec();
+    d.w = 148 * 2 + d.spine;
+    pdfCheck(await exportPdf(), d, 'DeviceCMYK');
   });
 
   await step('ブラウザ標準の確認ダイアログを使わない', async () => {
