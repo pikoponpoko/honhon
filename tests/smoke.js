@@ -168,6 +168,19 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     expect(r.rot[0] && r.rot[5], '縦書き字形のないフォントは回転で組む ' + r.rot.join());
   });
 
+  await step('見出しの大きさの文字は文節の途中で改行しない', async () => {
+    const r = await page.evaluate(() => {
+      const { layout } = window.__thinbook;
+      const lines = o => { const g = layout(Object.assign({ id: 'phr' + Math.random(), type: 'text', x: 0, y: 0, w: 60, h: 200,
+        text: 'アニメーション作家の個展「ねこと暮らす日々」', font: 'Noto Sans JP', weight: 700, leading: 130, track: 0, dir: 'h',
+        align: 'start', color: { c: 0, m: 0, y: 0, k: 100 } }, o)).glyphs, ys = [...new Set(g.map(x => x.y.toFixed(2)))];
+        return ys.map(y => g.filter(x => x.y.toFixed(2) === y).map(x => x.s).join('')); };
+      return { big: lines({ size: 20 }), body: lines({ size: 9 }) };
+    });
+    expect(r.big[r.big.length - 1] === '暮らす日々」', '見出し ' + r.big.join(' / '));
+    expect(r.body[0] === 'アニメーション作家の個展「ねこと暮ら', '本文は字単位で詰める ' + r.body.join(' / '));
+  });
+
   await step('スクリプトエラーが出ない', async () => {
     const js = errors.filter(e => !e.startsWith('native dialog'));
     expect(!js.length, js.join(' / '));
