@@ -1435,10 +1435,32 @@ function parsePSD(buf){
     cv.cmyk=[mk((b,o,q)=>{b[o]=255-planes[0][q];b[o+1]=255-planes[1][q];b[o+2]=255-planes[2][q]}),mk((b,o,q)=>{b[o]=b[o+1]=b[o+2]=255-planes[3][q]})]}
   return cv;
 }
+/* 自前で読めないPSD（PSB・ZIP圧縮・32bit・「互換性を優先」なしで保存して合成画像が白いもの）は ag-psd（MIT、https://github.com/Agamnentzar/ag-psd）で読む */
+let agP=null;
+function loadAgPsd(){return agP||(agP=new Promise((res,rej)=>{if(window.agPsd)return res(window.agPsd);const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/ag-psd@34.1.0/dist/bundle.js';
+  s.onload=()=>window.agPsd?res(window.agPsd):rej(new Error('PSDを読み込めませんでした'));s.onerror=()=>{agP=null;rej(new Error('PSDを読み込めませんでした（インターネットに接続してください）'))};document.head.appendChild(s)}))}
+function psdLayerLen(buf){try{const v=new DataView(buf);if(v.getUint16(4)!==1)return 0;let p=26;p+=4+v.getUint32(p);p+=4+v.getUint32(p);return v.getUint32(p)}catch(e){return 0}}
+/* 一色だけの画像か（縮小して見る） */
+function flatCanvas(c){const t=document.createElement('canvas');t.width=t.height=32;const x=t.getContext('2d',{willReadFrequently:true});x.drawImage(c,0,0,32,32);const d=x.getImageData(0,0,32,32).data;
+  for(let i=4;i<d.length;i+=4)for(let k=0;k<4;k++)if(Math.abs(d[i+k]-d[k])>2)return false;return true}
+/* レイヤーを重ねる（表示中のレイヤーのみ。不透明度・描画モード・グループ。マスク・クリッピングは使わない） */
+function agComposite(psd){const W=psd.width,H=psd.height,mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
+  const BM=m=>m&&m!=='normal'&&m!=='pass through'?m.replace(/ /g,'-'):'source-over';
+  const draw=(list,x)=>{for(const l of list||[]){if(l.hidden)continue;const a=(l.opacity==null?1:l.opacity)*(l.fillOpacity==null?1:l.fillOpacity);
+    if(l.children){if(l.blendMode==='pass through'&&a===1){draw(l.children,x);continue}const g=mk();draw(l.children,g.getContext('2d'));x.save();x.globalAlpha=a;x.globalCompositeOperation=BM(l.blendMode);x.drawImage(g,0,0);x.restore();continue}
+    if(!l.canvas)continue;x.save();x.globalAlpha=a;x.globalCompositeOperation=BM(l.blendMode);x.drawImage(l.canvas,l.left||0,l.top||0);x.restore()}};
+  if(psd.canvas&&(!psd.children||!psd.children.length||!flatCanvas(psd.canvas))){const c=mk();c.getContext('2d').drawImage(psd.canvas,0,0);return c}
+  if(!psd.children||!psd.children.length)return psd.canvas||null;
+  const c=mk(),x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);draw(psd.children,x);return c}
+async function readPSD(buf){let cv=null,err=null;
+  try{cv=parsePSD(buf)}catch(e){err=e}
+  if(cv&&!(psdLayerLen(buf)>0&&flatCanvas(cv)))return cv;
+  try{const A=await loadAgPsd(),out=agComposite(A.readPsd(buf,{skipThumbnail:true,skipLinkedFilesData:true,throwForMissingFeatures:false}));if(out)return out}catch(e){if(!err)err=e}
+  if(cv)return cv;throw err}
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('画像を読み込めませんでした'));i.src=src})}
 async function readImage(file){
   const head=new Uint8Array(await file.slice(0,4).arrayBuffer());let src,cv=null;
-  if(head[0]===0x38&&head[1]===0x42&&head[2]===0x50&&head[3]===0x53)cv=parsePSD(await file.arrayBuffer());
+  if(head[0]===0x38&&head[1]===0x42&&head[2]===0x50&&head[3]===0x53)cv=await readPSD(await file.arrayBuffer());
   else src=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(fr.error);fr.readAsDataURL(file)});
   let img=cv||await loadImg(src),w=cv?cv.width:img.naturalWidth,h=cv?cv.height:img.naturalHeight;const MAX=16e6;
   let cm=cv&&cv.cmyk||null;
@@ -4335,7 +4357,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>
   try{if(saved&&saved.doc){await loadProject(saved);return}}catch(e){try{await kvWrite(saved.doc.kind==='slide'||saved.doc.pptx?'slideProject':'previousProject',saved)}catch(_){}toast('前回の作品を開けませんでした：'+e.message)}
   S.doc=blankDoc();fitZoom();rebuild();renderAll();resetHistory();startDlg();
 })();
-window.__thinbook={S,setTheme,readImage,hexC,exportPDF,exportJob,preflight,layout,autoFlow,autoDaiwari,select,parsePSD,spineOf,newDoc,rebuild,commit,headOf,chainOf,linkTo,editText,alignSel};
+window.__thinbook={S,setTheme,readImage,hexC,exportPDF,exportJob,preflight,layout,autoFlow,autoDaiwari,select,parsePSD,readPSD,spineOf,newDoc,rebuild,commit,headOf,chainOf,linkTo,editText,alignSel};
 </script>
 
 <!-- ---------- Excel: open an existing .xlsx, edit cells, save without touching anything else ---------- -->
