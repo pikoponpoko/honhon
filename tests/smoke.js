@@ -155,6 +155,19 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     await m.close();
   });
 
+  await step('縦書きの約物・小書きの仮名はフォントの縦書き字形で組む', async () => {
+    const r = await page.evaluate(() => {
+      const { layout } = window.__thinbook;
+      const it = { id: 'vtest', type: 'text', x: 0, y: 0, w: 10, h: 120, text: '「あ」、ぁー', font: 'Noto Serif JP', weight: 400,
+        size: 9, leading: 175, track: 0, dir: 'v', align: 'start', color: { c: 0, m: 0, y: 0, k: 100 } };
+      const g = layout(it).glyphs;
+      const loc = Object.assign({}, it, { id: 'vtest2', font: 'この端末にないフォント' });
+      return { vg: g.map(x => !!x.vg), rot: layout(loc).glyphs.map(x => x.rot) };
+    });
+    expect(r.vg.join() === 'true,false,true,true,true,true', '同梱フォントの縦書き字形 ' + r.vg.join());
+    expect(r.rot[0] && r.rot[5], '縦書き字形のないフォントは回転で組む ' + r.rot.join());
+  });
+
   await step('スクリプトエラーが出ない', async () => {
     const js = errors.filter(e => !e.startsWith('native dialog'));
     expect(!js.length, js.join(' / '));
