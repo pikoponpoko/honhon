@@ -99,6 +99,47 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     pdfCheck(await exportPdf(), d, 'DeviceCMYK');
   });
 
+  // カラー画像の版：RGB画像は Japan Color 2001 Coated のインキ量に、CMYKのPSDは元の版のまま入稿PDFに入る
+  const cmykPsd = (w, h, ink) => { // 非圧縮 8bit CMYK の PSD（PSDの版は 255＝インキなし）
+    const head = Buffer.alloc(26); head.write('8BPS', 0); head.writeUInt16BE(1, 4); head.writeUInt16BE(4, 12); head.writeUInt32BE(h, 14); head.writeUInt32BE(w, 18); head.writeUInt16BE(8, 22); head.writeUInt16BE(4, 24);
+    const z = Buffer.alloc(4), comp = Buffer.alloc(2), planes = ink.map(v => Buffer.alloc(w * h, 255 - v));
+    return Buffer.concat([head, z, z, z, comp, ...planes]);
+  };
+  const pdfInkAt = (buf, fx, fy) => {
+    const s = buf.toString('latin1'), m = s.match(/\/Width (\d+) \/Height (\d+) \/ColorSpace \/DeviceCMYK[^>]*\/Length (\d+) >>\s*stream\r?\n/);
+    expect(m, 'CMYKの画像がない');
+    const st = m.index + m[0].length, raw = require('zlib').inflateSync(buf.subarray(st, st + +m[3])), W = +m[1], H = +m[2];
+    const o = (Math.round(H * fy) * W + Math.round(W * fx)) * 4;
+    return [...raw.subarray(o, o + 4)].map(v => Math.round(v / 2.55));
+  };
+  const placeAndExport = async (file) => {
+    await page.evaluate(async ({ name, type, b64 }) => {
+      const T = window.__thinbook, bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      const im = await T.readImage(new File([u], name, { type }));
+      T.S.doc = T.newDoc({ kind: 'body', name: '色テスト', printer: 'generic', w: 148, h: 210, binding: 'right', color: 'cmyk', pages: 2 });
+      const d = T.S.doc; T.S.images = { pic: im }; T.S.sel = null; T.S.page = 0;
+      d.pages[0].items.push({ id: 'pic1', type: 'image', x: -d.bleed, y: -d.bleed, w: 148 + 2 * d.bleed, h: 210 + 2 * d.bleed, imageId: 'pic', fit: 'cover' });
+      T.rebuild();
+    }, file);
+    return exportPdf();
+  };
+
+  await step('CMYKのPSDは元の版のまま入稿PDFに入る', async () => {
+    const ink = [30, 60, 10, 5].map(v => Math.round(v * 2.55));
+    const pdf = await placeAndExport({ name: 'cmyk.psd', type: 'image/vnd.adobe.photoshop', b64: cmykPsd(40, 40, ink).toString('base64') });
+    const got = pdfInkAt(pdf, 0.5, 0.25);
+    expect(JSON.stringify(got) === JSON.stringify([30, 60, 10, 5]), 'インキ量が変わった: ' + got.join('/'));
+  });
+
+  await step('RGB画像は Japan Color 2001 Coated のインキ量になる', async () => {
+    const png = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 40; const x = c.getContext('2d'); x.fillStyle = 'rgb(29,139,86)'; x.fillRect(0, 0, 40, 40); return c.toDataURL('image/png').split(',')[1]; });
+    const got = pdfInkAt(await placeAndExport({ name: 'rgb.png', type: 'image/png', b64: png }), 0.5, 0.25);
+    const want = [81, 32, 83, 0]; // littleCMS（sRGB→Japan Color 2001 Coated、知覚的）
+    expect(got.every((v, i) => Math.abs(v - want[i]) <= 2), `インキ量 ${got.join('/')}（期待 ${want.join('/')}）`);
+    const black = await page.evaluate(() => window.__thinbook.hexC('#000000'));
+    expect(black.k === 100 && !black.c && !black.m && !black.y, '黒の文字色がスミ1色でない');
+  });
+
   await step('ブラウザ標準の確認ダイアログを使わない', async () => {
     expect(!errors.some(e => e.startsWith('native dialog')), errors.join(' / '));
   });
