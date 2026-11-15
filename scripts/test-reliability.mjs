@@ -73,7 +73,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   const blank={innerHTML:'',style:{setProperty(){}}};
   const c=ctx({S:{doc:original,images:{old:{src:'old'}},media:{old:{}},zoom:1,
     single:false,visible:new Set(),dirty:new Set(),tdirty:new Set()},
-    kvGet:async()=>null,migrateSlides(){},stage:{clientHeight:700,clientWidth:900},
+    kvGet:async()=>null,stage:{clientHeight:700,clientWidth:900},
     PX:96/25.4,clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),stopInline(){},
     io:{disconnect(){}},spreadsEl:blank,pagesEl:{innerHTML:''},lcache:new Map(),
     thumbH:()=>64,isFlat:()=>false, renderAll(){},resetHistory(){} });
@@ -95,7 +95,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   const c=ctx({S:{doc:original,images:{old:{src:'old',w:10,h:10}},media:{}},
     SL:()=>c.S.doc.pages,MS:()=>[],loadImg:()=>new Promise(r=>release=r),
     kvWrite:async(k,v)=>{saved=structuredClone(v)},kvGet:async()=>null,saveQueue:Promise.resolve(),saveT:0,saveRevision:0,saving:0,checkQuota(){},saveStatus(){},toast(){},commitT:0,docT:0,
-    migrateSlides(){},fitZoom(){},rebuild(){},renderAll(){},resetHistory(){} });
+    fitZoom(){},rebuild(){},renderAll(){},resetHistory(){} });
   run(c,cut('function projectData(file)', '\nfunction validateProject')+load);
   c.input={app:'honhon',doc:incoming,images:{new:{src:'new',w:10,h:10}}};
   const loading=run(c,'loadProject(input)');
@@ -111,7 +111,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
 {
   const c=ctx({S:{doc:doc()},PT:25.4/72,r1:v=>Math.round(v*10)/10,
     uid:()=>Math.random().toString(36),gAdv:s=>String(s).length*3});
-  run(c,cut('function textItem(o)', '\nfunction videoItem')+
+  run(c,cut('function textItem(o)', '\nfunction blankDoc')+
     line('const GK=')+'\n'+cut('function gT(kind,o)', '\nfunction tocRowH')+
     cut('function colRows(g,o)', '\nfunction tocAuto'));
   c.g={m:{x:15,y:15,w:120,h:180},font:['Noto Sans JP','Noto Sans JP'],
@@ -121,17 +121,17 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   record('colophon_linebreaks',Array.from(out));
 }
 
-// Export must wait for pending images; an image that cannot be decoded is reported and left as an empty frame.
+// Export draws loaded images, reports an image that cannot be decoded, and refuses while an image is still loading.
 {
   let imageDraws=0;
   const drawing={setTransform(){},fillRect(){},save(){},restore(){},beginPath(){},rect(){},clip(){},
     drawImage(){imageDraws++},getImageData:(x,y,w,h)=>({data:new Uint8Array(w*h*4).fill(255)})};
-  const d=doc();d.kind='slide';d.trimW=10;d.trimH=10;d.bleed=0;
+  const d=doc();d.trimW=10;d.trimH=10;d.bleed=0;
   d.pages[0].items=[{type:'image',imageId:'photo',x:0,y:0,w:10,h:10,fit:'contain'}];
-  const c=ctx({S:{doc:d,images:{photo:{pending:true,w:10,h:10}}},
+  const c=ctx({S:{doc:d,images:{photo:{w:10,h:10,img:{}}}},
     document:{createElement:()=>({getContext:()=>drawing}),fonts:{load:async()=>[],ready:Promise.resolve()}},
     FF:x=>x,wcache:new Map(),lcache:new Map(),sepCache:new Map(),exporting:false,
-    SL:()=>d.pages,MS:()=>[],loadPendingImages:async()=>{c.S.images.photo={pending:false,w:10,h:10,img:{}}},mBg:()=>({}),mUnder:()=>[],nombreText:i=>String(i+1),sepCanvas:()=>({}),exportNames:()=>({one:'audit',page:()=> 'audit'}),
+    pageBg:()=>({}),bgItem:()=>({}),nombreText:i=>String(i+1),sepCanvas:()=>({}),exportNames:()=>({one:'audit',page:()=> 'audit'}),
     deflate:async u=>new Uint8Array(deflateSync(u)),enc:new TextEncoder(),MMPT:72/25.4});
   run(c,pw+cut('function imgScale(it,im)', '\nfunction effPpi')+
     cut('function drawItem(ctx,it,ch,preview)', '\nfunction nombreText')+
@@ -141,12 +141,12 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
     cut('async function ensureFonts()', '\nfunction pdfFrom')+
     cut('function pdfFrom(pages,title)', '\nasync function exportPDF'));
   const out=await run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})");
-  assert(out.blob.size>0);assert(imageDraws>0);assert(!c.S.images.photo.pending);
-  record('pending_image_pdf',{pdfBytes:out.blob.size,imageDraws,pending:c.S.images.photo.pending});
+  assert(out.blob.size>0);assert(imageDraws>0);
+  record('image_pdf',{pdfBytes:out.blob.size,imageDraws});
   let notice='';c.toast=m=>{notice=m};
-  c.loadPendingImages=async()=>{c.S.images.photo={failed:true}};
+  c.S.images.photo={failed:true};
   await run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})");assert.match(notice,/読み込めない画像 1件/);
-  c.loadPendingImages=async()=>{};c.S.images.photo={pending:true,w:10,h:10};
+  c.S.images.photo={pending:true,w:10,h:10};
   await assert.rejects(run(c,"exportJob({fmt:'pdf',dpi:25.4,range:[0],base:'audit'},()=>{})"),/読み込みが終わっていません/);
 }
 
@@ -177,16 +177,16 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
   record('project_validation',{validAccepted:true,invalidNumbersRejected:true});
 }
 
-// Recovery snapshots must include original PPTX bytes and be independent of edits.
+// Recovery snapshots must be independent of edits.
 {
   const current=doc();current.pages[0].items=[{type:'rect',x:0,y:0,w:20,h:20}];
-  const originalFile=new Blob(['original-pptx']);let snapshot;
-  const c=ctx({S:{doc:current,pptxSrc:originalFile},SL:()=>current.pages,
+  let snapshot;
+  const c=ctx({S:{doc:current},
     projectData:()=>({app:'honhon',doc:current}),kvWrite:async(k,v)=>{assert.equal(k,'previousProject');snapshot=v}});
   run(c,cut('async function backupBeforeSwitch()', '\nconst switchBypass'));
   await run(c,'backupBeforeSwitch()');current.name='changed';
-  assert.equal(snapshot.doc.name,'original');assert.equal(await snapshot.pptxSrc.text(),'original-pptx');
-  record('recovery_snapshot',{independent:true,pptxPreserved:true});
+  assert.equal(snapshot.doc.name,'original');
+  record('recovery_snapshot',{independent:true});
 }
 
 // A view rebuild failure preserves the original document; an undecodable image opens the document without that image.
@@ -196,7 +196,7 @@ record('script_syntax', { compiledScriptBlocks:scripts.length });
     const incoming=doc();incoming.name='incoming';
     const c=ctx({S:{doc:original,images:originalImages,media:{}},commitT:0,docT:0,saveT:0,
       kvGet:async()=>null,loadImg:async()=>{throw new Error('decode failed')},
-      migrateSlides(){},fitZoom(){},rebuild(){if(++builds===1)throw new Error('view failed')},
+      fitZoom(){},rebuild(){if(++builds===1)throw new Error('view failed')},
       renderAll(){},resetHistory(){},scheduleSave(){}});
     run(c,load);c.input={app:'honhon',doc:incoming,images:failure==='image'?{broken:{src:'bad'}}:{}};
     if(failure==='image'){let notice='';c.toast=m=>{notice=m};builds=1;await run(c,'loadProject(input)');assert.equal(c.S.doc.name,'incoming');assert(!c.S.images.broken);assert.match(notice,/読み込めない画像が1件/);continue}
