@@ -181,6 +181,26 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     expect(r.body[0] === 'アニメーション作家の個展「ねこと暮ら', '本文は字単位で詰める ' + r.body.join(' / '));
   });
 
+  await step('禁則（JLREQ）とルビ', async () => {
+    const r = await page.evaluate(() => {
+      const { layout } = window.__thinbook;
+      const base = { type: 'text', x: 0, y: 0, h: 200, font: 'Noto Sans JP', weight: 400, size: 10, leading: 175, track: 0,
+        dir: 'h', align: 'start', color: { c: 0, m: 0, y: 0, k: 100 } };
+      const lines = o => { const g = layout(Object.assign({ id: 'k' + Math.random() }, base, o)).glyphs.filter(x => !x.fs),
+        ys = [...new Set(g.map(x => x.y.toFixed(2)))]; return ys.map(y => g.filter(x => x.y.toFixed(2) === y).map(x => x.s).join('')); };
+      const em = 10 * 25.4 / 72;
+      const rb = layout(Object.assign({ id: 'rb' }, base, { w: 60, text: '｜古本屋《ふるほんや》と東京《とうきょう》' })).glyphs;
+      return {
+        close: lines({ w: em * 5.5, text: 'あいうえお。」かきく' }),
+        word: lines({ w: em * 5, text: 'あいうえhello world' }),
+        rubyBase: rb.filter(x => !x.fs).map(x => x.s).join(''), ruby: rb.filter(x => x.fs).map(x => x.s).join(''),
+      };
+    });
+    expect(r.close[1].startsWith('お。」'), '句点と閉じ括弧は追い出す ' + r.close.join(' / '));
+    expect(r.word[0].trim() === 'あいうえ' && r.word[1].trim() === 'hello', '英単語の途中で切らない ' + r.word.join(' / '));
+    expect(r.rubyBase === '古本屋と東京' && r.ruby === 'ふるほんやとうきょう', 'ルビ ' + r.rubyBase + ' / ' + r.ruby);
+  });
+
   await step('スクリプトエラーが出ない', async () => {
     const js = errors.filter(e => !e.startsWith('native dialog'));
     expect(!js.length, js.join(' / '));
