@@ -201,6 +201,26 @@ const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
     expect(r.rubyBase === '古本屋と東京' && r.ruby === 'ふるほんやとうきょう', 'ルビ ' + r.rubyBase + ' / ' + r.ruby);
   });
 
+  // ag-psd はCDNから読む。ネットに出られない環境では AG_PSD_BUNDLE に ag-psd@34.1.0 の dist/bundle.js を指定する
+  if (process.env.AG_PSD_BUNDLE) await page.route('https://cdn.jsdelivr.net/npm/ag-psd@34.1.0/dist/bundle.js',
+    r => r.fulfill({ path: process.env.AG_PSD_BUNDLE, contentType: 'text/javascript' }));
+  await step('合成画像のないPSD・PSBはレイヤーから読む（ag-psd）', async () => {
+    const r = await page.evaluate(async () => {
+      const T = window.__thinbook, A = await loadAgPsd();
+      const cnv = (col, w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = col; g.fillRect(0, 0, w, h); return c; };
+      const px = (c, x, y) => Array.from(c.getContext('2d').getImageData(x, y, 1, 1).data.slice(0, 3));
+      const ab = b => b instanceof ArrayBuffer ? b : b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+      const noComp = await T.readPSD(ab(A.writePsd({ width: 100, height: 80, canvas: cnv('#fff', 100, 80), children: [
+        { name: 'a', canvas: cnv('#f00', 60, 80), left: 0, top: 0 }, { name: 'b', canvas: cnv('#00f', 40, 80), left: 60, top: 0, opacity: 0.5 },
+        { name: 'c', canvas: cnv('#0f0', 100, 80), left: 0, top: 0, hidden: true }] })));
+      const psb = await T.readPSD(ab(A.writePsd({ width: 50, height: 50, canvas: cnv('#0a0', 50, 50), children: [{ name: 'a', canvas: cnv('#0a0', 50, 50) }] }, { psb: true })));
+      return { a: px(noComp, 10, 10), b: px(noComp, 90, 10), psb: px(psb, 5, 5) };
+    });
+    expect(r.a.join() === '255,0,0', '合成画像なしのPSD（左） ' + r.a);
+    expect(Math.abs(r.b[0] - 128) < 4 && r.b[2] === 255, '合成画像なしのPSD（不透明度50%） ' + r.b);
+    expect(r.psb.join() === '0,170,0', 'PSB ' + r.psb);
+  });
+
   await step('スクリプトエラーが出ない', async () => {
     const js = errors.filter(e => !e.startsWith('native dialog'));
     expect(!js.length, js.join(' / '));
